@@ -71,7 +71,7 @@ public class NekoDbContext(DbContextOptions options) : DbContext(options)
     public DbSet<ScriptEntity> Scripts { get; set; }
     public DbSet<UserEntity> Users { get; set; }
     
-    public static JsonSerializerOptions JsonSerializerOptions { get; }= new()
+    public static JsonSerializerOptions JsonSerializerOptions { get; } = new()
     {
         AllowOutOfOrderMetadataProperties = true,
         Converters = { new JsonStringEnumConverter() },
