@@ -68,33 +68,9 @@ $ docker build . -t slkoshka/bottleneko:dev
 
 ## Screenshots
 
-<div align="center">
-    <a href="docs/assets/screenshot1.png"><img src="docs/assets/screenshot1.png" width="400px"></img></a>
-
-    Initial setup
-</div>
-<div align="center">
-    <a href="docs/assets/screenshot2.png"><img src="docs/assets/screenshot2.png" width="400px"></img></a>
-
-    Dashboard
-</div>
-<div align="center">
-    <a href="docs/assets/screenshot3.png"><img src="docs/assets/screenshot3.png" width="400px"></img></a>
-
-    Connections
-</div>
-<div align="center">
-    <a href="docs/assets/screenshot4.png"><img src="docs/assets/screenshot4.png" width="400px"></img></a>
-
-    Message history
-</div>
-<div align="center">
-    <a href="docs/assets/screenshot5.png"><img src="docs/assets/screenshot5.png" width="400px"></img></a>
-
-    Script editor
-</div>
-<div align="center">
-    <a href="docs/assets/screenshot6.png"><img src="docs/assets/screenshot6.png" width="400px"></img></a>
-
-    Log viewer
-</div>
+<a href="docs/assets/screenshot1.png"><img src="docs/assets/screenshot1.png" width="15%"></img></a>
+<a href="docs/assets/screenshot2.png"><img src="docs/assets/screenshot2.png" width="15%"></img></a>
+<a href="docs/assets/screenshot3.png"><img src="docs/assets/screenshot3.png" width="15%"></img></a>
+<a href="docs/assets/screenshot4.png"><img src="docs/assets/screenshot4.png" width="15%"></img></a>
+<a href="docs/assets/screenshot5.png"><img src="docs/assets/screenshot5.png" width="15%"></img></a>
+<a href="docs/assets/screenshot6.png"><img src="docs/assets/screenshot6.png" width="15%"></img></a>
