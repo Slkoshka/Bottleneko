@@ -1,0 +1,11 @@
+publish
+*/bin
+*/obj
+*/dist
+*/node_modules
+**/bottleneko.db*
+.vs
+**/Dockerfile
+**/*.ps1
+**/*.txt
+**/*.md

@@ -1,0 +1,119 @@
+﻿.branding span {
+    display: block;
+    float: left;
+}
+
+.branding .branding-highlight {
+    color: #9341ff;
+    transform: translateY(0.1em);
+}
+
+.main-page {
+    height: 100dvh;
+}
+
+main {
+    padding: 3rem 3rem 3rem 28rem;
+    height: 100%;
+}
+
+aside {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 25rem;
+    height: 100dvh;
+    overflow-y: auto;
+}
+
+.sidebar-button {
+    display: none;
+}
+
+@media only screen and (max-width: 1920px) {
+    html {
+        font-size: 14px;
+    }
+
+    main {
+        padding: 1.5rem 1.5rem 1.5rem calc(1.5rem + max(20rem, 20vw));
+    }
+
+    aside {
+        width: max(20rem, 20vw);
+    }
+}
+
+@media only screen and (max-width: 1000px) {
+    html {
+        font-size: 12px;
+    }
+
+    .main-page {
+        display: block;
+    }
+
+    main {
+        padding: 5.5rem 0.5rem 1.5rem 0.5rem;
+    }
+
+    aside {
+        width: 100dvw;
+        height: 5rem;
+        z-index: 100;
+        overflow-y: hidden;
+        overscroll-behavior-y: contain;
+    }
+
+    body.sidebar-shown {
+        overflow-y: hidden;
+    }
+
+    body.sidebar-shown aside {
+        height: 100dvh;
+        overflow-y: auto;
+    }
+
+    .sidebar-button {
+        display: block;
+    }
+}
+
+.dashboard-card table {
+    table-layout: fixed;
+}
+
+.dashboard-card table tr {
+    width: 100%;
+    height: 3em;
+}
+
+.dashboard-card .text-collapse {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow-x: hidden;
+}
+
+.dashboard-card-bot td:nth-child(1) {
+    width: 7em;
+}
+
+.dashboard-card-system td:nth-child(1) {
+    width: 7em;
+}
+
+.view-content {
+    flex-grow: 1;
+    height: calc(100% - 5rem);
+}
+
+.tab-content {
+    flex-grow: 1;
+    height: calc(100% - 10rem);
+}
+
+.nav-item {
+    margin-bottom: 0.5em;
+}
+
+.monaco-editor { position: absolute !important; }

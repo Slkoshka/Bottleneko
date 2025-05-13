@@ -1,0 +1,87 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35931.197
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bottleneko.Server", "Bottleneko.Server\Bottleneko.Server.csproj", "{D2BB5A4C-A910-4996-836B-4BC14D67B690}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bottleneko.Core", "Bottleneko.Core\Bottleneko.Core.csproj", "{8174B591-BC74-4BE5-B303-32DB125BFBB5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bottleneko.Api", "Bottleneko.Api\Bottleneko.Api.csproj", "{85D46EC8-8D29-1F73-12CA-5EFBB3D55CE4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bottleneko.Common", "Bottleneko.Common\Bottleneko.Common.csproj", "{01F3A0A5-1D9F-7857-7ACA-B25F95AEDF4C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bottleneko.Database", "Bottleneko.Database\Bottleneko.Database.csproj", "{E3B28706-8483-71EB-30F3-0984066016C1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bottleneko.CodeGenerator", "Bottleneko.CodeGenerator\Bottleneko.CodeGenerator.csproj", "{7B81CBA6-2E84-BD7F-5E02-CF67A17893EB}"
+EndProject
+Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "Bottleneko.Client", "Bottleneko.Client\Bottleneko.Client.esproj", "{9C8B8F11-3961-6F2F-0D93-80D874F1A283}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bottleneko.AppHost", "Bottleneko.AppHost\Bottleneko.AppHost.csproj", "{D640D44A-85E2-2F06-887F-FC1F109B62B1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bottleneko.ServiceDefaults", "Bottleneko.ServiceDefaults\Bottleneko.ServiceDefaults.csproj", "{9F572937-0A04-C80E-59FA-68671FAF6180}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
+	ProjectSection(SolutionItems) = preProject
+		Bottleneko.Common.props = Bottleneko.Common.props
+		GenerateBindings.ps1 = GenerateBindings.ps1
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".NET Aspire", ".NET Aspire", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D2BB5A4C-A910-4996-836B-4BC14D67B690}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D2BB5A4C-A910-4996-836B-4BC14D67B690}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D2BB5A4C-A910-4996-836B-4BC14D67B690}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D2BB5A4C-A910-4996-836B-4BC14D67B690}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8174B591-BC74-4BE5-B303-32DB125BFBB5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8174B591-BC74-4BE5-B303-32DB125BFBB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8174B591-BC74-4BE5-B303-32DB125BFBB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8174B591-BC74-4BE5-B303-32DB125BFBB5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{85D46EC8-8D29-1F73-12CA-5EFBB3D55CE4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{85D46EC8-8D29-1F73-12CA-5EFBB3D55CE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{85D46EC8-8D29-1F73-12CA-5EFBB3D55CE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{85D46EC8-8D29-1F73-12CA-5EFBB3D55CE4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{01F3A0A5-1D9F-7857-7ACA-B25F95AEDF4C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{01F3A0A5-1D9F-7857-7ACA-B25F95AEDF4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{01F3A0A5-1D9F-7857-7ACA-B25F95AEDF4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{01F3A0A5-1D9F-7857-7ACA-B25F95AEDF4C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E3B28706-8483-71EB-30F3-0984066016C1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E3B28706-8483-71EB-30F3-0984066016C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E3B28706-8483-71EB-30F3-0984066016C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E3B28706-8483-71EB-30F3-0984066016C1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B81CBA6-2E84-BD7F-5E02-CF67A17893EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B81CBA6-2E84-BD7F-5E02-CF67A17893EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B81CBA6-2E84-BD7F-5E02-CF67A17893EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B81CBA6-2E84-BD7F-5E02-CF67A17893EB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C8B8F11-3961-6F2F-0D93-80D874F1A283}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C8B8F11-3961-6F2F-0D93-80D874F1A283}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C8B8F11-3961-6F2F-0D93-80D874F1A283}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{9C8B8F11-3961-6F2F-0D93-80D874F1A283}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C8B8F11-3961-6F2F-0D93-80D874F1A283}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C8B8F11-3961-6F2F-0D93-80D874F1A283}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{D640D44A-85E2-2F06-887F-FC1F109B62B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D640D44A-85E2-2F06-887F-FC1F109B62B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D640D44A-85E2-2F06-887F-FC1F109B62B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D640D44A-85E2-2F06-887F-FC1F109B62B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9F572937-0A04-C80E-59FA-68671FAF6180}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9F572937-0A04-C80E-59FA-68671FAF6180}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F572937-0A04-C80E-59FA-68671FAF6180}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9F572937-0A04-C80E-59FA-68671FAF6180}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{D640D44A-85E2-2F06-887F-FC1F109B62B1} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{9F572937-0A04-C80E-59FA-68671FAF6180} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2FBFF718-96C6-4727-B1A8-13978DC403D3}
+	EndGlobalSection
+EndGlobal

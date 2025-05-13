@@ -1,0 +1,9 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Bottleneko</RootNamespace>
+  </PropertyGroup>
+
+  <Import Project="$(MSBuildProjectDirectory)\..\Bottleneko.Common.props" />
+
+</Project>

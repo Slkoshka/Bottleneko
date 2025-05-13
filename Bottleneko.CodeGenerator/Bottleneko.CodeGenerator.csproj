@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <Import Project="$(MSBuildProjectDirectory)\..\Bottleneko.Common.props" />
+
+  <ItemGroup>
+    <PackageReference Include="Spectre.Console.Cli" Version="0.50" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Bottleneko.Api\Bottleneko.Api.csproj" />
+    <ProjectReference Include="..\Bottleneko.Common\Bottleneko.Common.csproj" />
+    <ProjectReference Include="..\Bottleneko.Core\Bottleneko.Core.csproj" />
+  </ItemGroup>
+
+</Project>

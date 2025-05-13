@@ -1,0 +1,10 @@
+body {
+    min-height: 100dvh;
+    background-color: #17171c;
+    color: #f0f0f0;
+    caret-color: transparent;
+}
+
+input {
+    caret-color: #f0f0f0;
+}

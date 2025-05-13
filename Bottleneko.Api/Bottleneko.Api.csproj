@@ -1,0 +1,9 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="$(MSBuildProjectDirectory)\..\Bottleneko.Common.props" />
+
+  <ItemGroup>
+    <ProjectReference Include="..\Bottleneko.Common\Bottleneko.Common.csproj" />
+  </ItemGroup>
+
+</Project>

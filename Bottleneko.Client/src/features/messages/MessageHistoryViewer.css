@@ -1,0 +1,114 @@
+.message-history-viewer th {
+    position: sticky;
+    top: 0;
+}
+
+.message-history-message {
+    box-shadow: inset 4px 0 0 0 rgb(var(--message-color));
+    animation-duration: 0.4s;
+    animation-name: message-history-appear;
+}
+
+@keyframes message-history-appear {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.message-history-timestamp {
+    width: 15em;
+    min-width: 15em;
+    padding-left: 10px !important;
+    font-size: 0.8rem;
+    vertical-align: middle;
+}
+
+.message-history-connection {
+    width: 10em;
+    vertical-align: middle;
+}
+
+.message-history-connection .btn {
+    width: 100%;
+    max-width: 10em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow-x: clip;
+}
+
+.message-history-chat {
+    width: 20em;
+    max-width: 20em;
+    vertical-align: middle;
+}
+
+.message-history-author {
+    width: 17em;
+    max-width: 17em;
+    vertical-align: middle;
+}
+
+.message-history-attachments {
+    width: 10em;
+    max-width: 10em;
+}
+
+@media (width < 2200px) {
+    .message-history-chat {
+        width: 10em;
+        max-width: 10em;
+    }
+
+    .message-history-author {
+        width: 10em;
+        max-width: 10em;
+    }
+
+    .message-history-attachments {
+        width: 5em;
+        max-width: 5em;
+    }
+}
+
+.message-history-attachments .btn {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow-x: clip;
+}
+
+.message-history-content {
+    white-space: pre-wrap;
+    word-break: break-all;
+    min-width: 12em;
+}
+
+.message-history-clip {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow-x: clip;
+}
+
+.message-history-clip:hover {
+    text-overflow: clip;
+    white-space: normal;
+    word-break: break-all;
+}
+
+.message-history-message td {
+    background-color: rgba(var(--message-color), 0.2);
+}
+
+.message-history-message:hover td {
+    background-color: rgba(var(--message-color), 0.4);
+}
+
+.message-history-direct {
+    --message-color: 64, 160, 64;
+}
+
+.message-history-normal {
+    --message-color: 64, 64, 64;
+}

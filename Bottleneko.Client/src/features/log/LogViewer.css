@@ -1,0 +1,107 @@
+.log-viewer th {
+    position: sticky;
+    top: 0;
+}
+
+.log-message {
+    box-shadow: inset 4px 0 0 0 rgb(var(--message-color));
+    animation-duration: 0.4s;
+    animation-name: log-message-appear;
+}
+
+@keyframes log-message-appear {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.log-message-timestamp {
+    width: 16em;
+    min-width: 16em;
+    padding-left: 10px !important;
+    font-size: 0.8rem;
+    vertical-align: middle;
+}
+
+.log-message-source {
+    width: 12em;
+    vertical-align: middle;
+}
+
+.log-message-source .btn {
+    width: 100%;
+    max-width: 15em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow-x: clip;
+}
+
+.log-message-category {
+    max-width: 15em;
+    width: 15em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow-x: clip;
+    vertical-align: middle;
+}
+
+.log-message-category:hover {
+    text-overflow: clip;
+    white-space: normal;
+    word-break: break-all;
+}
+
+@media (width < 1920px) {
+    .log-message-source {
+        width: 8em;
+    }
+
+    .log-message-category {
+        max-width: 12em;
+        width: 12em;
+    }
+}
+
+.log-message-text {
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.log-message td {
+    background-color: rgba(var(--message-color), 0.2);
+}
+
+.log-message:hover td {
+    background-color: rgba(var(--message-color), 0.3);
+}
+
+.log-message-critical {
+    --message-color: 255, 0, 0;
+}
+
+.log-message-critical .log-message-text {
+    font-weight: bold;
+}
+
+.log-message-error {
+    --message-color: 160, 0, 0;
+}
+
+.log-message-warning {
+    --message-color: 255, 160, 64;
+}
+
+.log-message-info {
+    --message-color: 64, 128, 255;
+}
+
+.log-message-verbose {
+    --message-color: 48, 48, 48;
+}
+
+.log-message-debug {
+    --message-color: 48, 48, 48;
+}
