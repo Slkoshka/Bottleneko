@@ -32,7 +32,7 @@ public class SystemController(IHostApplicationLifetime appLifetime, NekoDbContex
         return Ok(new EnvironmentInfoDto(
                 new SystemInfoDto(
                     Environment.MachineName,
-                    RuntimeInformation.OSDescription,
+                    Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true" ? "Container" : RuntimeInformation.OSDescription,
                     RuntimeInformation.ProcessArchitecture switch
                     {
                         Architecture.X86 => "x86",
