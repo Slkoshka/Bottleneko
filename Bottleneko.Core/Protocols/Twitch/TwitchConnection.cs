@@ -730,7 +730,7 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
         }
     }
 
-    public static async Task<object?> TestAsync(TwitchProtocolConfiguration config, CancellationToken _)
+    public static async Task<object?> TestAsync(IServiceProvider _, TwitchProtocolConfiguration config, CancellationToken __)
     {
         var api = new NekoTwitchAPI();
         api.Settings.ClientId = config.Auth.ClientId;

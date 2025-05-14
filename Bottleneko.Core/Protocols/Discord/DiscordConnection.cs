@@ -288,7 +288,7 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
         return Task.CompletedTask;
     }
 
-    public static async Task<object?> TestAsync(DiscordProtocolConfiguration config, CancellationToken cancellationToken)
+    public static async Task<object?> TestAsync(IServiceProvider _, DiscordProtocolConfiguration config, CancellationToken cancellationToken)
     {
         await using var client = new DiscordSocketClient(new() { GatewayIntents = GetIntents(config) });
 

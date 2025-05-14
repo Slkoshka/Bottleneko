@@ -410,7 +410,7 @@ class TelegramConnection(IServiceProvider services, INekoLogger logger, Connecti
         }
     }
 
-    public static async Task<object?> TestAsync(TelegramProtocolConfiguration config, CancellationToken cancellationToken)
+    public static async Task<object?> TestAsync(IServiceProvider _, TelegramProtocolConfiguration config, CancellationToken cancellationToken)
     {
         var telegram = new TelegramBotClient(config.Token);
         var me = await telegram.GetMe(cancellationToken);
