@@ -1,12 +1,13 @@
+# syntax=docker/dockerfile:1.7-labs
+
 FROM mcr.microsoft.com/dotnet/sdk:9.0@sha256:fe3c1ed472bb0964c100f06aa9b1759f5ed84e0dfe6904d60f6a82159d3c7ae4 AS build-dotnet
 WORKDIR /src
 
 # Restore
-COPY ./*.sln ./
-COPY ./*.props ./
-COPY */*.csproj ./
-COPY */*.esproj ./
-RUN for file in $(ls *.csproj *.esproj); do mkdir -p ${file%.*} && mv $file ${file%.*}; done
+COPY --parents ./**/*.sln ./
+COPY --parents ./**/*.csproj ./
+COPY --parents ./**/*.esproj ./
+COPY --parents ./**/*.props ./
 RUN dotnet restore
 
 # Publish
