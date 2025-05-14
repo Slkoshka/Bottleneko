@@ -147,22 +147,19 @@ public class NekoDbContext(DbContextOptions options) : DbContext(options)
             {
                 void SetOptionIfNotExists(Option value)
                 {
-                    try
+                    if (!context.Set<OptionEntity>().Any(option => option.Key == value.GetType().Name))
                     {
                         context.Set<OptionEntity>().Add(new OptionEntity()
                         {
                             Key = value.GetType().Name,
                             Value = value,
                         });
-                        context.SaveChanges();
-                    }
-                    catch (Exception e) when (e.IsDuplicateKeyException())
-                    {
                     }
                 }
 
                 SetOptionIfNotExists(new OptionSecretKey(RandomNumberGenerator.GetBytes(256)));
                 SetOptionIfNotExists(new OptionSetUp(false));
+                context.SaveChanges();
             });
     }
 
