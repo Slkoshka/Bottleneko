@@ -19,6 +19,8 @@ using Bottleneko.Scripting.Bindings.Discord;
 using Akka.Actor;
 using Bottleneko.Messages;
 using Bottleneko.Database.Schema.Protocols.Discord;
+using Discord.Net.Rest;
+using Discord.Net.WebSockets;
 
 namespace Bottleneko.Protocols.Discord;
 
@@ -30,8 +32,8 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
 
     public IServiceProvider Services { get; } = services;
 
-    private readonly DiscordRestClient _rest = new(new DiscordRestConfig());
-    private readonly DiscordSocketClient? _client = data.Configuration.ReceiveEvents ? new DiscordSocketClient(new DiscordSocketConfig { GatewayIntents = GetIntents(data.Configuration) }) : null;
+    private DiscordRestClient _rest = null!;
+    private DiscordSocketClient? _client = null;
     private bool _disposed = false;
 
     private static GatewayIntents GetIntents(DiscordProtocolConfiguration config)
@@ -42,8 +44,30 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
             | (config.IsMessageContentIntentEnabled ? GatewayIntents.MessageContent : 0);
     }
 
+    private static async Task<(DiscordRestClient RestClient, DiscordSocketClient? SocketClient)> CreateAsync(DiscordProtocolConfiguration config)
+    {
+        var proxy = await GetProxyAsync(config.ProxyId);
+        var restProvider = DefaultRestClientProvider.Create(proxy is not null, proxy);
+
+        var rest = new DiscordRestClient(new DiscordRestConfig()
+        {
+            RestClientProvider = restProvider,
+        });
+
+        var client = config.ReceiveEvents ? new DiscordSocketClient(new DiscordSocketConfig
+        {
+            GatewayIntents = GetIntents(config),
+            RestClientProvider = restProvider,
+            WebSocketProvider = DefaultWebSocketProvider.Create(proxy),
+        }) : null;
+
+        return (rest, client);
+    }
+
     public override async Task StartAsync()
     {
+        (_rest, _client) = await CreateAsync(data.Configuration);
+
         try
         {
             await _rest.LoginAsync(TokenType.Bot, data.Configuration.Token);
@@ -290,80 +314,116 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
 
     public static async Task<object?> TestAsync(IServiceProvider _, DiscordProtocolConfiguration config, CancellationToken cancellationToken)
     {
-        await using var client = new DiscordSocketClient(new() { GatewayIntents = GetIntents(config) });
-
-        var tcs = new TaskCompletionSource<ISelfUser>();
-        var log = new List<LogMessage>();
-
-        Task OnConnectedAsync()
-        {
-            tcs.SetResult(client.CurrentUser);
-            return Task.CompletedTask;
-        }
-
-        Task OnLogAsync(LogMessage message)
-        {
-            log.Add(message);
-            return Task.CompletedTask;
-        }
-
-        Task OnDisconnectedAsync(Exception exception)
-        {
-            if (exception is WebSocketException && exception.InnerException is WebSocketClosedException wsException)
-            {
-                tcs.SetException(wsException);
-            }
-            else
-            {
-                tcs.SetException(exception);
-            }
-
-            return Task.CompletedTask;
-        }
-
-        client.Connected += OnConnectedAsync;
-        client.Log += OnLogAsync;
-        client.Disconnected += OnDisconnectedAsync;
+        var (rest, client) = await CreateAsync(config);
 
         try
         {
-            var cancelTask = cancellationToken.WaitHandle.WaitOneAsync();
-            await Task.WhenAny(client.LoginAsync(TokenType.Bot, config.Token), cancelTask);
-            await Task.WhenAny(client.StartAsync(), cancelTask);
-            await Task.WhenAny(tcs.Task, cancelTask);
+            if (client is null)
+            {
+                var me = await rest.GetCurrentUserAsync();
+                return new
+                {
+                    User = new
+                    {
+                        me.Id,
+                        Username = $"{me.Username}#{me.Discriminator}",
+                        Avatar = me.GetAvatarUrl(),
+                    },
+                };
+            }
+            else
+            {
+                var tcs = new TaskCompletionSource<ISelfUser>();
+                var log = new List<LogMessage>();
 
-            cancellationToken.ThrowIfCancellationRequested();
+                Task OnConnectedAsync()
+                {
+                    tcs.SetResult(client.CurrentUser);
+                    return Task.CompletedTask;
+                }
+
+                Task OnLogAsync(LogMessage message)
+                {
+                    log.Add(message);
+                    return Task.CompletedTask;
+                }
+
+                Task OnDisconnectedAsync(Exception exception)
+                {
+                    if (exception is WebSocketException && exception.InnerException is WebSocketClosedException wsException)
+                    {
+                        tcs.SetException(wsException);
+                    }
+                    else
+                    {
+                        tcs.SetException(exception);
+                    }
+
+                    return Task.CompletedTask;
+                }
+
+                client.Connected += OnConnectedAsync;
+                client.Log += OnLogAsync;
+                client.Disconnected += OnDisconnectedAsync;
+
+                try
+                {
+                    var cancelTask = cancellationToken.WaitHandle.WaitOneAsync();
+                    await Task.WhenAny(client.LoginAsync(TokenType.Bot, config.Token), cancelTask);
+                    await Task.WhenAny(client.StartAsync(), cancelTask);
+                    await Task.WhenAny(tcs.Task, cancelTask);
+
+                    cancellationToken.ThrowIfCancellationRequested();
+                }
+                finally
+                {
+                    client.Connected -= OnConnectedAsync;
+                    client.Disconnected -= OnDisconnectedAsync;
+                }
+
+                var me = await tcs.Task;
+
+                return new
+                {
+                    User = new
+                    {
+                        me.Id,
+                        Username = $"{me.Username}#{me.Discriminator}",
+                        Avatar = me.GetAvatarUrl(),
+                    },
+                    Log = log.Select(message => new
+                    {
+                        Level = message.Severity,
+                        message.Source,
+                        message.Message,
+                        Exception = message.Exception?.Message,
+                    }).ToArray(),
+                };
+            }
         }
         finally
         {
-            client.Connected -= OnConnectedAsync;
-            client.Disconnected -= OnDisconnectedAsync;
+            if (client is not null)
+            {
+                await client.DisposeAsync();
+            }
+            await rest.DisposeAsync();
         }
-
-        var me = await tcs.Task;
-
-        return new
-        {
-            User = new
-            {
-                me.Id,
-                Username = $"{me.Username}#{me.Discriminator}",
-                Avatar = me.GetAvatarUrl(),
-            },
-            Log = log.Select(message => new
-            {
-                Level = message.Severity,
-                message.Source,
-                message.Message,
-                Exception = message.Exception?.Message,
-            }).ToArray(),
-        };
     }
 
     public override async Task HandleMessageAsync(IActorRef sender, IConnectionsMessage message)
     {
         switch (message)
         {
+            case IConnectionsMessage.ProxyUpdated proxyUpdated:
+                {
+                    if (data.Configuration.ProxyId is not null && long.Parse(data.Configuration.ProxyId) == proxyUpdated.Id)
+                    {
+                        RequestRestart();
+                    }
+                    break;
+                }
+
             case IConnectionsMessage.SimpleReply simpleReply:
                 {
                     try
@@ -470,6 +530,9 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
         {
             await _client.DisposeAsync();
         }
-        await _rest.DisposeAsync();
+        if (_rest is not null)
+        {
+            await _rest.DisposeAsync();
+        }
     }
 }

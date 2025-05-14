@@ -4,26 +4,31 @@ using Bottleneko.Api.Protocols;
 using Bottleneko.Connections;
 using Bottleneko.Database;
 using Bottleneko.Database.Schema;
-using Bottleneko.Database.Schema.Protocols.Discord;
 using Bottleneko.Database.Schema.Protocols.Twitch;
 using Bottleneko.Logging;
 using Bottleneko.Messages;
 using Bottleneko.Scripting.Bindings;
 using Bottleneko.Scripting.Bindings.Twitch;
-using Discord;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using TwitchLib.Api;
 using TwitchLib.Api.Core.Enums;
 using TwitchLib.Api.Core.Exceptions;
+using TwitchLib.Api.Core.HttpCallHandlers;
 using TwitchLib.Api.Helix.Models.EventSub;
 using TwitchLib.Api.Helix.Models.Users.GetUsers;
 using TwitchLib.EventSub.Core.SubscriptionTypes.Channel;
 using TwitchLib.EventSub.Core.SubscriptionTypes.User;
 using TwitchLib.EventSub.Websockets;
+using TwitchLib.EventSub.Websockets.Client;
 using TwitchLib.EventSub.Websockets.Core.EventArgs;
 using TwitchLib.EventSub.Websockets.Core.EventArgs.Channel;
 using TwitchLib.EventSub.Websockets.Core.EventArgs.User;
+using TwitchLib.EventSub.Websockets.Core.Handler;
+using TwitchLib.EventSub.Websockets.Interfaces;
 
 namespace Bottleneko.Protocols.Twitch;
 
@@ -32,6 +37,11 @@ namespace Bottleneko.Protocols.Twitch;
 class TwitchConnection(IServiceProvider services, INekoLogger logger, ConnectionCreationData<TwitchProtocolConfiguration> data) : ConnectionBase
 #pragma warning restore CS9113 // Parameter is unread.
 {
+    class WebsocketClientServiceProvider(IClientWebsocketProvider clientWebsocketProvider) : IServiceProvider
+    {
+        public object? GetService(Type serviceType) => serviceType == typeof(WebsocketClient) ? new WebsocketClient(webSocketProvider: clientWebsocketProvider) : null;
+    }
+
     enum ConditionArgument
     {
         ChannelId,
@@ -128,7 +138,7 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
         { TwitchSubscriptionTopic.ChannelVipRemove, new("channel.vip.remove", "1", [new("broadcaster_user_id", ConditionArgument.ChannelId)], (isOwnChannel, scopes) => scopes.Contains(TwitchScope.ChannelReadVips) || scopes.Contains(TwitchScope.ChannelManageVips)) },
 };
 
-    private readonly NekoTwitchAPI _api = new();
+    private TwitchAPI _api = null!;
     private readonly SemaphoreSlim _apiLock = new(1);
     private EventSubWebsocketClient? _eventSub;
     private bool _disconnectRequested = false;
@@ -139,9 +149,33 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
     private readonly CancellationTokenSource _cts = new();
     private Task _checkTokenTask = Task.CompletedTask;
 
+    private static async Task<(TwitchAPI API, EventSubWebsocketClient? EventSub)> CreateAsync(IServiceProvider services, TwitchProtocolConfiguration config)
+    {
+        var proxy = await GetProxyAsync(config.ProxyId);
+        var provider = new DefaultClientWebsocketProvider(proxy);
+        var loggerFactory = services.GetRequiredService<ILoggerFactory>();
+
+        var api = new TwitchAPI(http: new TwitchHttpClient(loggerFactory.CreateLogger<TwitchHttpClient>(), proxy));
+        api.Settings.ClientId = config.Auth.ClientId;
+
+        var eventSub = config.ReceiveEvents ?
+            new EventSubWebsocketClient(
+                loggerFactory.CreateLogger<EventSubWebsocketClient>(),
+                [.. typeof(INotificationHandler)
+                    .Assembly.ExportedTypes
+                    .Where(x => typeof(INotificationHandler).IsAssignableFrom(x) && !x.IsInterface && !x.IsAbstract)
+                    .Select(Activator.CreateInstance).Cast<INotificationHandler>()],
+                new WebsocketClientServiceProvider(provider),
+                new WebsocketClient(loggerFactory.CreateLogger<WebsocketClient>(), provider)) :
+                null;
+
+        return (api, eventSub);
+    }
+
     public override async Task StartAsync()
     {
-        _api.Settings.ClientId = data.Configuration.Auth.ClientId;
+        (_api, _eventSub) = await CreateAsync(services, data.Configuration);
+
         await RefreshTokenAsync();
         _me = (await _api.Helix.Users.GetUsersAsync()).Users.Single();
         _usersCache[_me.Login] = _me;
@@ -518,7 +552,7 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
     }
 
     [SuppressMessage("Style", "VSTHRD200:Use \"Async\" suffix for async methods")]
-    private async Task<T> WithApi<T>(Func<TwitchAPIWrapper, Task<T>> f)
+    private async Task<T> WithApi<T>(Func<TwitchAPI, Task<T>> f)
     {
         await _apiLock.WaitAsync();
         try
@@ -551,7 +585,7 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
     }
 
     [SuppressMessage("Style", "VSTHRD200:Use \"Async\" suffix for async methods")]
-    private async Task WithApi(Func<TwitchAPIWrapper, Task> f)
+    private async Task WithApi(Func<TwitchAPI, Task> f)
     {
         await WithApi<object?>(async api =>
         {
@@ -684,6 +718,15 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
     {
         switch (message)
         {
+            case IConnectionsMessage.ProxyUpdated proxyUpdated:
+                {
+                    if (data.Configuration.ProxyId is not null && long.Parse(data.Configuration.ProxyId) == proxyUpdated.Id)
+                    {
+                        RequestRestart();
+                    }
+                    break;
+                }
+
             case IConnectionsMessage.SimpleReply simpleReply:
                 {
                     if (simpleReply.ReplyTo.raw is TwitchChatMessageBinding twitchMessage)
@@ -730,10 +773,9 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
         }
     }
 
-    public static async Task<object?> TestAsync(IServiceProvider _, TwitchProtocolConfiguration config, CancellationToken __)
+    public static async Task<object?> TestAsync(IServiceProvider services, TwitchProtocolConfiguration config, CancellationToken __)
     {
-        var api = new NekoTwitchAPI();
-        api.Settings.ClientId = config.Auth.ClientId;
+        var (api, _) = await CreateAsync(services, config with { ReceiveEvents = false });
         api.Settings.AccessToken = config.Auth.AccessToken;
 
         var me = (await api.Helix.Users.GetUsersAsync()).Users.Single();

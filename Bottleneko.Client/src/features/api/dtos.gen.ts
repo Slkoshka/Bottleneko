@@ -7,6 +7,7 @@ export interface DiscordProtocolConfiguration {
     isPresenceIntentEnabled: boolean;
     isServerMembersIntentEnabled: boolean;
     isMessageContentIntentEnabled: boolean;
+    proxyId: string | null;
 }
 
 export type ProtocolConfiguration =
@@ -19,6 +20,7 @@ export interface TelegramProtocolConfiguration {
     $type: 'Telegram';
     token: string;
     receiveEvents: boolean;
+    proxyId: string | null;
 }
 
 export enum TwitchSubscriptionTopic {
@@ -171,6 +173,7 @@ export interface TwitchProtocolConfiguration {
     auth: TwitchAuth;
     receiveEvents: boolean;
     channels: TwitchProtocolChannel[];
+    proxyId: string | null;
 }
 
 export interface AuthenticatePacket {
@@ -327,6 +330,25 @@ export interface EnvironmentInfoDto {
     system: SystemInfoDto;
     neko: NekoInfoDto;
     messageStats: MessageStatsDto;
+}
+
+export enum ProxyType {
+    Http = 'Http',
+    Https = 'Https',
+    Socks4 = 'Socks4',
+    Socks4a = 'Socks4a',
+    Socks5 = 'Socks5',
+}
+
+export interface ProxyDto {
+    id: string;
+    name: string;
+    type: ProxyType;
+    hostname: string;
+    port: number;
+    isAuthRequired: boolean;
+    username: string;
+    password: string;
 }
 
 export enum ScriptStatus {

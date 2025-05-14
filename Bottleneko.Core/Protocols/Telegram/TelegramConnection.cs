@@ -24,15 +24,27 @@ class TelegramConnection(IServiceProvider services, INekoLogger logger, Connecti
     public const Protocol ProtocolId = Protocol.Telegram;
     public const string LogCategory = "Bottleneko.Telegram";
 
-    private readonly TelegramBotClient _bot = new(data.Configuration.Token);
+    private TelegramBotClient _bot = null!;
     private readonly CancellationTokenSource _cts = new();
     private Task _mainLoopTask = Task.CompletedTask;
     private User _me = null!;
 
     public static string FormatName(string firstName, string? lastName) => lastName is null ? firstName : $"{firstName} {lastName}";
 
+    private static async Task<TelegramBotClient> CreateAsync(TelegramProtocolConfiguration config)
+    {
+        var proxy = await GetProxyAsync(config.ProxyId);
+        return new TelegramBotClient(config.Token, new HttpClient(new HttpClientHandler()
+        {
+            UseProxy = proxy is not null,
+            Proxy = proxy,
+        }));
+    }
+
     public override async Task StartAsync()
     {
+        _bot = await CreateAsync(data.Configuration);
+
         _me = await _bot.GetMe();
         if (data.Configuration.ReceiveEvents)
         {
@@ -369,6 +381,15 @@ class TelegramConnection(IServiceProvider services, INekoLogger logger, Connecti
     {
         switch (message)
         {
+            case IConnectionsMessage.ProxyUpdated proxyUpdated:
+                {
+                    if (data.Configuration.ProxyId is not null && long.Parse(data.Configuration.ProxyId) == proxyUpdated.Id)
+                    {
+                        RequestRestart();
+                    }
+                    break;
+                }
+
             case IConnectionsMessage.SimpleReply simpleReply:
                 {
                     if (simpleReply.ReplyTo.chat.raw is TelegramChatBinding telegramChat && simpleReply.ReplyTo.raw is TelegramChatMessageBinding telegramMessage && telegramMessage.Update.Message is not null)
@@ -412,7 +433,7 @@ class TelegramConnection(IServiceProvider services, INekoLogger logger, Connecti
 
     public static async Task<object?> TestAsync(IServiceProvider _, TelegramProtocolConfiguration config, CancellationToken cancellationToken)
     {
-        var telegram = new TelegramBotClient(config.Token);
+        var telegram = await CreateAsync(config);
         var me = await telegram.GetMe(cancellationToken);
 
         return new

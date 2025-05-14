@@ -70,6 +70,7 @@ public class NekoDbContext(DbContextOptions options) : DbContext(options)
     public DbSet<TwitchChatMessageEntity> TwitchChatMessages { get; set; }
     public DbSet<ScriptEntity> Scripts { get; set; }
     public DbSet<UserEntity> Users { get; set; }
+    public DbSet<ProxyEntity> Proxies { get; set; }
     
     public static JsonSerializerOptions JsonSerializerOptions { get; } = new()
     {

@@ -16,6 +16,7 @@ public interface IConnectionsMessage : IContainerMessage
 
     public record Get(long Id) : ContainerItemMessage(Id), IConnectionsMessage;
     public record GetAttachment(long Id, long AttachmentId) : ContainerItemMessage(Id), IConnectionsMessage, IHasReply;
+    public record ProxyUpdated(long Id) : BroadcastItemMessage, IConnectionsMessage;
     public record SimpleReply(long Id, ChatMessageBinding ReplyTo, string Text) : ContainerItemMessage(Id), IConnectionsMessage;
     public record SendMessage(long Id, ChatBinding Chat, string Text) : ContainerItemMessage(Id), IConnectionsMessage;
 }

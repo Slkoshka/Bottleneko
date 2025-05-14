@@ -1,7 +1,10 @@
 ﻿using Akka.Actor;
+using Bottleneko.Database;
 using Bottleneko.Database.Schema;
 using Bottleneko.Messages;
 using Bottleneko.Scripting.Bindings;
+using Microsoft.EntityFrameworkCore;
+using System.Net;
 
 namespace Bottleneko.Protocols;
 
@@ -13,6 +16,13 @@ abstract class ConnectionBase : IAsyncDisposable
     public event EventHandler<Exception>? OnDied;
 
     public abstract Task StartAsync();
+
+    protected static async Task<IWebProxy?> GetProxyAsync(string? id)
+    {
+        await using var db = NekoDbContext.Get();
+        var proxyId = string.IsNullOrEmpty(id) ? (long?)null : long.Parse(id);
+        return id is null ? null : (await db.Proxies.SingleOrDefaultAsync(proxy => proxy.Id == proxyId && !proxy.IsDeleted))?.CreateProxy();
+    }
 
     protected void Connected() => OnConnected?.Invoke(this, EventArgs.Empty);
     protected void RequestRestart() => OnRestartRequested?.Invoke(this, EventArgs.Empty);

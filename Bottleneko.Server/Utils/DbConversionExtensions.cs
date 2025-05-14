@@ -53,4 +53,18 @@ public static class DbConversionExtensions
             status
         );
     }
+
+    public static ProxyDto ToDto(this ProxyEntity proxy)
+    {
+        return new ProxyDto(
+            proxy.Id.ToString(),
+            proxy.Name,
+            proxy.Type,
+            proxy.Hostname,
+            proxy.Port,
+            proxy.IsAuthRequired,
+            proxy.Username,
+            proxy.Password
+        );
+    }
 }

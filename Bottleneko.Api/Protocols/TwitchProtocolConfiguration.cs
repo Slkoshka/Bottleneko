@@ -140,4 +140,4 @@ public record TwitchAuth(string ClientId, string Me, string AccessToken, string 
 [SerializeAsJson]
 public record TwitchProtocolChannel(string Name, TwitchSubscriptionTopic[] EventSubscriptions);
 
-public record TwitchProtocolConfiguration(TwitchAuth Auth, bool ReceiveEvents, TwitchProtocolChannel[] Channels) : ProtocolConfiguration;
+public record TwitchProtocolConfiguration(TwitchAuth Auth, bool ReceiveEvents, TwitchProtocolChannel[] Channels, string? ProxyId = null) : ProtocolConfiguration;

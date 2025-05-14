@@ -91,6 +91,13 @@ abstract class ContainerCat<TChild, TEntity, TAddMsg, TUpdateMsg, TRemoveMsg>(IS
                     break;
                 }
 
+            case IContainerMessage.BroadcastItemMessage msg:
+                foreach (var child in _children.Values)
+                {
+                    child.Forward(msg);
+                }
+                break;
+
             case IContainerMessage.ContainerItemMessage msg:
                 if (_children.TryGetValue(msg.Id, out var item))
                 {

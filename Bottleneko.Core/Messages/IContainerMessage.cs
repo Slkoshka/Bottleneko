@@ -2,6 +2,7 @@
 
 public interface IContainerMessage
 {
+    public abstract record BroadcastItemMessage : IContainerMessage;
     public abstract record ContainerItemMessage(long Id) : IContainerMessage;
 
     public abstract record Add : IContainerMessage;
