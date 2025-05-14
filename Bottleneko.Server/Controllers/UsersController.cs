@@ -15,7 +15,7 @@ namespace Bottleneko.Server.Controllers;
 [Authorize]
 public class UsersController(NekoDbContext db) : CrudController<UsersController.CreateUserRequest, UsersController.UpdateUserRequest>
 {
-    public async Task<ClaimsIdentity?> GetIdentityAsync(string userName, string password)
+    private async Task<ClaimsIdentity?> GetIdentityAsync(string userName, string password)
     {
         userName = userName.Trim();
 

@@ -1,4 +1,4 @@
-System.Environment.SetEnvironmentVariable("ASPIRE_ALLOW_UNSECURED_TRANSPORT", "true");
+Environment.SetEnvironmentVariable("ASPIRE_ALLOW_UNSECURED_TRANSPORT", "true");
 
 var builder = DistributedApplication.CreateBuilder(args);
 
@@ -6,7 +6,9 @@ var server = builder.AddProject<Projects.Bottleneko_Server>("bottleneko-server",
     {
         options.ExcludeLaunchProfile = true;
     })
+    .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
     .WithHttpEndpoint(0)
+    .WithUrlForEndpoint("http", annotation => annotation.Url += "/swagger/")
     .WithExternalHttpEndpoints();
 
 var npmApp = builder.AddNpmApp("bottleneko-client", "../Bottleneko.Client")
