@@ -2,3 +2,7 @@
 	path = External/TwitchLib/TwitchLib.EventSub.Websockets
 	url = https://github.com/Slkoshka/TwitchLib.EventSub.Websockets
 	branch = bottleneko
+[submodule "External/TwitchLib/TwitchLib.Api"]
+	path = External/TwitchLib/TwitchLib.Api
+	url = https://github.com/Slkoshka/TwitchLib.Api/
+	branch = bottleneko
