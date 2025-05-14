@@ -56,7 +56,7 @@ For development:
 
 ## Development
 
-1. Clone the repository
+1. Clone the repository with submodules
 2. Open [`Bottleneko.sln`](Bottleneko.sln) in your favorite .NET IDE ([**Visual Studio**](https://visualstudio.microsoft.com/) and [**JetBrains Rider**](https://www.jetbrains.com/rider/) both work well)
 3. Run `Bottleneko.AppHost`
 

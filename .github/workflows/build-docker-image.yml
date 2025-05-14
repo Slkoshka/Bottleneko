@@ -11,6 +11,11 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
     - name: Docker meta
       id: meta
       uses: docker/metadata-action@v5

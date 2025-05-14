@@ -29,6 +29,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".NET Aspire", ".NET Aspire", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TwitchLib", "TwitchLib", "{90BDA4DE-9727-425D-9E72-A06EC6823BED}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwitchLib.EventSub.Websockets", "External\TwitchLib\TwitchLib.EventSub.Websockets\TwitchLib.EventSub.Websockets\TwitchLib.EventSub.Websockets.csproj", "{A4BF74A9-4385-B225-230B-8B7767777FCA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -73,6 +77,10 @@ Global
 		{9F572937-0A04-C80E-59FA-68671FAF6180}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9F572937-0A04-C80E-59FA-68671FAF6180}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9F572937-0A04-C80E-59FA-68671FAF6180}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A4BF74A9-4385-B225-230B-8B7767777FCA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4BF74A9-4385-B225-230B-8B7767777FCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4BF74A9-4385-B225-230B-8B7767777FCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4BF74A9-4385-B225-230B-8B7767777FCA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -80,6 +88,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{D640D44A-85E2-2F06-887F-FC1F109B62B1} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{9F572937-0A04-C80E-59FA-68671FAF6180} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{A4BF74A9-4385-B225-230B-8B7767777FCA} = {90BDA4DE-9727-425D-9E72-A06EC6823BED}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2FBFF718-96C6-4727-B1A8-13978DC403D3}
