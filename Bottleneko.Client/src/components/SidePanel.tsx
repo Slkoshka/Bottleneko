@@ -117,8 +117,8 @@ export default function SidePanel({ className = '', style = {}, props }: { class
                     </LinkContainer>
                 </Nav.Item>
 
-                <Nav.Item key="system">
-                    <LinkContainer to="/system"><Nav.Link active={false} className="text-white fs-5 fw-bold">System</Nav.Link></LinkContainer>
+                <Nav.Item key="settings">
+                    <LinkContainer to="/settings"><Nav.Link active={false} className="text-white fs-5 fw-bold">Settings</Nav.Link></LinkContainer>
                 </Nav.Item>
             </Nav>
 

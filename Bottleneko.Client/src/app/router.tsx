@@ -7,7 +7,7 @@ import ConnectionView from '../features/connections/ConnectionView';
 import UsersView from '../features/users/UsersView';
 import AddUserView from '../features/users/AddUserView';
 import UserView from '../features/users/UserView';
-import SystemView from '../features/system/SystemView';
+import SettingsView from '../features/settings/SettingsView';
 import ScriptsView from '../features/scripts/ScriptsView';
 import AddScriptView from '../features/scripts/AddScriptView';
 import ScriptView from '../features/scripts/ScriptView';
@@ -68,8 +68,8 @@ const router = createBrowserRouter([
             },
 
             {
-                path: 'system',
-                element: <SystemView />,
+                path: 'settings',
+                element: <SettingsView />,
             },
         ],
     },

@@ -1,4 +1,5 @@
 ﻿import { Link } from 'react-router-dom';
+import { Button } from 'react-bootstrap';
 import { LogSourceType } from '../api/dtos.gen';
 import { useConnections } from '../connections/context';
 import { useScripts } from '../scripts/context';
@@ -11,9 +12,9 @@ export default function LogSourceDisplay({ sourceType, sourceId }: { sourceType:
     switch (sourceType) {
         case LogSourceType.System:
             return (
-                <Link to="/system" className="btn btn-primary btn-sm px-1 py-0">
+                <Button className="px-1 py-0" size="sm">
                     System
-                </Link>
+                </Button>
             );
 
         case LogSourceType.Connection:

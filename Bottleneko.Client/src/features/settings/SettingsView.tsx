@@ -2,9 +2,9 @@
 import LogViewer from '../log/LogViewer';
 import View from '../../components/View';
 
-export default function SystemView() {
+export default function SettingsView() {
     return (
-        <View title="System">
+        <View title="Settings">
             <Tabs defaultActiveKey="logs">
                 <Tab eventKey="logs" title="Logs" className="h-100">
                     <LogViewer />
