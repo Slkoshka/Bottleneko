@@ -33,6 +33,114 @@
                 }
         }
     }).join(' '));
+
+    const subscribe = (event, callback) => {
+        const token = api.Subscribe(event, (name, event) => {
+            callback(name, event);
+        });
+        return {
+            cancel: () => api.Unsubscribe(token),
+        };
+    };
+
+    const flattenFilter = (filter, start, prefix) => {
+        const result = start ?? {};
+        for (const key of Object.keys(filter)) {
+            const subfilter = filter[key];
+            if (subfilter !== null && typeof subfilter === 'object' && !api.IsEnum(subfilter) && !(subfilter instanceof RegExp)) {
+                flattenFilter(subfilter, result, prefix ? (`${prefix}${key}.`) : (key + '.'));
+            }
+            else {
+                result[prefix ? prefix + key : key] = subfilter;
+            }
+        }
+        return result;
+    };
+
+    const extractValue = (obj, path) => {
+        for (const part of path) {
+            obj = obj[part];
+            if (obj === undefined || obj === null) {
+                return obj;
+            }
+        }
+
+        return obj;
+    };
+
+    const makeEvent = (event, defaultFilter) => {
+        defaultFilter = flattenFilter(defaultFilter);
+        return (callback, filter) => {
+            if (typeof filter === 'function') {
+                return subscribe(event, (_, msg) => {
+                    if (filter(msg)) {
+                        return callback(msg);
+                    }
+                });
+            }
+            else if (filter === undefined) {
+                filter = {};
+            }
+            else if (filter === null) {
+                return subscribe(event, (_, msg) => {
+                    return callback(msg);
+                });
+            }
+
+            const merged = { ...defaultFilter, ...flattenFilter(filter) };
+            const filterList = Object.keys(merged).filter(key => merged[key] !== null && merged[key] !== undefined).map(key => ({
+                path: key,
+                pathParts: key.split('.'),
+                comparison: merged[key],
+            }));
+
+            return subscribe(event, (_, msg) => {
+                for (const subfilter of filterList) {
+                    const value = extractValue(msg, subfilter.pathParts);
+                    if (subfilter.comparison instanceof RegExp) {
+                        if (typeof value !== 'string') {
+                            log(core.Bottleneko.Logging.LogSeverity.Warning, [`Failed to apply event filter: ${subfilter.path} is not a string`]);
+                            return;
+                        }
+                        if (!subfilter.comparison.test(value)) {
+                            return;
+                        }
+                    }
+                    else if (typeof subfilter.comparison === 'string' || typeof subfilter.comparison === 'number' || typeof subfilter.comparison === 'boolean' || typeof subfilter.comparison === 'bigint') {
+                        if (typeof value !== typeof subfilter.comparison) {
+                            log(core.Bottleneko.Logging.LogSeverity.Warning, [`Failed to apply event filter: ${subfilter.path} is not a ${typeof subfilter.comparison}`]);
+                            return;
+                        }
+
+                        if (subfilter.comparison !== value) {
+                            return;
+                        }
+                    }
+                    else if (api.IsEnum(subfilter.comparison)) {
+                        if (typeof value !== typeof subfilter.comparison) {
+                            log(core.Bottleneko.Logging.LogSeverity.Warning, [`Failed to apply event filter: ${subfilter.path} is not a enum value`]);
+                            return;
+                        }
+
+                        if (subfilter.comparison !== value) {
+                            return;
+                        }
+                    }
+                    else if (typeof subfilter.comparison === 'function') {
+                        if (!subfilter.comparison(value)) {
+                            return;
+                        }
+                    }
+                    else {
+                        log(core.Bottleneko.Logging.LogSeverity.Warning, [`Failed to apply event filter: ${typeof subfilter.comparison} is not supported as a filter`]);
+                        return;
+                    }
+                }
+
+                return callback(msg);
+            });
+        };
+    };
     
     return {
         script: {
@@ -55,15 +163,6 @@
             DiscordChannelType: core.Bottleneko.Scripting.Bindings.Discord.DiscordChannelType,
         },
 
-        on: (event, callback) => {
-            const token = api.Subscribe(event, (name, event) => {
-                callback(name, event);
-            });
-            return {
-                cancel: () => api.Unsubscribe(token),
-            };
-        },
-
         wait: api.Wait,
 
         log: {
@@ -74,10 +173,17 @@
             verbose: (...args) => log(core.Bottleneko.Logging.LogSeverity.Verbose, args),
             debug: (...args) => log(core.Bottleneko.Logging.LogSeverity.Debug, args),
         },
+
+        when: {
+            connection: {
+                messageReceived: makeEvent('connection/message_received', { 'flags.isSpecial': false, 'flags.isOffline': false }),
+            },
+        },
     };
 }());
 
 const log = neko.log;
+const when = neko.when;
 const { setInterval, setTimeout, clearInterval } = (function () {
     let lastTimeout = 0;
     const timers = new Set();

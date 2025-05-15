@@ -40,16 +40,7 @@ class ConnectionActor(IServiceProvider services, AkkaService akka, INekoLogger l
                 _connection.OnMessageReceived += (_, msg) =>
                 {
                     akka.Tell(new IEventBusMessage.Publish("internal/connection/message_received", msg.Entity));
-                    switch (msg)
-                    {
-                        case { Entity.IsOffline: true }:
-                            akka.Tell(new IEventBusMessage.Publish("connection/offline_message", msg.Binding));
-                            break;
-
-                        default:
-                            akka.Tell(new IEventBusMessage.Publish("connection/message_received", msg.Binding));
-                            break;
-                    }
+                    akka.Tell(new IEventBusMessage.Publish("connection/message_received", msg.Binding));
                 };
                 _connection.OnDied += (_, ex) => self.Tell(new ConnectionDied(ex));
 
