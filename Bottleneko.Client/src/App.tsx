@@ -14,6 +14,7 @@ import WebSocketConnection from './features/websockets/WebSocketConnection';
 import SetupPageView from './features/setup/SetupPageView';
 import EventEmitterProvider from './features/events/EventEmitterProvider';
 import ScriptsProvider from './features/scripts/ScriptsProvider';
+import ProxiesProvider from './features/proxies/ProxiesProvider';
 import LoadingPage from './pages/LoadingPage';
 import ErrorPage from './pages/ErrorPage';
 
@@ -25,9 +26,11 @@ function AppView() {
             return (
                 <ConnectionsProvider>
                     <ScriptsProvider>
-                        <WebSocketConnection>
-                            <RouterProvider router={router} />
-                        </WebSocketConnection>
+                        <ProxiesProvider>
+                            <WebSocketConnection>
+                                <RouterProvider router={router} />
+                            </WebSocketConnection>
+                        </ProxiesProvider>
                     </ScriptsProvider>
                 </ConnectionsProvider>
             );
