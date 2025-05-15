@@ -1,6 +1,6 @@
 ﻿import { useParams } from 'react-router-dom';
 import { useCallback, useState } from 'react';
-import { Tab, Tabs } from 'react-bootstrap';
+import { Alert, Tab, Tabs } from 'react-bootstrap';
 import View from '../../components/View';
 import { LogSourceType, ScriptStatus } from '../api/dtos.gen';
 import { useAsync, useFetchData } from '../../app/hooks';
@@ -12,7 +12,7 @@ import ScriptEditor from './ScriptEditor';
 export default function ScriptView() {
     const { scriptId } = useParams();
     const fetchScript = useCallback((signal: AbortSignal) => api.scripts.get(scriptId ?? '', signal), [scriptId]);
-    const [script, isRefreshing, refresh] = useFetchData(fetchScript, true);
+    const [script, isRefreshing, refresh, notFound] = useFetchData(fetchScript, true);
     const [activeTab, setActiveTab] = useState<string | undefined | null>();
 
     const canBeStarted = script && (script.status === ScriptStatus.Stopped || script.status === ScriptStatus.Error);
@@ -28,6 +28,16 @@ export default function ScriptView() {
     const onSaved = useCallback(() => {
         refresh();
     }, [refresh]);
+
+    if (notFound) {
+        return (
+            <View title="Not found">
+                <Alert variant="warning" style={{ maxWidth: '600px' }}>
+                    <span className="fs-5">The script does not exist or has been deleted.</span>
+                </Alert>
+            </View>
+        );
+    }
 
     return (
         <View

@@ -1,6 +1,6 @@
 import { createElement, useCallback, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Button, Tab, Tabs } from 'react-bootstrap';
+import { Alert, Button, Tab, Tabs } from 'react-bootstrap';
 import api from '../api';
 import View from '../../components/View';
 import ModalDialog from '../../components/ModalDialog';
@@ -17,7 +17,7 @@ import { ConnectionDefinition, protocols } from '.';
 export default function ConnectionView() {
     const { connectionId } = useParams();
     const fetchConnection = useCallback((signal: AbortSignal) => api.connections.get(connectionId ?? '', signal), [connectionId]);
-    const [connection, isRefreshing, refresh] = useFetchData(fetchConnection, true);
+    const [connection, isRefreshing, refresh, notFound] = useFetchData(fetchConnection, true);
     const [savedDefinition, setSavedDefinition] = useState<ConnectionDefinition>();
     const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
     const connections = useConnections();
@@ -55,6 +55,16 @@ export default function ConnectionView() {
             setSavedDefinition(definition);
             setShowSaveConfirmation(true);
         }, ref: editorFormRef });
+    }
+
+    if (notFound) {
+        return (
+            <View title="Not found">
+                <Alert variant="warning" style={{ maxWidth: '600px' }}>
+                    <span className="fs-5">The connection does not exist or has been deleted.</span>
+                </Alert>
+            </View>
+        );
     }
 
     return (

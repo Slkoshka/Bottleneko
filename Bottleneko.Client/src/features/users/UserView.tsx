@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useParams } from 'react-router-dom';
+import { Alert } from 'react-bootstrap';
 import api from '../api';
 import View from '../../components/View';
 import { useAuth } from '../auth/context';
@@ -10,7 +11,7 @@ import UserEditor, { EditedUser } from './UserEditor';
 export default function UserView() {
     const { userId } = useParams();
     const fetchUser = useCallback((signal: AbortSignal) => api.users.get(userId ?? '', signal), [userId]);
-    const [user, isLoading, refresh] = useFetchData(fetchUser);
+    const [user, isLoading, refresh, notFound] = useFetchData(fetchUser);
     const auth = useAuth();
     const toasterDispatch = useToasterDispatch();
 
@@ -33,6 +34,16 @@ export default function UserView() {
     const onValidated = useCallback((formData: EditedUser) => {
         save(formData).catch(onError);
     }, [save, onError]);
+
+    if (notFound) {
+        return (
+            <View title="Not found">
+                <Alert variant="warning" style={{ maxWidth: '600px' }}>
+                    <span className="fs-5">The user does not exist or has been deleted.</span>
+                </Alert>
+            </View>
+        );
+    }
 
     return (
         <View title={isLoading ? 'Loading...' : user?.displayName}>

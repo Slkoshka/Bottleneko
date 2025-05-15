@@ -12,6 +12,7 @@ import ScriptsView from '../features/scripts/ScriptsView';
 import AddScriptView from '../features/scripts/AddScriptView';
 import ScriptView from '../features/scripts/ScriptView';
 import MessagesView from '../features/messages/MessagesView';
+import NotFoundPage from '../pages/NotFoundPage';
 
 const router = createBrowserRouter([
     {
@@ -72,6 +73,10 @@ const router = createBrowserRouter([
                 element: <SettingsView />,
             },
         ],
+    },
+    {
+        path: '*',
+        element: <NotFoundPage />,
     },
 ]);
 
