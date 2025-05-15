@@ -4,7 +4,7 @@ import { branding } from '../props';
 
 export default function LoadingPage() {
     return (
-        <FullscreenPage title={`Connecting to ${branding}...`}>
+        <FullscreenPage title={`Connecting to ${branding.plain}...`}>
             <div style={{ height: '10rem' }}>
                 <LoadingBanner size="xl" />
             </div>
