@@ -2,6 +2,7 @@ import { Card, Form } from 'react-bootstrap';
 import { Formik } from 'formik';
 import { forwardRef } from 'react';
 import * as yup from 'yup';
+import { useProxies } from '../../proxies/context';
 import { ConnectionDefinition } from '..';
 import { DiscordConfigSchema } from '.';
 
@@ -14,6 +15,8 @@ const defaultDefinition = schema.getDefault();
 type DiscordConnectionDefinition = yup.InferType<typeof schema>;
 
 const DiscordConfigEditor = forwardRef(({ definition, onValidated, disabled = false }: { definition: ConnectionDefinition | null; disabled?: boolean; onValidated: (definition: ConnectionDefinition) => void }, ref: React.ForwardedRef<HTMLFormElement>) => {
+    const proxies = useProxies();
+
     return (
         <Formik validationSchema={schema} onSubmit={onValidated} initialValues={definition as (DiscordConnectionDefinition | null) ?? defaultDefinition} validateOnChange={false}>
             {({ handleSubmit, handleChange, values, errors }) => (
@@ -109,6 +112,24 @@ const DiscordConfigEditor = forwardRef(({ definition, onValidated, disabled = fa
                             These options require enabling the corresponding privileged gateway intents in the Developer Portal. Refusing to do so will make you bot not being able to connect to Discord.
                         </Card.Footer>
                     </Card>
+
+                    <Form.Group>
+                        <Form.Label>Proxy</Form.Label>
+                        <Form.Select name="config.proxyId" value={values.config.proxyId} onChange={handleChange} isInvalid={!!errors.config?.proxyId} disabled={disabled}>
+                            <option value="">Don&apos;t use a proxy</option>
+                            {
+                                proxies?.state.list?.map(proxy => (
+                                    <option key={proxy.id} value={proxy.id}>{proxy.name}</option>
+                                ))
+                            }
+                        </Form.Select>
+                        <Form.Text muted>
+                            Use a proxy server for outgoing connections.
+                        </Form.Text>
+                        <Form.Control.Feedback type="invalid">
+                            {errors.config?.proxyId}
+                        </Form.Control.Feedback>
+                    </Form.Group>
                 </Form>
             )}
         </Formik>

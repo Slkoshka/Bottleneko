@@ -5,6 +5,7 @@ import * as yup from 'yup';
 import { ConnectionDefinition } from '..';
 import { TwitchProtocolChannel } from '../../api/dtos.gen';
 import IconButton from '../../../components/IconButton';
+import { useProxies } from '../../proxies/context';
 import TwitchChannelEditor from './TwitchChannelEditor';
 import TwitchAuthWizard from './TwitchAuthWizard';
 import { scopeToScopeName } from './scopes';
@@ -26,6 +27,7 @@ const defaultDefinition = schema.getDefault();
 type TwitchConnectionDefinition = yup.InferType<typeof schema>;
 
 const TwitchConfigEditor = forwardRef(({ definition, onValidated, disabled = false }: { definition: ConnectionDefinition | null; disabled?: boolean; onValidated: (definition: ConnectionDefinition) => void }, ref: React.ForwardedRef<HTMLFormElement>) => {
+    const proxies = useProxies();
     const [isAuthShown, setIsAuthShown] = useState(false);
     const [editedChannel, setEditedChannel] = useState<TwitchProtocolChannel | null>(null);
 
@@ -226,6 +228,24 @@ const TwitchConfigEditor = forwardRef(({ definition, onValidated, disabled = fal
                                         )
                                     : <></>
                             }
+
+                            <Form.Group>
+                                <Form.Label>Proxy</Form.Label>
+                                <Form.Select name="config.proxyId" value={values.config.proxyId} onChange={handleChange} isInvalid={!!errors.config?.proxyId} disabled={disabled}>
+                                    <option value="">Don&apos;t use a proxy</option>
+                                    {
+                                        proxies?.state.list?.map(proxy => (
+                                            <option key={proxy.id} value={proxy.id}>{proxy.name}</option>
+                                        ))
+                                    }
+                                </Form.Select>
+                                <Form.Text muted>
+                                    Use a proxy server for outgoing connections.
+                                </Form.Text>
+                                <Form.Control.Feedback type="invalid">
+                                    {errors.config?.proxyId}
+                                </Form.Control.Feedback>
+                            </Form.Group>
                         </Form>
                     </>
                 )}

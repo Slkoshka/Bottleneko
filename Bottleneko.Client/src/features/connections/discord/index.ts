@@ -9,6 +9,7 @@ export const DiscordConfigSchema = yup.object().shape({
     isPresenceIntentEnabled: yup.boolean().default(false),
     isServerMembersIntentEnabled: yup.boolean().default(false),
     isMessageContentIntentEnabled: yup.boolean().default(false),
+    proxyId: yup.string().default(''),
 });
 
 export type Discord = Connection<Protocol.Discord, yup.InferType<typeof DiscordConfigSchema>>;

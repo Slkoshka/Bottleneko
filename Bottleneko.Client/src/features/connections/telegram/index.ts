@@ -6,6 +6,7 @@ export const TelegramConfigSchema = yup.object().noUnknown().shape({
     $type: yup.string().default(Protocol.Telegram),
     token: yup.string().default('').required('API token is required'),
     receiveEvents: yup.boolean().default(true),
+    proxyId: yup.string().default(''),
 });
 
 export type Telegram = Connection<Protocol.Telegram, yup.InferType<typeof TelegramConfigSchema>>;

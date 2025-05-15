@@ -20,6 +20,7 @@ export const TwitchConfigSchema = yup.object().noUnknown().shape({
     receiveEvents: yup.boolean().default(true),
     channels: yup.array().of(TwitchProtocolChannelSchema).max(100).default([]).required(),
     auth: TwitchAuthSchema.required(),
+    proxyId: yup.string().default(''),
 });
 
 export type TwitchAuth = yup.InferType<typeof TwitchAuthSchema>;
