@@ -7,20 +7,70 @@ const implementation = (severity: LogSeverity, args: unknown[]): void => __Api.L
             return 'undefined';
 
         default:
-            if (typeof item === 'object') {
+            if (typeof item === 'function') {
+                try {
+                    return __Api.GetTypeName(item);
+                }
+                catch {}
+                return '<function>';
+            }
+            else if (typeof item === 'object') {
                 if (__Api.IsEnum(item)) {
                     return (item as EnumValue<unknown>).ToString();
                 }
 
+                if (item instanceof Error) {
+                    return item.stack;
+                }
+                
+                const asString = item!.toString();
+                if (asString !== '[object Object]') {
+                    return asString;
+                }
+
                 try {
                     return JSON.stringify(item, (_, item) => {
-                        return typeof item === 'bigint' ? item.toString() : __Api.IsEnum(item) ? item.ToString() : item;
+                        switch (typeof item) {
+                            case 'bigint':
+                                return item.toString();
+
+                            case 'object':
+                                if (item === null) {
+                                    return item;
+                                }
+                                else if (__Api.IsEnum(item)) {
+                                    return (item as EnumValue<unknown>).ToString();
+                                } else if (item instanceof Error) {
+                                    return item.stack;
+                                }
+                                const asString = item!.toString();
+                                if (asString !== '[object Object]') {
+                                    return asString;
+                                }
+                                return item;
+
+                            case 'undefined':
+                                return '<undefined>';
+
+                            case 'function':
+                                try {
+                                    return __Api.GetTypeName(item);
+                                }
+                                catch {}
+                                return '<function>';
+
+                            case 'number':
+                            case 'boolean':
+                            case 'string':
+                            default:
+                                return item;
+                        }
                     }, 2);
                 } catch {
                     return item!.toString();
                 }
             } else {
-                return item;
+                return item!.toString();
             }
     }
 }).join(' '));

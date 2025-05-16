@@ -69,7 +69,7 @@ class JsScriptActor(IServiceProvider services, AkkaService akka, INekoLogger log
         _synchronizationContext?.Post((_) => func(), null);
     }
 
-    public void Subscribe(object token, string? @event, Action<string?, object> handler)
+    public void Subscribe(object token, string? @event, Func<string?, object, object> handler)
     {
         akka.Tell(new IEventBusMessage.SubscribeExternal(token, CallbackAsync, @event));
 
@@ -81,7 +81,16 @@ class JsScriptActor(IServiceProvider services, AkkaService akka, INekoLogger log
                 {
                     try
                     {
-                        handler(eventName, arg);
+                        if (handler(eventName, arg) is Task task)
+                        {
+                            _ = task.ContinueWith(result =>
+                            {
+                                if (result.IsFaulted)
+                                {
+                                    OnScriptError(result.Exception);
+                                }
+                            }, TaskScheduler.Default);
+                        }
                     }
                     catch (Exception e)
                     {
@@ -106,7 +115,21 @@ class JsScriptActor(IServiceProvider services, AkkaService akka, INekoLogger log
 
     private void OnScriptError(Exception ex)
     {
-        Logger.LogError("Bottleneko.Scripting", "An error has occured in script", ex);
+        if (ex is AggregateException { InnerException: ScriptEngineException })
+        {
+            ex = ex.InnerException;
+        }
+        
+        if (ex is ScriptEngineException { ErrorDetails: not null } scriptEngineException)
+        {
+            // Workaround for ClearScript leaking it's internal script initialization code in error messages
+            var errorInfo = string.Join('\n', scriptEngineException.ErrorDetails.Split('\n').Select(line => line.Contains(" -> Object.defineProperty(this,'EngineInternal'") ? line.Split(" -> ")[0] : line));
+            Logger.LogError("Bottleneko.Scripting", $"An error has occured in script:\n\n{errorInfo}");
+        }
+        else
+        {
+            Logger.LogError("Bottleneko.Scripting", "An error has occured in script", ex);
+        }
     }
 
     public void Stop()
@@ -128,11 +151,22 @@ class JsScriptActor(IServiceProvider services, AkkaService akka, INekoLogger log
                     _engine.Global.SetProperty("__Core", new HostTypeCollection(type => type.GetCustomAttribute<ExposeToScriptsAttribute>() is not null, AssemblyLoadContext.Default.Assemblies.ToArray()));
 
                     _engine.DocumentSettings.AccessFlags = DocumentAccessFlags.EnableFileLoading | DocumentAccessFlags.AllowCategoryMismatch;
-                    _engine.DocumentSettings.Loader = new JsLoader();
+                    _engine.DocumentSettings.Loader = new JsLoader(source);
 
                     try
                     {
-                        _engine.Execute(new DocumentInfo("@") { Category = ModuleCategory.Standard }, source);
+                        if (_engine.EvaluateDocument("@script") is Task task)
+                        {
+                            _ = task.ContinueWith(result =>
+                            {
+                                if (result.IsFaulted)
+                                {
+                                    self.Tell(new ScriptError(result.Exception));
+                                    owner.Tell(new ScriptInstance.FatalScriptError(result.Exception));
+                                    self.Tell(IControlMessage.Shutdown.Instance);
+                                }
+                            }, TaskScheduler.Default);
+                        }
                     }
                     catch (Exception e)
                     {

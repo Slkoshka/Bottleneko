@@ -13,7 +13,7 @@ declare const _default: {
     };
     when: {
         connection: {
-            messageReceived: (callback: (msg: ChatMessage) => void, filter?: (object | ((msg: ChatMessage) => boolean)) | undefined) => void;
+            messageReceived: (callback: (msg: ChatMessage) => Promise<unknown> | void, filter?: (object | ((msg: ChatMessage) => boolean)) | undefined) => void;
         };
     };
     wait: (milliseconds: number) => Promise<void>;

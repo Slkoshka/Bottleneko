@@ -23,7 +23,7 @@ public class JsApi
     public object Subscribe(string? @event, object handler)
     {
         var token = new object();
-        _script.Subscribe(token, @event, (Action<string?, object>)_host.proc(2, handler));
+        _script.Subscribe(token, @event, (Func<string?, object, object>)_host.func(2, handler));
         return token;
     }
 
@@ -31,6 +31,11 @@ public class JsApi
     public Task Wait(int milliseconds)
     {
         return Task.Delay(milliseconds);
+    }
+
+    public string GetTypeName<T>()
+    {
+        return typeof(T).Name;
     }
 
     public bool IsEnum(object? value)

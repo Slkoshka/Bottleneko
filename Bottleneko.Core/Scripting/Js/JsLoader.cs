@@ -7,9 +7,12 @@ namespace Bottleneko.Scripting.Js;
 class JsLoader : DefaultDocumentLoader
 {
     private readonly Dictionary<string, string> _modules;
+    private readonly string _script;
 
-    public JsLoader()
+    public JsLoader(string script)
     {
+        _script = script;
+
         const string basePath = "Bottleneko.Scripting.Js.API.";
         const string extension = ".js";
 
@@ -20,7 +23,23 @@ class JsLoader : DefaultDocumentLoader
 
     public override async Task<Document> LoadDocumentAsync(DocumentSettings settings, DocumentInfo? sourceInfo, string specifier, DocumentCategory category, DocumentContextCallback contextCallback)
     {
-        var fromScript = sourceInfo?.Name == "@";
+        if (specifier == "@script")
+        {
+            var scriptUri = new Uri("file:///script.js", UriKind.Absolute);
+            if (GetCachedDocument(scriptUri) is Document cached)
+            {
+                return cached;
+            }
+            else
+            {
+                return CacheDocument(new StringDocument(new DocumentInfo(scriptUri)
+                {
+                    Category = ModuleCategory.Standard,
+                }, _script), false);
+            }
+        }
+
+        var fromScript = sourceInfo?.Name == "@script";
         var parts = specifier.Split('/');
         if (!sourceInfo.HasValue || (fromScript && (parts[0] != "neko" || parts.Any(part => part == ".." || part == "."))))
         {

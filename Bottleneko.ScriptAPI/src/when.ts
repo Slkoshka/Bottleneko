@@ -1,6 +1,6 @@
 import log from './log';
 
-const subscribe = function<T>(event: string, callback: (name: string, event: T) => void) {
+const subscribe = function<T>(event: string, callback: (name: string, event: T) => Promise<unknown> | void) {
     const token = __Api.Subscribe(event, callback);
     return {
         cancel: (): void => __Api.Unsubscribe(token),
@@ -69,7 +69,7 @@ const extractValue = (obj: any, path: string[]) => {
 
 type EventFilterCallback<T> = (msg: T) => boolean;
 type EventFilter<T> = object | EventFilterCallback<T>;
-type EventCallback<T> = ((msg: T) => void);
+type EventCallback<T> = ((msg: T) => Promise<unknown> | void);
 
 const matchFilter = function(value: any, filter: FilterDefinition) {
     if (filter.comparison === 'undefined') {
