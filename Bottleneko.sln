@@ -47,6 +47,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwitchLib.Api.Helix", "Exte
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwitchLib.Api.Helix.Models", "External\TwitchLib\TwitchLib.Api\TwitchLib.Api.Helix.Models\TwitchLib.Api.Helix.Models.csproj", "{0FBBB897-8C3C-C0B8-1D5C-D56A3CAB59F8}"
 EndProject
+Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "Bottleneko.ScriptAPI", "Bottleneko.ScriptAPI\Bottleneko.ScriptAPI.esproj", "{22A5A3AF-E1CF-A939-3686-E68E79BD5332}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -123,6 +125,12 @@ Global
 		{0FBBB897-8C3C-C0B8-1D5C-D56A3CAB59F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0FBBB897-8C3C-C0B8-1D5C-D56A3CAB59F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0FBBB897-8C3C-C0B8-1D5C-D56A3CAB59F8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22A5A3AF-E1CF-A939-3686-E68E79BD5332}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22A5A3AF-E1CF-A939-3686-E68E79BD5332}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22A5A3AF-E1CF-A939-3686-E68E79BD5332}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{22A5A3AF-E1CF-A939-3686-E68E79BD5332}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22A5A3AF-E1CF-A939-3686-E68E79BD5332}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22A5A3AF-E1CF-A939-3686-E68E79BD5332}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
