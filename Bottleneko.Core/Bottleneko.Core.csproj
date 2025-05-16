@@ -7,11 +7,11 @@
   <Import Project="$(MSBuildProjectDirectory)\..\Bottleneko.Common.props" />
 
   <ItemGroup>
-    <None Remove="Scripting\Prologue.js" />
+    <None Remove="Scripting\Js\API\**\*.js" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Scripting\Js\Prologue.js" />
+    <EmbeddedResource Include="Scripting\Js\API\**\*.js" />
   </ItemGroup>
 
   <ItemGroup>

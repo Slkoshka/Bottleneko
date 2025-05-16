@@ -1,0 +1,10 @@
+{
+  "name": "bottleneko.script_api",
+  "version": "0.0.0",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.3"
+  }
+}

@@ -7,12 +7,15 @@ import { JsScriptCode, ScriptDto } from '../api/dtos.gen';
 import api from '../api';
 import JsScriptEditor from './JsScriptEditor';
 
+// eslint-disable-next-line import/default
+import defaultCode from './defaultScript?raw';
+
 export const EditedScriptSchema = yup.object().shape({
     name: yup.string().default('').required('Name cannot be empty'),
     description: yup.string().default(''),
     code: yup.object().shape({
         $type: yup.string().default('JavaScript'),
-        source: yup.string().default(''),
+        source: yup.string().default(defaultCode),
     }),
 });
 

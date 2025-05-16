@@ -1,4 +1,5 @@
 ﻿using Akka.Actor;
+using Akka.Event;
 using Bottleneko.Actors;
 using Bottleneko.Logging;
 using Bottleneko.Messages;
@@ -6,6 +7,7 @@ using Bottleneko.Scripting.Bindings;
 using Bottleneko.Services;
 using Bottleneko.Utils;
 using Microsoft.ClearScript;
+using Microsoft.ClearScript.JavaScript;
 using Microsoft.ClearScript.V8;
 using Microsoft.VisualStudio.Threading;
 using System.Reflection;
@@ -29,19 +31,11 @@ class JsScriptActor(IServiceProvider services, AkkaService akka, INekoLogger log
         V8ScriptEngineFlags.EnableTaskPromiseConversion |
         V8ScriptEngineFlags.EnableValueTaskPromiseConversion |
         V8ScriptEngineFlags.UseSynchronizationContexts);
-    private static readonly string _prologue = ReadPrologue();
 
     private Thread _thread = null!;
     private IActorRef _self = null!;
     private SingleThreadedSynchronizationContext? _synchronizationContext;
     private readonly SingleThreadedSynchronizationContext.Frame _frame = new();
-
-    private static string ReadPrologue()
-    {
-        using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Bottleneko.Scripting.Js.Prologue.js") ?? throw new Exception("Can't find embedded resource");
-        using var reader = new StreamReader(stream);
-        return reader.ReadToEnd();
-    }
 
     private void MainLoop(object? arg)
     {
@@ -132,11 +126,13 @@ class JsScriptActor(IServiceProvider services, AkkaService akka, INekoLogger log
                     _engine.Global.SetProperty("__Host", new HostFunctions());
                     _engine.Global.SetProperty("__Api", new JsApi(Services, this));
                     _engine.Global.SetProperty("__Core", new HostTypeCollection(type => type.GetCustomAttribute<ExposeToScriptsAttribute>() is not null, AssemblyLoadContext.Default.Assemblies.ToArray()));
-                    _engine.Execute(_prologue);
+
+                    _engine.DocumentSettings.AccessFlags = DocumentAccessFlags.EnableFileLoading | DocumentAccessFlags.AllowCategoryMismatch;
+                    _engine.DocumentSettings.Loader = new JsLoader();
 
                     try
                     {
-                        _engine.Execute(source);
+                        _engine.Execute(new DocumentInfo("@") { Category = ModuleCategory.Standard }, source);
                     }
                     catch (Exception e)
                     {

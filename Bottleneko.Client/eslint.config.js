@@ -34,7 +34,7 @@ export default tsESLint.config(
             }),
         ],
         files: ['**/*.{ts,tsx}'],
-        ignores: ['dist'],
+        ignores: ['dist', 'src/features/scripts/api/*.d.ts'],
         languageOptions: {
             ecmaVersion: 2020,
             globals: globals.browser,
