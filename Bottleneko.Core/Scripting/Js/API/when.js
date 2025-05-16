@@ -63,6 +63,9 @@ const matchFilter = function (value, filter) {
         return true;
     }
     else if (filter.comparison instanceof RegExp) {
+        if (value === null) {
+            return false;
+        }
         if (typeof value !== 'string') {
             log.warning(`Failed to apply event filter: ${filter.path.join('.')} is not a string`);
             return false;
@@ -72,6 +75,9 @@ const matchFilter = function (value, filter) {
         }
     }
     else if (typeof filter.comparison === 'string' || typeof filter.comparison === 'number' || typeof filter.comparison === 'boolean' || typeof filter.comparison === 'bigint') {
+        if (value === null) {
+            return false;
+        }
         if (typeof value !== typeof filter.comparison) {
             log.warning(`Failed to apply event filter: ${filter.path.join('.')} is not a ${typeof filter.comparison}`);
             return false;
@@ -81,6 +87,9 @@ const matchFilter = function (value, filter) {
         }
     }
     else if (__Api.IsEnum(filter.comparison)) {
+        if (value === null) {
+            return false;
+        }
         if (typeof value !== typeof filter.comparison) {
             log.warning(`Failed to apply event filter: ${filter.path.join('.')} is not a enum value`);
             return false;
@@ -91,6 +100,11 @@ const matchFilter = function (value, filter) {
     }
     else if (typeof filter.comparison === 'function') {
         if (!filter.comparison(value)) {
+            return false;
+        }
+    }
+    else if (filter.comparison === null) {
+        if (value !== null) {
             return false;
         }
     }
