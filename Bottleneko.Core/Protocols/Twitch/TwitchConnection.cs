@@ -149,24 +149,23 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
     private readonly CancellationTokenSource _cts = new();
     private Task _checkTokenTask = Task.CompletedTask;
 
-    private static async Task<(TwitchAPI API, EventSubWebsocketClient? EventSub)> CreateAsync(IServiceProvider services, TwitchProtocolConfiguration config)
+    private static async Task<(TwitchAPI API, EventSubWebsocketClient? EventSub)> CreateAsync(INekoLogger logger, TwitchProtocolConfiguration config)
     {
         var proxy = await GetProxyAsync(config.ProxyId);
         var provider = new DefaultClientWebsocketProvider(proxy);
-        var loggerFactory = services.GetRequiredService<ILoggerFactory>();
 
-        var api = new TwitchAPI(http: new TwitchHttpClient(loggerFactory.CreateLogger<TwitchHttpClient>(), proxy));
+        var api = new TwitchAPI(http: new TwitchHttpClient(new TwitchLogAdapter<TwitchHttpClient>(logger), proxy));
         api.Settings.ClientId = config.Auth.ClientId;
 
         var eventSub = config.ReceiveEvents ?
             new EventSubWebsocketClient(
-                loggerFactory.CreateLogger<EventSubWebsocketClient>(),
+                new TwitchLogAdapter<EventSubWebsocketClient>(logger),
                 [.. typeof(INotificationHandler)
                     .Assembly.ExportedTypes
                     .Where(x => typeof(INotificationHandler).IsAssignableFrom(x) && !x.IsInterface && !x.IsAbstract)
                     .Select(Activator.CreateInstance).Cast<INotificationHandler>()],
                 new WebsocketClientServiceProvider(provider),
-                new WebsocketClient(loggerFactory.CreateLogger<WebsocketClient>(), provider)) :
+                new WebsocketClient(new TwitchLogAdapter<WebsocketClient>(logger), provider)) :
                 null;
 
         return (api, eventSub);
@@ -174,7 +173,7 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
 
     public override async Task StartAsync()
     {
-        (_api, _eventSub) = await CreateAsync(services, data.Configuration);
+        (_api, _eventSub) = await CreateAsync(logger, data.Configuration);
 
         await RefreshTokenAsync();
         _me = (await _api.Helix.Users.GetUsersAsync()).Users.Single();
@@ -773,9 +772,10 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
         }
     }
 
-    public static async Task<object?> TestAsync(IServiceProvider services, TwitchProtocolConfiguration config, CancellationToken __)
+    public static async Task<object?> TestAsync(IServiceProvider _, TwitchProtocolConfiguration config, CancellationToken __)
     {
-        var (api, _) = await CreateAsync(services, config with { ReceiveEvents = false });
+        var log = new LogRouter(LogSourceType.System, "");
+        var (api, _) = await CreateAsync(log, config with { ReceiveEvents = false });
         api.Settings.AccessToken = config.Auth.AccessToken;
 
         var me = (await api.Helix.Users.GetUsersAsync()).Users.Single();
@@ -794,6 +794,13 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
                 me.OfflineImageUrl,
                 me.Email,
             },
+            Log = log.Buffer.GetAll().Select(msg => new
+            {
+                msg.Severity,
+                msg.Category,
+                msg.Message,
+                Exception = msg.Exception?.Message,
+            })
         };
     }
 

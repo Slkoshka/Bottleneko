@@ -25,6 +25,16 @@ public abstract class HistoryBuffer<TItem, TFilter>(int capacity)
         }
     }
 
+    public TItem[] GetAll()
+    {
+        var result = new TItem[_buffer.Count];
+        for (int i = 0; i < result.Length; i++)
+        {
+            result[i] = _buffer[i];
+        }
+        return result;
+    }
+
     public int GetLast(Memory<TItem> target, TFilter filter)
     {
         var written = 0;

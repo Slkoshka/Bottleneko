@@ -372,7 +372,7 @@ class TelegramConnection(IServiceProvider services, INekoLogger logger, Connecti
             }
             catch (Exception ex)
             {
-                logger.LogError(LogCategory, "An error has occured in the update receive loop", ex);
+                logger.LogWarning(LogCategory, "An error has occured in the update receive loop", ex);
             }
         }
     }
