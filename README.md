@@ -47,6 +47,8 @@ Now that the installation is complete, you can start the initial setup wizard by
 
 For development:
 * .NET SDK 9.0
+* Node.js and npm
+* PowerShell 7+ (optional)
 
 ## Useful links
 
@@ -56,7 +58,10 @@ For development:
 
 ## Development
 
-1. Clone the repository with submodules
+1. Clone the repository with submodules:  
+```shell
+$ git clone --recurse-submodules https://github.com/Slkoshka/Bottleneko
+```
 2. Open [`Bottleneko.sln`](Bottleneko.sln) in your favorite .NET IDE ([**Visual Studio**](https://visualstudio.microsoft.com/) and [**JetBrains Rider**](https://www.jetbrains.com/rider/) both work well)
 3. Run `Bottleneko.AppHost`
 
