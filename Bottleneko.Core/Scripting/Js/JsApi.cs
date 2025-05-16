@@ -14,12 +14,11 @@ public class JsApi
     private readonly JsScriptActor _script;
     private readonly HostFunctions _host = new();
 
-    internal JsApi(IServiceProvider services, JsScriptActor script)
+    internal JsApi(JsScriptActor script)
     {
         _script = script;
     }
 
-    //public object Subscribe(string? @event, Action<string?, object> handler)
     public object Subscribe(string? @event, object handler)
     {
         var token = new object();
@@ -33,11 +32,13 @@ public class JsApi
         return Task.Delay(milliseconds);
     }
 
+    [SuppressMessage("Performance", "CA1822:Mark members as static")]
     public string GetTypeName<T>()
     {
         return typeof(T).Name;
     }
 
+    [SuppressMessage("Performance", "CA1822:Mark members as static")]
     public bool IsEnum(object? value)
     {
         return value?.GetType().IsEnum ?? false;

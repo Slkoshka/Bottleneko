@@ -1,5 +1,4 @@
 ﻿using Akka.Actor;
-using Akka.Event;
 using Bottleneko.Actors;
 using Bottleneko.Logging;
 using Bottleneko.Messages;
@@ -7,7 +6,6 @@ using Bottleneko.Scripting.Bindings;
 using Bottleneko.Services;
 using Bottleneko.Utils;
 using Microsoft.ClearScript;
-using Microsoft.ClearScript.JavaScript;
 using Microsoft.ClearScript.V8;
 using Microsoft.VisualStudio.Threading;
 using System.Reflection;
@@ -147,7 +145,7 @@ class JsScriptActor(IServiceProvider services, AkkaService akka, INekoLogger log
                 Invoke(() =>
                 {
                     _engine.Global.SetProperty("__Host", new HostFunctions());
-                    _engine.Global.SetProperty("__Api", new JsApi(Services, this));
+                    _engine.Global.SetProperty("__Api", new JsApi(this));
                     _engine.Global.SetProperty("__Core", new HostTypeCollection(type => type.GetCustomAttribute<ExposeToScriptsAttribute>() is not null, AssemblyLoadContext.Default.Assemblies.ToArray()));
 
                     _engine.DocumentSettings.AccessFlags = DocumentAccessFlags.EnableFileLoading | DocumentAccessFlags.AllowCategoryMismatch;
