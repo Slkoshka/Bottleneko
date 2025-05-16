@@ -81,7 +81,7 @@ const matchFilter = function(value: any, filter: FilterDefinition) {
         }
 
         if (typeof value !== 'string') {
-            log.warning(`Failed to apply event filter: ${filter.path.join('.')} is not a string`);
+            log.warning(`Failed to apply event filter: '${filter.path.join('.')}' is not a string`);
             return false;
         }
         if (!filter.comparison.test(value)) {
@@ -94,7 +94,7 @@ const matchFilter = function(value: any, filter: FilterDefinition) {
         }
 
         if (typeof value !== typeof filter.comparison) {
-            log.warning(`Failed to apply event filter: ${filter.path.join('.')} is not a ${typeof filter.comparison}`);
+            log.warning(`Failed to apply event filter: '${filter.path.join('.')}' is not a ${typeof filter.comparison}`);
             return false;
         }
 
@@ -108,7 +108,7 @@ const matchFilter = function(value: any, filter: FilterDefinition) {
         }
 
         if (typeof value !== typeof filter.comparison) {
-            log.warning(`Failed to apply event filter: ${filter.path.join('.')} is not a enum value`);
+            log.warning(`Failed to apply event filter: '${filter.path.join('.')}' is not a enum value`);
             return false;
         }
 
