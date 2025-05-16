@@ -5,30 +5,103 @@ const subscribe = function (event, callback) {
         cancel: () => __Api.Unsubscribe(token),
     };
 };
-const flattenFilter = (filter, start, prefix) => {
-    const result = start ?? {};
-    for (const key of Object.keys(filter)) {
-        const subfilter = filter[key];
-        if (subfilter !== null && typeof subfilter === 'object' && !__Api.IsEnum(subfilter) && !(subfilter instanceof RegExp)) {
-            flattenFilter(subfilter, result, prefix ? (`${prefix}${key}.`) : (key + '.'));
+class FilterDefinition {
+    path;
+    comparison;
+    constructor(path, comparison) {
+        this.path = path;
+        this.comparison = comparison;
+    }
+}
+const flattenFilters = (filters, start, path) => {
+    const result = start ?? [];
+    path = path ?? [];
+    for (const [key, filter] of Object.entries(filters)) {
+        if (filter instanceof FilterDefinition) {
+            result.push(new FilterDefinition([...path, ...key.split('.')], filter.comparison));
+        }
+        else if (filter !== null && typeof filter === 'object' && !__Api.IsEnum(filter) && !(filter instanceof RegExp)) {
+            flattenFilters(filter, result, [...path, ...key.split('.')]);
         }
         else {
-            result[prefix ? prefix + key : key] = subfilter;
+            result.push(new FilterDefinition([...path, ...key.split('.')], filter));
         }
+    }
+    return result;
+};
+const setValueByPath = (target, path, value) => {
+    for (let i = 0; i < path.length; i++) {
+        if (i === path.length - 1) {
+            target[path[i]] = value;
+        }
+        else {
+            if (!Object.hasOwn(target, path[i]) || target[path[i]] instanceof FilterDefinition) {
+                target[path[i]] = {};
+            }
+            target = target[path[i]];
+        }
+    }
+};
+const expandFilters = (filters) => {
+    const result = {};
+    for (const filter of filters) {
+        setValueByPath(result, filter.path, filter);
     }
     return result;
 };
 const extractValue = (obj, path) => {
     for (const part of path) {
-        obj = obj[part];
-        if (obj === undefined || obj === null) {
-            return obj;
+        if (typeof obj !== 'object') {
+            return undefined;
         }
+        obj = obj[part];
     }
     return obj;
 };
+const matchFilter = function (value, filter) {
+    if (filter.comparison === 'undefined') {
+        return true;
+    }
+    else if (filter.comparison instanceof RegExp) {
+        if (typeof value !== 'string') {
+            log.warning(`Failed to apply event filter: ${filter.path.join('.')} is not a string`);
+            return false;
+        }
+        if (!filter.comparison.test(value)) {
+            return false;
+        }
+    }
+    else if (typeof filter.comparison === 'string' || typeof filter.comparison === 'number' || typeof filter.comparison === 'boolean' || typeof filter.comparison === 'bigint') {
+        if (typeof value !== typeof filter.comparison) {
+            log.warning(`Failed to apply event filter: ${filter.path.join('.')} is not a ${typeof filter.comparison}`);
+            return false;
+        }
+        if (filter.comparison !== value) {
+            return false;
+        }
+    }
+    else if (__Api.IsEnum(filter.comparison)) {
+        if (typeof value !== typeof filter.comparison) {
+            log.warning(`Failed to apply event filter: ${filter.path.join('.')} is not a enum value`);
+            return false;
+        }
+        if (filter.comparison !== value) {
+            return false;
+        }
+    }
+    else if (typeof filter.comparison === 'function') {
+        if (!filter.comparison(value)) {
+            return false;
+        }
+    }
+    else {
+        log.warning(`Failed to apply event filter: ${typeof filter.comparison} is not supported as a filter`);
+        return false;
+    }
+    return true;
+};
 const makeEvent = function (event, defaultFilter) {
-    defaultFilter = flattenFilter(defaultFilter);
+    const defaultFilterFlattened = flattenFilters(defaultFilter);
     return (callback, filter) => {
         if (typeof filter === 'function') {
             return subscribe(event, (_, msg) => {
@@ -45,49 +118,10 @@ const makeEvent = function (event, defaultFilter) {
                 return callback(msg);
             });
         }
-        const merged = { ...defaultFilter, ...flattenFilter(filter) };
-        const filterList = Object.keys(merged).filter(key => merged[key] !== null && merged[key] !== undefined).map(key => ({
-            path: key,
-            pathParts: key.split('.'),
-            comparison: merged[key],
-        }));
+        const merged = flattenFilters(expandFilters([...defaultFilterFlattened, ...flattenFilters(filter)]));
         return subscribe(event, (_, msg) => {
-            for (const subfilter of filterList) {
-                const value = extractValue(msg, subfilter.pathParts);
-                if (subfilter.comparison instanceof RegExp) {
-                    if (typeof value !== 'string') {
-                        log.warning(`Failed to apply event filter: ${subfilter.path} is not a string`);
-                        return;
-                    }
-                    if (!subfilter.comparison.test(value)) {
-                        return;
-                    }
-                }
-                else if (typeof subfilter.comparison === 'string' || typeof subfilter.comparison === 'number' || typeof subfilter.comparison === 'boolean' || typeof subfilter.comparison === 'bigint') {
-                    if (typeof value !== typeof subfilter.comparison) {
-                        log.warning(`Failed to apply event filter: ${subfilter.path} is not a ${typeof subfilter.comparison}`);
-                        return;
-                    }
-                    if (subfilter.comparison !== value) {
-                        return;
-                    }
-                }
-                else if (__Api.IsEnum(subfilter.comparison)) {
-                    if (typeof value !== typeof subfilter.comparison) {
-                        log.warning(`Failed to apply event filter: ${subfilter.path} is not a enum value`);
-                        return;
-                    }
-                    if (subfilter.comparison !== value) {
-                        return;
-                    }
-                }
-                else if (typeof subfilter.comparison === 'function') {
-                    if (!subfilter.comparison(value)) {
-                        return;
-                    }
-                }
-                else {
-                    log.warning(`Failed to apply event filter: ${typeof subfilter.comparison} is not supported as a filter`);
+            for (const filter of Object.values(merged)) {
+                if (!matchFilter(extractValue(msg, filter.path), filter)) {
                     return;
                 }
             }
