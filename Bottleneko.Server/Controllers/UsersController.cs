@@ -42,7 +42,7 @@ public class UsersController(NekoDbContext db) : CrudController<UsersController.
         var identity = await GetIdentityAsync(request.Username, request.Password);
         if (identity is null)
         {
-            return Error(ErrorCode.Unauthorized, "Invalid user name or password");
+            return Error(ErrorCode.Unauthorized, "Invalid username or password");
         }
 
         var jwt = new JwtSecurityToken(

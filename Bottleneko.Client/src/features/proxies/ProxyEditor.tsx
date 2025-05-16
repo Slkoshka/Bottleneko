@@ -12,7 +12,7 @@ const schema = yup.object().shape({
     hostname: yup.string().label('Hostname').required(),
     port: yup.number().label('Port').min(1).max(65535).required(),
     isAuthRequired: yup.boolean(),
-    username: yup.string().label('User name').when('isAuthRequired', {
+    username: yup.string().label('Username').when('isAuthRequired', {
         is: true,
         then: schema => schema.required(),
     }),
@@ -134,7 +134,7 @@ export default function ProxyEditor({ show, proxy, onSuccess, onCancel }: { show
                                     onChange={() => { void setFieldValue('isAuthRequired', !values.isAuthRequired); }}
                                 />
                                 <Form.Group>
-                                    <Form.Label>User name</Form.Label>
+                                    <Form.Label>Username</Form.Label>
                                     <Form.Control name="username" value={values.username} onChange={handleChange} isInvalid={!!errors.username} autoComplete="off" disabled={!values.isAuthRequired} />
                                     <Form.Control.Feedback type="invalid">
                                         {errors.username}
