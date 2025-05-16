@@ -57,7 +57,12 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
     private void Start()
     {
         _actor = CreateActor();
-        _ = _actor.Ask(IControlMessage.Ready.Instance).PipeTo(Self, Self, () => new Started(), ex => new FailedToStart(ex));
+        _ = _actor.Ask(IControlMessage.Ready.Instance).PipeTo(Self, Self, result => result switch
+        {
+            Status.Success _ => Started.Instance,
+            Status.Failure failure => new FailedToStart(failure.Cause),
+            _ => new FailedToStart(new Exception("Unknown error")),
+        }, ex => new FailedToStart(ex));
         Context.Watch(_actor);
         Become(Starting);
     }

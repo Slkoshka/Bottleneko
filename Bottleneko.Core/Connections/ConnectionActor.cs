@@ -56,8 +56,7 @@ class ConnectionActor(IServiceProvider services, AkkaService akka, INekoLogger l
         {
             logger.LogError("Bottleneko.Connections", "An error has occured while starting the connection", ex);
             owner.Tell(new ConnectionError(ex));
-            Context.Stop(Self);
-            return;
+            throw;
         }
     }
 

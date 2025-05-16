@@ -30,6 +30,7 @@ public abstract class NekoActor(IServiceProvider services) : UntypedActorWithSta
                 break;
 
             case InitFailure failure:
+                Stash.UnstashAll();
                 Become(FailedToStart(failure.Exception));
                 break;
 
