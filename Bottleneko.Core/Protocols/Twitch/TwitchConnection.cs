@@ -10,7 +10,6 @@ using Bottleneko.Messages;
 using Bottleneko.Scripting.Bindings;
 using Bottleneko.Scripting.Bindings.Twitch;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
@@ -148,6 +147,7 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
     private readonly ConcurrentDictionary<string, User> _usersCache = new(StringComparer.OrdinalIgnoreCase);
     private readonly CancellationTokenSource _cts = new();
     private Task _checkTokenTask = Task.CompletedTask;
+    private (User ChannelInfo, EventSubSubscription Subscription)[] _subscriptions = [];
 
     private static async Task<(TwitchAPI API, EventSubWebsocketClient? EventSub)> CreateAsync(INekoLogger logger, TwitchProtocolConfiguration config)
     {
@@ -171,6 +171,36 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
         return (api, eventSub);
     }
 
+    private async Task<(User ChannelInfo, EventSubSubscription Subscription)[]> GetSubscriptionsAsync()
+    {
+        var result = new List<(User ChannelInfo, EventSubSubscription Subscription)>();
+
+        if (_eventSub is not null)
+        {
+            var channels = await GetUsersInfoAsync(data.Configuration.Channels.Select(channel => channel.Name));
+
+            foreach (var channel in data.Configuration.Channels)
+            {
+                if (!channels.TryGetValue(channel.Name, out var channelInfo))
+                {
+                    logger.LogWarning(LogCategory, $"Unable to get channel information for '{channel.Name}'");
+                    continue;
+                }
+
+                foreach (var topic in channel.EventSubscriptions)
+                {
+                    var subscription = _subscriptionTypes[topic];
+                    if (subscription.Predicate?.Invoke(channelInfo.Id == _me.Id, _scopes) ?? true)
+                    {
+                        result.Add((channelInfo, subscription));
+                    }
+                }
+            }
+        }
+
+        return [.. result];
+    }
+
     public override async Task StartAsync()
     {
         (_api, _eventSub) = await CreateAsync(logger, data.Configuration);
@@ -179,13 +209,35 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
         _me = (await _api.Helix.Users.GetUsersAsync()).Users.Single();
         _usersCache[_me.Login] = _me;
 
+        _subscriptions = await GetSubscriptionsAsync();
+
+        if (_subscriptions.Length == 0)
+        {
+            _eventSub = null;
+        }
+
         _checkTokenTask = Task.Run(async () =>
         {
             while (!_cts.Token.IsCancellationRequested)
             {
                 try
                 {
-                    await WithApi(api => api.Auth.ValidateAccessTokenAsync());
+                    await Task.Delay(TimeSpan.FromMinutes(5), _cts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+
+                try
+                {
+                    await WithApi(async api =>
+                    {
+                        if (await api.Auth.ValidateAccessTokenAsync() is null)
+                        {
+                            throw new TokenExpiredException("Token validation failed", new HttpResponseMessage());
+                        }
+                    });
                 }
                 catch (BadTokenException)
                 {
@@ -195,22 +247,11 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
                 {
                     logger.LogWarning(LogCategory, "An error has occured while validating access token", ex);
                 }
-
-                try
-                {
-                    await Task.Delay(TimeSpan.FromHours(1), _cts.Token);
-                }
-                catch (OperationCanceledException)
-                {
-                    break;
-                }
             }
         }, _cts.Token);
 
-        if (data.Configuration.ReceiveEvents)
+        if (_eventSub is not null)
         {
-            _eventSub = new EventSubWebsocketClient();
-
             _eventSub.WebsocketConnected += OnWebsocketConnectedAsync;
             _eventSub.WebsocketDisconnected += OnWebsocketDisconnectedAsync;
             _eventSub.ErrorOccurred += OnErrorOccurredAsync;
@@ -560,7 +601,7 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
             {
                 return await f(_api);
             }
-            catch (TokenExpiredException)
+            catch (Exception ex) when (ex is TokenExpiredException or BadScopeException)
             {
                 await RefreshTokenAsync();
                 return await f(_api);
@@ -569,6 +610,11 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
         catch (BadTokenException ex)
         {
             logger.LogError(LogCategory, "Invalid access token", ex);
+            Die(ex);
+            throw;
+        }
+        catch (BadImageFormatException ex)
+        {
             Die(ex);
             throw;
         }
@@ -647,24 +693,9 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
         {
             if (!args.IsRequestedReconnect)
             {
-                var channels = await GetUsersInfoAsync(data.Configuration.Channels.Select(channel => channel.Name));
-
-                foreach (var channel in data.Configuration.Channels)
+                foreach (var (channelInfo, subscription) in _subscriptions)
                 {
-                    if (!channels.TryGetValue(channel.Name, out var channelInfo))
-                    {
-                        logger.LogWarning(LogCategory, $"Unable to get channel information for '{channel.Name}'");
-                        continue;
-                    }
-
-                    foreach (var topic in channel.EventSubscriptions)
-                    {
-                        var subscription = _subscriptionTypes[topic];
-                        if (subscription.Predicate?.Invoke(channelInfo.Id == _me.Id, _scopes) ?? true)
-                        {
-                            await SubscribeToTopicAsync(subscription.TopicName, subscription.Version, [.. subscription.Condition.Select(x => new KeyValuePair<string, string>(x.Key, x.Value == ConditionArgument.ChannelId ? channelInfo.Id : _me.Id))]);
-                        }
-                    }
+                    await SubscribeToTopicAsync(subscription.TopicName, subscription.Version, [.. subscription.Condition.Select(x => new KeyValuePair<string, string>(x.Key, x.Value == ConditionArgument.ChannelId ? channelInfo.Id : _me.Id))]);
                 }
 
                 Connected();
