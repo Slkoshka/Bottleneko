@@ -14,13 +14,15 @@ try {
 
 Push-Location Bottleneko.ScriptAPI
 try {
-    Copy-Item ../Bottleneko.Client/src/features/scripts/api/bottleneko.gen.d.ts ./src
+    Copy-Item ../Bottleneko.Client/src/features/scripts/api/bottleneko.gen.d.ts ./src/typeDefs
     
     & npm install
     & npm run build '--' --declaration --outDir ./dist
 
-    Copy-Item ./dist/* ../Bottleneko.Core/Scripting/Js/API/ -Recurse -Include *.js
-    Copy-Item ./dist/* ../Bottleneko.Client/src/features/scripts/api/ -Recurse -Include *.ts
+    & robocopy ./src/typeDefs/ ./dist/ *.d.ts /s
+
+    & robocopy ./dist/ ../Bottleneko.Core/Scripting/Js/API/ *.js /s
+    & robocopy ./dist/ ../Bottleneko.Client/src/features/scripts/api/ *.ts /s /xf _*.*
 
     $Files = Get-ChildItem -Path ../Bottleneko.Client/src/features/scripts/api/* -Filter *.d.ts -Recurse | Where-Object { !$_.PSisContainer }
     $Base = Resolve-Path '../Bottleneko.Client/src/features/scripts/api/'

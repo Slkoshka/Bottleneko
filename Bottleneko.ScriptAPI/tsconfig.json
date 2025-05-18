@@ -4,6 +4,7 @@
     "lib": ["ESNext"],
     "module": "ESNext",
     "skipLibCheck": true,
+    "typeRoots": ["src/typeDefs/**/*.d.ts"],
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

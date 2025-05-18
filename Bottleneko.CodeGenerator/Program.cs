@@ -240,17 +240,17 @@ class Program
                     typeof(Packet),
                     typeof(LogSeverity),
                     typeof(NekoSettings),
-                }.Select(type => type.Assembly).Distinct().SelectMany(assembly => assembly.GetTypes().Where(type => type.IsPublic && type.GetCustomAttribute<ExposeToScriptsAttribute>() is not null)))
+                }.Select(type => type.Assembly).Distinct().SelectMany(assembly => assembly.GetTypes().Where(type => type.IsPublic && type.GetCustomAttribute<ExposeToScriptsAttribute>() is ExposeToScriptsAttribute { IsInternal: false })))
             {
                 if (type is { IsEnum: true })
                 {
                     destTypes.Add(type, new EnumDefinition(SimplifyTypeName(type), Enum.GetNames(type)));
                 }
-                else if (type is { IsClass: true, IsAbstract: true, IsSealed: false, IsGenericType: false } or { IsInterface: true } && !type.IsAssignableTo(typeof(Attribute)) && type.GetCustomAttributes<ExposeToScriptsAttribute>().Single() is { DerivedTypes.Length: > 0 } attr)
+                else if (type is { IsClass: true, IsAbstract: true, IsSealed: false, IsGenericType: false } or { IsInterface: true } && !type.IsAssignableTo(typeof(Attribute)) && type.GetCustomAttributes<ExposeToScriptsAttribute>().Single() is { DerivedTypes.Length: > 0, IsInternal: false } attr)
                 {
                     destTypes.Add(type, new UnionDefinition(SimplifyTypeName(type), [.. attr.DerivedTypes.Select(derived => new UnionSubTypeDefinition(derived, SimplifyTypeName(derived)))]));
                 }
-                else if (type is { IsClass: true, IsAbstract: false, IsGenericType: false } && !type.IsAssignableTo(typeof(Attribute)) && type.GetCustomAttribute<ExposeToScriptsAttribute>() is not null)
+                else if (type is { IsClass: true, IsAbstract: false, IsGenericType: false } && !type.IsAssignableTo(typeof(Attribute)) && type.GetCustomAttribute<ExposeToScriptsAttribute>() is ExposeToScriptsAttribute { IsInternal: false })
                 {
                     destTypes.Add(type, ProcessStruct(type));
                 }
@@ -273,7 +273,7 @@ class Program
 
                     case EnumDefinition enumDefinition:
                         generatedTypes.AppendLine();
-                        generatedTypes.AppendLine($"interface {enumDefinition.Name} {{");
+                        generatedTypes.AppendLine($"declare interface {enumDefinition.Name} {{");
                         foreach (var value in enumDefinition.Values)
                         {
                             generatedTypes.AppendLine($"    {value}: EnumValue<{enumDefinition.Name}>;");
@@ -283,7 +283,7 @@ class Program
 
                     case StructDefinition structDefinition:
                         generatedTypes.AppendLine();
-                        generatedTypes.AppendLine($"interface {structDefinition.Name} {{");
+                        generatedTypes.AppendLine($"declare interface {structDefinition.Name} {{");
                         foreach (var field in structDefinition.Fields)
                         {
                             generatedTypes.AppendLine($"    {field.Name}: {RenderFieldType(field, GetType(destTypes, field.Type))};");

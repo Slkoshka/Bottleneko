@@ -1,4 +1,4 @@
-const implementation = (severity: LogSeverity, args: unknown[]): void => __Api.Log(severity, 'Script', args.map(item => {
+const implementation = (severity: EnumValue<LogSeverity>, args: unknown[]): void => __Api.Log(severity, 'Script', args.map(item => {
     switch (item) {
         case null:
             return 'null';

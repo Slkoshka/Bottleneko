@@ -1,7 +1,7 @@
 import log from './log';
 
-const subscribe = function<T>(event: string, callback: (name: string, event: T) => Promise<unknown> | void) {
-    const token = __Api.Subscribe(event, callback);
+const subscribe = function<T>(event: string, callback: (name: string, event: T) => Promise<unknown> | undefined) {
+    const token = __Api.Subscribe(event, callback as any);
     return {
         cancel: (): void => __Api.Unsubscribe(token),
     };
@@ -65,11 +65,11 @@ const extractValue = (obj: any, path: string[]) => {
         obj = obj[part];
     }
     return obj;
-}
+};
 
 type EventFilterCallback<T> = (msg: T) => boolean;
 type EventFilter<T> = object | EventFilterCallback<T>;
-type EventCallback<T> = ((msg: T) => Promise<unknown> | void);
+type EventCallback<T> = ((msg: T) => Promise<unknown> | undefined);
 
 const matchFilter = function(value: any, filter: FilterDefinition) {
     if (filter.comparison === 'undefined') {
@@ -132,9 +132,9 @@ const matchFilter = function(value: any, filter: FilterDefinition) {
     }
 
     return true;
-}
+};
 
-const makeEvent = function<T>(event: string, defaultFilter: EventFilter<T>): (callback: EventCallback<T>, filter?: EventFilter<T> | undefined) => void {
+const makeEvent = function<T>(event: string, defaultFilter: EventFilter<T>): (callback: EventCallback<T>, filter?: EventFilter<T>) => void {
     const defaultFilterFlattened = flattenFilters(defaultFilter);
     return (callback, filter) => {
         if (typeof filter === 'function') {

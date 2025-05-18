@@ -7,9 +7,10 @@ using System.Numerics;
 namespace Bottleneko.Scripting.Js;
 
 [SuppressMessage("Style", "VSTHRD200:Use \"Async\" suffix for async methods")]
-public class JsApi
+public class JsApi : IDisposable
 {
     public string ScriptName => _script.Name;
+    public JsHttpClient HttpClient { get; } = new();
 
     private readonly JsScriptActor _script;
     private readonly HostFunctions _host = new();
@@ -62,5 +63,11 @@ public class JsApi
     public void Log(LogSeverity severity, string category, string message)
     {
         _script.Logger.Log(severity, category, message);
+    }
+
+    public void Dispose()
+    {
+        GC.SuppressFinalize(this);
+        HttpClient.Dispose();
     }
 }

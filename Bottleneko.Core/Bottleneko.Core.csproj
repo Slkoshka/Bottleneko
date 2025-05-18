@@ -18,6 +18,7 @@
     <PackageReference Include="Akka" Version="1.5.40" />
     <PackageReference Include="Akka.DependencyInjection" Version="1.5.40" />
     <PackageReference Include="Discord.Net" Version="3.17.4" />
+    <PackageReference Include="HttpMultipartParser" Version="9.0.0" />
     <PackageReference Include="Microsoft.ClearScript.Complete" Version="7.5.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.4" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.4" />

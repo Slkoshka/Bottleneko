@@ -41,7 +41,7 @@ class JsLoader : DefaultDocumentLoader
 
         var fromScript = sourceInfo?.Name == "@script";
         var parts = specifier.Split('/');
-        if (!sourceInfo.HasValue || (fromScript && (parts[0] != "neko" || parts.Any(part => part == ".." || part == "."))))
+        if (!sourceInfo.HasValue || (fromScript && (parts[0] != "neko" || parts.Any(part => part == ".." || part == "." || part.StartsWith("_")))))
         {
             throw new Exception($"Module not found: {specifier}");
         }

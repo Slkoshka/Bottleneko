@@ -1,9 +1,10 @@
 import connections from './connections';
 import log from './log';
+import * as network from './network';
 import script from './script';
 import types from './types';
 import when from './when';
-export { connections, log, script, types, when, };
+export { connections, log, network, script, types, when };
 export * from './timers';
 declare const _default: {
     types: {
@@ -13,7 +14,7 @@ declare const _default: {
     };
     when: {
         connection: {
-            messageReceived: (callback: (msg: ChatMessage) => Promise<unknown> | void, filter?: (object | ((msg: ChatMessage) => boolean)) | undefined) => void;
+            messageReceived: (callback: (msg: ChatMessage) => Promise<unknown> | undefined, filter?: (object | ((msg: ChatMessage) => boolean)) | undefined) => void;
         };
     };
     wait: (milliseconds: number) => Promise<void>;
@@ -22,7 +23,7 @@ declare const _default: {
     clearInterval: (id: unknown) => boolean;
     clearTimeout: (id: unknown) => boolean;
     connections: {
-        get: (id: bigint) => Promise<Connection>;
+        get: (id: bigint) => Promise<Connection | null>;
     };
     log: {
         critical: (...args: unknown[]) => void;
@@ -32,6 +33,7 @@ declare const _default: {
         verbose: (...args: unknown[]) => void;
         debug: (...args: unknown[]) => void;
     };
+    network: typeof network;
     script: {
         name: string;
         stop: () => void;

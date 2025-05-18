@@ -67,7 +67,7 @@ const matchFilter = function (value, filter) {
             return false;
         }
         if (typeof value !== 'string') {
-            log.warning(`Failed to apply event filter: ${filter.path.join('.')} is not a string`);
+            log.warning(`Failed to apply event filter: '${filter.path.join('.')}' is not a string`);
             return false;
         }
         if (!filter.comparison.test(value)) {
@@ -79,7 +79,7 @@ const matchFilter = function (value, filter) {
             return false;
         }
         if (typeof value !== typeof filter.comparison) {
-            log.warning(`Failed to apply event filter: ${filter.path.join('.')} is not a ${typeof filter.comparison}`);
+            log.warning(`Failed to apply event filter: '${filter.path.join('.')}' is not a ${typeof filter.comparison}`);
             return false;
         }
         if (filter.comparison !== value) {
@@ -91,7 +91,7 @@ const matchFilter = function (value, filter) {
             return false;
         }
         if (typeof value !== typeof filter.comparison) {
-            log.warning(`Failed to apply event filter: ${filter.path.join('.')} is not a enum value`);
+            log.warning(`Failed to apply event filter: '${filter.path.join('.')}' is not a enum value`);
             return false;
         }
         if (filter.comparison !== value) {

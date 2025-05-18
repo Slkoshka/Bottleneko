@@ -3,7 +3,7 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface EnumValue<T> { ToString: () => string }
 
-interface ConnectionStatus {
+declare interface ConnectionStatus {
     NotConnected: EnumValue<ConnectionStatus>;
     Connecting: EnumValue<ConnectionStatus>;
     Connected: EnumValue<ConnectionStatus>;
@@ -12,13 +12,13 @@ interface ConnectionStatus {
     Error: EnumValue<ConnectionStatus>;
 }
 
-interface Protocol {
+declare interface Protocol {
     Discord: EnumValue<Protocol>;
     Telegram: EnumValue<Protocol>;
     Twitch: EnumValue<Protocol>;
 }
 
-interface LogSeverity {
+declare interface LogSeverity {
     Critical: EnumValue<LogSeverity>;
     Error: EnumValue<LogSeverity>;
     Warning: EnumValue<LogSeverity>;
@@ -27,13 +27,13 @@ interface LogSeverity {
     Debug: EnumValue<LogSeverity>;
 }
 
-interface ChatFlags {
+declare interface ChatFlags {
     isPrivate: boolean;
 
     ToString: () => string | null;
 }
 
-interface Chat {
+declare interface Chat {
     id: bigint;
     protocol: EnumValue<Protocol>;
     connectionId: bigint;
@@ -45,7 +45,7 @@ interface Chat {
     ToString: () => string | null;
 }
 
-interface ChatMessageAttachment {
+declare interface ChatMessageAttachment {
     id: bigint;
     messageId: bigint;
     contentType: string;
@@ -55,7 +55,7 @@ interface ChatMessageAttachment {
     ToString: () => string | null;
 }
 
-interface ChatMessageFlags {
+declare interface ChatMessageFlags {
     isSpecial: boolean;
     isDirect: boolean;
     isOffline: boolean;
@@ -63,7 +63,7 @@ interface ChatMessageFlags {
     ToString: () => string | null;
 }
 
-interface ChatMessage {
+declare interface ChatMessage {
     id: bigint;
     protocol: EnumValue<Protocol>;
     connectionId: bigint;
@@ -80,13 +80,13 @@ interface ChatMessage {
     ToString: () => string | null;
 }
 
-interface ChatterFlags {
+declare interface ChatterFlags {
     isBot: boolean;
 
     ToString: () => string | null;
 }
 
-interface Chatter {
+declare interface Chatter {
     id: bigint;
     protocol: EnumValue<Protocol>;
     connectionId: bigint;
@@ -98,7 +98,7 @@ interface Chatter {
     ToString: () => string | null;
 }
 
-interface Connection {
+declare interface Connection {
     id: bigint;
     protocol: EnumValue<Protocol>;
     name: string;
@@ -108,7 +108,7 @@ interface Connection {
     ToString: () => string | null;
 }
 
-interface TwitchChat {
+declare interface TwitchChat {
     id: string;
     name: string;
     displayName: string;
@@ -120,7 +120,7 @@ interface TwitchChat {
     ToString: () => string | null;
 }
 
-interface TwitchChatBadge {
+declare interface TwitchChatBadge {
     id: string;
     info: string;
     setId: string;
@@ -128,7 +128,7 @@ interface TwitchChatBadge {
     ToString: () => string | null;
 }
 
-interface TwitchChatMessage {
+declare interface TwitchChatMessage {
     id: string;
     text: string;
     badges: TwitchChatBadge[];
@@ -147,7 +147,7 @@ interface TwitchChatMessage {
     ToString: () => string | null;
 }
 
-interface TwitchChatter {
+declare interface TwitchChatter {
     id: string;
     login: string;
     displayName: string;
@@ -158,14 +158,14 @@ interface TwitchChatter {
     ToString: () => string | null;
 }
 
-interface TwitchConnection {
+declare interface TwitchConnection {
     asDiscord: () => DiscordConnection | null;
     asTwelegram: () => TelegramConnection | null;
     asTwitch: () => TwitchConnection | null;
     ToString: () => string | null;
 }
 
-interface TelegramChatType {
+declare interface TelegramChatType {
     Private: EnumValue<TelegramChatType>;
     Group: EnumValue<TelegramChatType>;
     Channel: EnumValue<TelegramChatType>;
@@ -173,7 +173,7 @@ interface TelegramChatType {
     Sender: EnumValue<TelegramChatType>;
 }
 
-interface TelegramChat {
+declare interface TelegramChat {
     id: bigint;
     type: EnumValue<TelegramChatType>;
     title: string;
@@ -187,11 +187,11 @@ interface TelegramChat {
     ToString: () => string | null;
 }
 
-interface UnknownTelegramAttachmentExtra {
+declare interface UnknownTelegramAttachmentExtra {
     ToString: () => string | null;
 }
 
-interface AnimationTelegramAttachmentExtra {
+declare interface AnimationTelegramAttachmentExtra {
     width: number;
     height: number;
     duration: number;
@@ -199,7 +199,7 @@ interface AnimationTelegramAttachmentExtra {
     ToString: () => string | null;
 }
 
-interface AudioTelegramAttachmentExtra {
+declare interface AudioTelegramAttachmentExtra {
     duration: number;
     performer: string;
     title: string;
@@ -207,18 +207,18 @@ interface AudioTelegramAttachmentExtra {
     ToString: () => string | null;
 }
 
-interface DocumentTelegramAttachmentExtra {
+declare interface DocumentTelegramAttachmentExtra {
     ToString: () => string | null;
 }
 
-interface PhotoTelegramAttachmentExtra {
+declare interface PhotoTelegramAttachmentExtra {
     width: number;
     height: number;
 
     ToString: () => string | null;
 }
 
-interface StickerTelegramAttachmentExtra {
+declare interface StickerTelegramAttachmentExtra {
     width: number;
     height: number;
     isAnimated: boolean;
@@ -229,7 +229,7 @@ interface StickerTelegramAttachmentExtra {
     ToString: () => string | null;
 }
 
-interface VideoTelegramAttachmentExtra {
+declare interface VideoTelegramAttachmentExtra {
     width: number;
     height: number;
     duration: number;
@@ -238,7 +238,7 @@ interface VideoTelegramAttachmentExtra {
     ToString: () => string | null;
 }
 
-interface VideoNoteTelegramAttachmentExtra {
+declare interface VideoNoteTelegramAttachmentExtra {
     width: number;
     height: number;
     duration: number;
@@ -246,13 +246,13 @@ interface VideoNoteTelegramAttachmentExtra {
     ToString: () => string | null;
 }
 
-interface VoiceTelegramAttachmentExtra {
+declare interface VoiceTelegramAttachmentExtra {
     duration: number;
 
     ToString: () => string | null;
 }
 
-interface TelegramChatMessageAttachment {
+declare interface TelegramChatMessageAttachment {
     fileId: string;
     fileUniqueId: string;
     fileSize: bigint | null;
@@ -264,14 +264,14 @@ interface TelegramChatMessageAttachment {
     ToString: () => string | null;
 }
 
-interface TelegramChatMessage {
+declare interface TelegramChatMessage {
     asDiscord: () => DiscordChatMessage | null;
     asTelegram: () => TelegramChatMessage | null;
     asTwitch: () => TwitchChatMessage | null;
     ToString: () => string | null;
 }
 
-interface TelegramChatter {
+declare interface TelegramChatter {
     id: bigint;
     firstName: string;
     lastName: string;
@@ -286,14 +286,14 @@ interface TelegramChatter {
     ToString: () => string | null;
 }
 
-interface TelegramConnection {
+declare interface TelegramConnection {
     asDiscord: () => DiscordConnection | null;
     asTwelegram: () => TelegramConnection | null;
     asTwitch: () => TwitchConnection | null;
     ToString: () => string | null;
 }
 
-interface DiscordGuild {
+declare interface DiscordGuild {
     id: bigint;
     name: string;
     description: string;
@@ -302,7 +302,7 @@ interface DiscordGuild {
     ToString: () => string | null;
 }
 
-interface DiscordChannelType {
+declare interface DiscordChannelType {
     Text: EnumValue<DiscordChannelType>;
     DM: EnumValue<DiscordChannelType>;
     Voice: EnumValue<DiscordChannelType>;
@@ -319,7 +319,7 @@ interface DiscordChannelType {
     Media: EnumValue<DiscordChannelType>;
 }
 
-interface DiscordChannel {
+declare interface DiscordChannel {
     id: bigint;
     name: string;
     type: EnumValue<DiscordChannelType>;
@@ -327,7 +327,7 @@ interface DiscordChannel {
     ToString: () => string | null;
 }
 
-interface DiscordChat {
+declare interface DiscordChat {
     guild: DiscordGuild;
     channel: DiscordChannel;
 
@@ -337,7 +337,7 @@ interface DiscordChat {
     ToString: () => string | null;
 }
 
-interface DiscordChatMessageAttachment {
+declare interface DiscordChatMessageAttachment {
     id: bigint;
     title: string;
     description: string;
@@ -350,7 +350,7 @@ interface DiscordChatMessageAttachment {
     ToString: () => string | null;
 }
 
-interface DiscordChatMessage {
+declare interface DiscordChatMessage {
     id: bigint;
     isPinned: boolean;
     isEveryoneMentioned: boolean;
@@ -364,7 +364,7 @@ interface DiscordChatMessage {
     ToString: () => string | null;
 }
 
-interface DiscordChatter {
+declare interface DiscordChatter {
     id: bigint;
     username: string;
     discriminator: string;
@@ -377,7 +377,7 @@ interface DiscordChatter {
     ToString: () => string | null;
 }
 
-interface DiscordConnection {
+declare interface DiscordConnection {
     getChat: (id: bigint) => Promise<Chat>;
     asDiscord: () => DiscordConnection | null;
     asTwelegram: () => TelegramConnection | null;

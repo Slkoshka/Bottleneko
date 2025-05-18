@@ -4,4 +4,5 @@
 public class ExposeToScriptsAttribute(params Type[] derivedTypes) : Attribute
 {
     public Type[] DerivedTypes { get; } = derivedTypes;
+    public bool IsInternal { get; set; } = false;
 }

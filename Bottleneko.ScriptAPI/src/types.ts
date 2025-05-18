@@ -1,5 +1,5 @@
 export default {
-    Protocol: __Core.Bottleneko.Api.Dtos.Protocol as Protocol,
-    ConnectionStatus: __Core.Bottleneko.Api.Dtos.ConnectionStatus as ConnectionStatus,
-    DiscordChannelType: __Core.Bottleneko.Scripting.Bindings.Discord.DiscordChannelType as DiscordChannelType,
+    Protocol: __Core.Bottleneko.Api.Dtos.Protocol,
+    ConnectionStatus: __Core.Bottleneko.Api.Dtos.ConnectionStatus,
+    DiscordChannelType: __Core.Bottleneko.Scripting.Bindings.Discord.DiscordChannelType,
 };

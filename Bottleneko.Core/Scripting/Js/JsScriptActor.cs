@@ -34,6 +34,7 @@ class JsScriptActor(IServiceProvider services, AkkaService akka, INekoLogger log
     private IActorRef _self = null!;
     private SingleThreadedSynchronizationContext? _synchronizationContext;
     private readonly SingleThreadedSynchronizationContext.Frame _frame = new();
+    private JsApi _jsApi = null!;
 
     private void MainLoop(object? arg)
     {
@@ -58,6 +59,8 @@ class JsScriptActor(IServiceProvider services, AkkaService akka, INekoLogger log
             Name = $"Script Thread: {Name}",
         };
         _thread.Start(self);
+
+        _jsApi = new JsApi(this);
 
         return Task.CompletedTask;
     }
@@ -145,7 +148,7 @@ class JsScriptActor(IServiceProvider services, AkkaService akka, INekoLogger log
                 Invoke(() =>
                 {
                     _engine.Global.SetProperty("__Host", new HostFunctions());
-                    _engine.Global.SetProperty("__Api", new JsApi(this));
+                    _engine.Global.SetProperty("__Api", _jsApi);
                     _engine.Global.SetProperty("__Core", new HostTypeCollection(type => type.GetCustomAttribute<ExposeToScriptsAttribute>() is not null, AssemblyLoadContext.Default.Assemblies.ToArray()));
 
                     _engine.DocumentSettings.AccessFlags = DocumentAccessFlags.EnableFileLoading | DocumentAccessFlags.AllowCategoryMismatch;
@@ -199,6 +202,7 @@ class JsScriptActor(IServiceProvider services, AkkaService akka, INekoLogger log
         _engine.Interrupt();
         _frame.Continue = false;
         _thread.Join();
+        _jsApi.Dispose();
         _engine.Dispose();
     }
 }
