@@ -42,7 +42,26 @@ jobs:
       uses: docker/setup-buildx-action@v3
     
     - name: Build and push
+      id: buildTry1
+      continue-on-error: true
       uses: docker/build-push-action@v6
+      with:
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        build-args: |
+          VERSION_SUFFIX=-${{ github.sha }}
+
+    - name: Wait to retry
+      if: steps.buildTry1.outcome != 'success'
+      run: |
+        sleep 60
+
+    - name: "Build and push (attempt #2)"
+      id: buildTry2
+      uses: docker/build-push-action@v6
+      if: steps.buildTry1.outcome != 'success'
       with:
         platforms: linux/amd64,linux/arm64
         push: true
