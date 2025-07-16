@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { Alert } from 'react-bootstrap';
 import api from '../api';
-import View from '../../components/View';
+import View from '../../components/views/View';
 import { useAuth } from '../auth/context';
 import { useAsync, useFetchData } from '../../app/hooks';
 import { useToasterDispatch } from '../toaster/context';

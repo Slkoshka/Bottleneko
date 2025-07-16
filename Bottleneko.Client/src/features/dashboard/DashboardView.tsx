@@ -1,4 +1,4 @@
-import View from '../../components/View';
+import View from '../../components/views/View';
 import api from '../api';
 import { useFetchData } from '../../app/hooks';
 import SystemDashboardCard from './cards/SystemDashboardCard';

@@ -1,13 +1,13 @@
 ﻿import { useCallback, useState } from 'react';
-import { ProgressBar } from 'react-bootstrap';
 import Highlight from 'react-highlight';
-import FullscreenPage from '../../components/FullscreenPage';
+import FullscreenPage from '../../components/fullscreen-page/FullscreenPage';
 import { useAsync, useOnce } from '../../app/hooks';
 import api from '../api';
 import LoadingBanner from '../../components/LoadingBanner';
 import { saveAccessToken } from '../auth';
 import { ErrorMetadata, extractErrorInfo } from '../../app/utils';
 import { SetupStage } from './SetupPageView';
+import SetupPage from './SetupPage';
 
 export default function SetupPageInitialization({ progress, account, setStage }: { progress: number; account: { login: string; password: string }; setStage: (stage: SetupStage) => void }) {
     const [error, setError] = useState<ErrorMetadata | null>();
@@ -27,17 +27,11 @@ export default function SetupPageInitialization({ progress, account, setStage }:
     });
 
     return (
-        <FullscreenPage
+        <SetupPage
             title={error ? 'An error has occured' : 'Setting up...'}
-            titleVariant={error ? 'danger' : undefined}
-            buttons={[
-                { key: 'next', content: 'Next', variant: 'primary', disabled: isLoading || !!error },
-            ]}
+            variant={error ? 'error' : 'working'}
+            progress={progress}
         >
-            {error ? <ProgressBar variant="danger" now={100} /> : <ProgressBar striped animated variant="success" now={progress} />}
-
-            <hr />
-
             {
                 error
                     ? (
@@ -47,6 +41,10 @@ export default function SetupPageInitialization({ progress, account, setStage }:
                         )
                     : isLoading ? <LoadingBanner /> : <></>
             }
-        </FullscreenPage>
+
+            <FullscreenPage.Button disabled>
+                Next
+            </FullscreenPage.Button>
+        </SetupPage>
     );
 }

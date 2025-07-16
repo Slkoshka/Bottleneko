@@ -1,15 +1,13 @@
-import FullscreenPage from '../components/FullscreenPage';
+import FullscreenPage from '../components/fullscreen-page/FullscreenPage';
 import { branding } from '../props';
 
 export default function ErrorPage() {
     return (
-        <FullscreenPage
-            title="Error"
-            titleVariant="danger"
-            buttons={[
-                { key: 'refresh', content: 'Refresh', disabled: false, action: () => { window.location.reload(); } },
-            ]}
-        >
+        <FullscreenPage>
+            <FullscreenPage.Title variant="danger">
+                Error
+            </FullscreenPage.Title>
+
             <p>
                 <strong>
                     An error has occured while accessing
@@ -21,6 +19,10 @@ export default function ErrorPage() {
             <p>
                 Try refreshing the page.
             </p>
+
+            <FullscreenPage.Button action={() => { window.location.reload(); }}>
+                Refresh
+            </FullscreenPage.Button>
         </FullscreenPage>
     );
 }

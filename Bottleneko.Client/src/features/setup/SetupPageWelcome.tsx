@@ -1,34 +1,24 @@
 import wearyCatFace from '@netbek/noto-emoji/build/svg/u1f640.svg';
-import { ProgressBar } from 'react-bootstrap';
-import FullscreenPage from '../../components/FullscreenPage';
+import FullscreenPage from '../../components/fullscreen-page/FullscreenPage';
 import { branding } from '../../props';
 import { SetupStage } from './SetupPageView';
+import SetupPage from './SetupPage';
 
 export default function SetupPageWelcome({ progress, setStage }: { progress: number; setStage: (stage: SetupStage) => void }) {
     return (
-        <FullscreenPage
-            title={`Welcome to ${branding.plain}!`}
-            buttons={[
-                { key: 'next', content: 'Next', variant: 'primary', disabled: false, action: () => {
-                    setStage({ stage: 'account' });
-                } },
-            ]}
-        >
-            <div>
-                <ProgressBar striped variant="success" now={progress} />
+        <SetupPage title={`Welcome to ${branding.plain}!`} variant="normal" progress={progress} emoji={wearyCatFace}>
+            <p>
+                It seems like you haven&apos;t configured
+                {' '}
+                <strong>{branding.plain}</strong>
+                {' '}
+                yet. This wizard will guide you through the initial setup process.
+            </p>
+            <p>Don&apos;t worry; it won&apos;t take long!</p>
 
-                <hr />
-
-                <p style={{ textAlign: 'center' }}><img src={wearyCatFace} style={{ width: '6em', height: '6em' }} /></p>
-                <p>
-                    It seems like you haven&apos;t configured
-                    {' '}
-                    <strong>{branding.plain}</strong>
-                    {' '}
-                    yet. This wizard will guide you through the initial setup process.
-                </p>
-                <p>Don&apos;t worry; it won&apos;t take long!</p>
-            </div>
-        </FullscreenPage>
+            <FullscreenPage.Button action={() => { setStage({ stage: 'account' }); }}>
+                Next
+            </FullscreenPage.Button>
+        </SetupPage>
     );
 }

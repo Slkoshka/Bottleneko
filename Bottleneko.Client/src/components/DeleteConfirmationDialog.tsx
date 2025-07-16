@@ -2,7 +2,7 @@
 import { Table } from 'react-bootstrap';
 import ConfirmationDialog from './ConfirmationDialog';
 
-export interface ItemInfoProperty { name: string; value: ReactNode[] | ReactNode | undefined }
+export interface ItemInfoProperty { name: string; value: ReactNode | undefined }
 export interface DeleteConfirmationDialogProps<T = unknown> { item?: T; itemInfoBuilder?: (item: T) => Record<string, ItemInfoProperty>; itemTypeName: string; onCancel?: () => void; onDelete?: (item: T) => void }
 
 export default function DeleteConfirmationDialog<T>({ item, itemInfoBuilder, itemTypeName, onCancel, onDelete }: DeleteConfirmationDialogProps<T>) {

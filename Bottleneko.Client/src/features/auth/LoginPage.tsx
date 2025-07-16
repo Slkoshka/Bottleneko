@@ -6,7 +6,7 @@ import api from '../api';
 import { RequestError } from '../api/errors';
 import { ErrorCode } from '../api/responses';
 import { useAsync } from '../../app/hooks';
-import FullscreenPage from '../../components/FullscreenPage';
+import FullscreenPage from '../../components/fullscreen-page/FullscreenPage';
 import { branding } from '../../props';
 import { useAuth } from './context';
 import { saveAccessToken } from '.';

@@ -28,7 +28,7 @@ const TelegramConfigEditor = forwardRef(({ definition, onValidated, disabled = f
                         handleSubmit();
                     }}
                     ref={ref}
-                    className="d-flex flex-column p-2"
+                    className="d-flex flex-column"
                     style={{ gap: '1rem' }}
                 >
                     <Form.Group>

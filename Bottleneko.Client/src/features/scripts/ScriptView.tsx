@@ -1,19 +1,19 @@
 ﻿import { useParams } from 'react-router-dom';
-import { useCallback, useState } from 'react';
-import { Alert, Tab, Tabs } from 'react-bootstrap';
-import View from '../../components/View';
+import { useCallback } from 'react';
+import { Alert } from 'react-bootstrap';
+import View from '../../components/views/View';
 import { LogSourceType, ScriptStatus } from '../api/dtos.gen';
 import { useAsync, useFetchData } from '../../app/hooks';
 import api from '../api';
 import LogViewer from '../log/LogViewer';
 import IconButton from '../../components/IconButton';
+import TabView from '../../components/views/TabView';
 import ScriptEditor from './ScriptEditor';
 
 export default function ScriptView() {
     const { scriptId } = useParams();
     const fetchScript = useCallback((signal: AbortSignal) => api.scripts.get(scriptId ?? '', signal), [scriptId]);
     const [script, isRefreshing, refresh, notFound] = useFetchData(fetchScript, true);
-    const [activeTab, setActiveTab] = useState<string | undefined | null>();
 
     const canBeStarted = script && (script.status === ScriptStatus.Stopped || script.status === ScriptStatus.Error);
     const canBeRestarted = script && (script.status !== ScriptStatus.Stopped && script.status !== ScriptStatus.Stopping && script.status !== ScriptStatus.Error);
@@ -40,7 +40,7 @@ export default function ScriptView() {
     }
 
     return (
-        <View
+        <TabView
             title={(
                 <div className="d-flex" style={{ gap: '0.5rem' }}>
                     <span className="flex-grow-1">
@@ -51,21 +51,20 @@ export default function ScriptView() {
                     <IconButton icon="stop-circle" tooltip="Stop script" style={{ width: '2.75rem', height: '2.75rem' }} variant="danger" disabled={!canBeStopped || isLoading} onClick={() => { void stopScript(); }} />
                 </div>
             )}
+            defaultTab="logs"
             loading={!script}
         >
-            <Tabs defaultActiveKey="logs" activeKey={activeTab ?? undefined} onSelect={(tab) => { setActiveTab(tab); }}>
-                <Tab eventKey="logs" title="Logs" className="h-100">
-                    <LogViewer sourceType={LogSourceType.Script} sourceId={script?.id} />
-                </Tab>
+            <TabView.Tab id="logs" title="Logs" margin={false}>
+                <LogViewer sourceType={LogSourceType.Script} sourceId={script?.id} />
+            </TabView.Tab>
 
-                <Tab eventKey="settings" title="Edit" className="h-100 m-3">
-                    {
-                        script
-                            ? <ScriptEditor initialScript={script} onSaved={onSaved} />
-                            : <></>
-                    }
-                </Tab>
-            </Tabs>
-        </View>
+            <TabView.Tab id="settings" title="Edit">
+                {
+                    script
+                        ? <ScriptEditor initialScript={script} onSaved={onSaved} />
+                        : <></>
+                }
+            </TabView.Tab>
+        </TabView>
     );
 }

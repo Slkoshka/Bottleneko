@@ -1,9 +1,10 @@
 ﻿import { Formik } from 'formik';
-import { Alert, Form, ProgressBar } from 'react-bootstrap';
+import { Alert, Form } from 'react-bootstrap';
 import * as yup from 'yup';
 import { useCallback } from 'react';
-import FullscreenPage from '../../components/FullscreenPage';
+import FullscreenPage from '../../components/fullscreen-page/FullscreenPage';
 import { SetupStage } from './SetupPageView';
+import SetupPage from './SetupPage';
 
 const schema = yup.object().shape({
     login: yup.string().default('').required('Username is required'),
@@ -27,16 +28,7 @@ export default function SetupPageAccount({ progress, setStage }: { progress: num
                         handleSubmit();
                     }}
                 >
-                    <FullscreenPage
-                        title="Create an account"
-                        buttons={[
-                            { key: 'next', content: 'Next', variant: 'primary', disabled: false, action: 'submit' },
-                        ]}
-                    >
-                        <ProgressBar striped variant="success" now={progress} />
-
-                        <hr />
-
+                    <SetupPage title="Create an account" variant="normal" progress={progress}>
                         <Form.Group className="mb-3">
                             <Form.Label className="fs-5">Username</Form.Label>
                             <Form.Control name="login" value={values.login} onChange={handleChange} isInvalid={!!errors.login} />
@@ -54,7 +46,7 @@ export default function SetupPageAccount({ progress, setStage }: { progress: num
                         </Form.Group>
 
                         <Form.Group className="mb-3">
-                            <Form.Label className="fs-5">Confirm Password</Form.Label>
+                            <Form.Label className="fs-5">Confirm password</Form.Label>
                             <Form.Control type="password" name="passwordConfirmation" value={values.passwordConfirmation} onChange={handleChange} isInvalid={!!errors.passwordConfirmation} />
                             <Form.Control.Feedback type="invalid">
                                 {errors.passwordConfirmation}
@@ -64,9 +56,13 @@ export default function SetupPageAccount({ progress, setStage }: { progress: num
                         <hr />
 
                         <Alert variant="dark">
-                            You&apos;ll be able to create additional accounts after completing the initial setup if necessary.
+                            You&apos;ll be able to create additional accounts after completing the initial setup.
                         </Alert>
-                    </FullscreenPage>
+
+                        <FullscreenPage.Button action="submit">
+                            Next
+                        </FullscreenPage.Button>
+                    </SetupPage>
                 </Form>
             )}
         </Formik>

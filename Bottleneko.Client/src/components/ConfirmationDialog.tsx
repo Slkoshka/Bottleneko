@@ -2,7 +2,7 @@
 import { ButtonVariant } from 'react-bootstrap/esm/types';
 import ModalDialog from './ModalDialog';
 
-export interface ConfirmationDialogProps { children?: ReactNode[] | ReactNode; title?: string; show: boolean; onCancel?: () => void; onAccept?: () => void; cancelText?: string; acceptText?: string; acceptVariant?: ButtonVariant }
+export interface ConfirmationDialogProps { children?: ReactNode; title?: string; show: boolean; onCancel?: () => void; onAccept?: () => void; cancelText?: string; acceptText?: string; acceptVariant?: ButtonVariant }
 
 export default function ConfirmationDialog({ children, title, show, onCancel, onAccept, cancelText, acceptText, acceptVariant }: ConfirmationDialogProps) {
     return (

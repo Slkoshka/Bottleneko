@@ -9,24 +9,20 @@ export type SetupStage = { stage: 'welcome' } | { stage: 'account' } | { stage: 
 export default function SetupPageView() {
     const [stage, setStage] = useState<SetupStage>({ stage: 'welcome' });
 
-    let stageView = <div />;
     switch (stage.stage) {
         case 'welcome':
-            stageView = <SetupPageWelcome progress={25} setStage={setStage} />;
-            break;
+            return <SetupPageWelcome progress={25} setStage={setStage} />;
 
         case 'account':
-            stageView = <SetupPageAccount progress={50} setStage={setStage} />;
-            break;
+            return <SetupPageAccount progress={50} setStage={setStage} />;
 
         case 'initialization':
-            stageView = <SetupPageInitialization progress={75} account={stage.account} setStage={setStage} />;
-            break;
+            return <SetupPageInitialization progress={75} account={stage.account} setStage={setStage} />;
 
         case 'finish':
-            stageView = <SetupPageFinish progress={100} />;
-            break;
-    }
+            return <SetupPageFinish progress={100} />;
 
-    return stageView;
+        default:
+            return <></>;
+    }
 }

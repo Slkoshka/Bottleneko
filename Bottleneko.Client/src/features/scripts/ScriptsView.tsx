@@ -1,7 +1,7 @@
 ﻿import { Button } from 'react-bootstrap';
 import { LinkContainer } from 'react-router-bootstrap';
 import { useCallback, useState } from 'react';
-import View from '../../components/View';
+import View from '../../components/views/View';
 import { useAsync } from '../../app/hooks';
 import api from '../api';
 import { ScriptDto } from '../api/dtos.gen';

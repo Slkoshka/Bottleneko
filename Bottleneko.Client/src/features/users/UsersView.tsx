@@ -2,7 +2,7 @@ import { Button, Table } from 'react-bootstrap';
 import { useCallback, useState } from 'react';
 import { LinkContainer } from 'react-router-bootstrap';
 import api from '../api';
-import View from '../../components/View';
+import View from '../../components/views/View';
 import { useAuth } from '../auth/context';
 import { useAsync, useFetchData } from '../../app/hooks';
 import { UserDto } from '../api/dtos.gen';

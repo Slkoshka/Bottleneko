@@ -1,6 +1,6 @@
 ﻿import { useNavigate } from 'react-router-dom';
 import { useCallback } from 'react';
-import View from '../../components/View';
+import View from '../../components/views/View';
 import { ScriptDto } from '../api/dtos.gen';
 import ScriptEditor from './ScriptEditor';
 

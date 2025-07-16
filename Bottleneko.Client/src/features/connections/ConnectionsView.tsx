@@ -1,7 +1,7 @@
 import { LinkContainer } from 'react-router-bootstrap';
 import { Button } from 'react-bootstrap';
 import { useCallback, useState } from 'react';
-import View from '../../components/View';
+import View from '../../components/views/View';
 import DeleteConfirmationDialog from '../../components/DeleteConfirmationDialog';
 import { useAsync } from '../../app/hooks';
 import api from '../api';

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import View from '../../../components/View';
+import View from '../../../components/views/View';
 import { ConnectionDefinition, protocols } from '..';
 import { Protocol } from '../../api/dtos.gen';
 import AddConnectionSelect from './AddConnectionSelect';

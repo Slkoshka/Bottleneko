@@ -1,4 +1,4 @@
-import View from '../../components/View';
+import View from '../../components/views/View';
 import MessageHistoryViewer from './MessageHistoryViewer';
 
 export default function MessagesView() {

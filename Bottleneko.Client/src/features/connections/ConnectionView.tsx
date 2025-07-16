@@ -1,8 +1,8 @@
 import { createElement, useCallback, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Alert, Button, Tab, Tabs } from 'react-bootstrap';
+import { Alert, Button } from 'react-bootstrap';
 import api from '../api';
-import View from '../../components/View';
+import View from '../../components/views/View';
 import ModalDialog from '../../components/ModalDialog';
 import LogViewer from '../log/LogViewer';
 import { ConnectionStatus, LogSourceType } from '../api/dtos.gen';
@@ -10,6 +10,7 @@ import { useAsync, useFetchData } from '../../app/hooks';
 import { useToasterDispatch } from '../toaster/context';
 import MessageHistoryViewer from '../messages/MessageHistoryViewer';
 import IconButton from '../../components/IconButton';
+import TabView from '../../components/views/TabView';
 import ProtocolIcon from './ProtocolIcon';
 import { useConnections } from './context';
 import { ConnectionDefinition, protocols } from '.';
@@ -23,7 +24,6 @@ export default function ConnectionView() {
     const connections = useConnections();
     const editorFormRef = useRef<HTMLFormElement>(null);
     const toasterDispatch = useToasterDispatch();
-    const [activeTab, setActiveTab] = useState<string | undefined | null>();
 
     const [startConnection, isStarting] = useAsync(useCallback(() => api.connections.start(connection?.id ?? '').then(refresh), [connection, refresh]));
     const [restartConnection, isRestarting] = useAsync(useCallback(() => api.connections.restart(connection?.id ?? '').then(refresh), [connection, refresh]));
@@ -68,7 +68,7 @@ export default function ConnectionView() {
     }
 
     return (
-        <View
+        <TabView
             title={(
                 <div className="d-flex" style={{ gap: '0.5rem' }}>
                     <span className="flex-grow-1">
@@ -82,6 +82,7 @@ export default function ConnectionView() {
                 </div>
             )}
             loading={!connection}
+            defaultTab="messages"
         >
             <ModalDialog
                 header="Confirmation"
@@ -101,27 +102,25 @@ export default function ConnectionView() {
                 <p>This may cause the connection to be restarted, and it might miss messages or other events that have occured while it was reconnecting.</p>
             </ModalDialog>
 
-            <Tabs defaultActiveKey="messages" activeKey={activeTab ?? undefined} onSelect={(tab) => { setActiveTab(tab); }}>
-                {connectionId
-                    ? (
-                            <Tab eventKey="messages" title="Messages" className="h-100">
-                                <MessageHistoryViewer className="h-100" connectionId={connectionId} />
-                            </Tab>
-                        )
-                    : <></>}
+            {connectionId
+                ? (
+                        <TabView.Tab id="messages" title="Messages" margin={false}>
+                            <MessageHistoryViewer className="h-100" connectionId={connectionId} />
+                        </TabView.Tab>
+                    )
+                : <></>}
 
-                <Tab eventKey="logs" title="Logs" className="h-100">
-                    <LogViewer sourceType={LogSourceType.Connection} sourceId={connectionId} />
-                </Tab>
+            <TabView.Tab id="logs" title="Logs" margin={false}>
+                <LogViewer sourceType={LogSourceType.Connection} sourceId={connectionId} />
+            </TabView.Tab>
 
-                <Tab eventKey="edit" title="Settings">
-                    {editor}
-                    <hr />
-                    <div className="d-flex justify-content-center mx-auto pb-3">
-                        <Button size="lg" className="mx-2" style={{ width: 'calc(max(25%, 10rem))' }} onClick={() => editorFormRef.current?.requestSubmit()} disabled={isSaving}>Apply</Button>
-                    </div>
-                </Tab>
-            </Tabs>
-        </View>
+            <TabView.Tab id="edit" title="Settings">
+                {editor}
+                <hr />
+                <div className="d-flex justify-content-center mx-auto pb-3">
+                    <Button size="lg" className="mx-2" style={{ width: 'calc(max(25%, 10rem))' }} onClick={() => editorFormRef.current?.requestSubmit()} disabled={isSaving}>Apply</Button>
+                </div>
+            </TabView.Tab>
+        </TabView>
     );
 }
