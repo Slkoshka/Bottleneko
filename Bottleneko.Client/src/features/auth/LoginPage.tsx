@@ -66,14 +66,11 @@ export default function LoginPage() {
                     }}
                     ref={formRef}
                 >
-                    <FullscreenPage
-                        title={loginError ?? `Login to ${branding.plain}`}
-                        titleVariant={loginError ? 'danger' : undefined}
-                        buttons={[
-                            // { key: 'forgot-password', content: 'Forgot password?', variant: 'dark', action: 'submit', disabled: isLoading },
-                            { key: 'submit', content: 'Sign in', disabled: isLoading },
-                        ]}
-                    >
+                    <FullscreenPage>
+                        <FullscreenPage.Title variant={loginError ? 'danger' : undefined}>
+                            {loginError ?? `Login to ${branding.plain}`}
+                        </FullscreenPage.Title>
+
                         <Form.Group className="mb-3">
                             <Form.Label className="fs-5">Username</Form.Label>
                             <Form.Control name="login" value={values.login} onChange={handleChange} isInvalid={!!errors.login} disabled={isLoading} />
@@ -89,6 +86,14 @@ export default function LoginPage() {
                                 {errors.password}
                             </Form.Control.Feedback>
                         </Form.Group>
+
+                        {/* <FullscreenPage.Button disabled={isLoading} variant="dark" action="submit">
+                            Forgot password?
+                        </FullscreenPage.Button> */}
+
+                        <FullscreenPage.Button disabled={isLoading} action="submit">
+                            Sign in
+                        </FullscreenPage.Button>
                     </FullscreenPage>
                 </Form>
             )}
