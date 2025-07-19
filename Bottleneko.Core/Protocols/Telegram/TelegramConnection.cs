@@ -254,7 +254,7 @@ class TelegramConnection(IServiceProvider services, INekoLogger logger, Connecti
 
         await db.SaveChangesAsync();
 
-        if (update.Type != UpdateType.Message || msg.IsSpecial || isOffline)
+        if (update.Type != UpdateType.Message)
         {
             return;
         }
