@@ -1,4 +1,4 @@
-import { createElement, useCallback, useRef, useState } from 'react';
+import { createElement, useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Alert, Button } from 'react-bootstrap';
 import api from '../api';
@@ -6,38 +6,47 @@ import View from '../../components/views/View';
 import ModalDialog from '../../components/ModalDialog';
 import LogViewer from '../log/LogViewer';
 import { ConnectionStatus, LogSourceType } from '../api/dtos.gen';
-import { useAsync, useFetchData } from '../../app/hooks';
+import { useAsync } from '../../app/hooks';
 import { useToasterDispatch } from '../toaster/context';
 import MessageHistoryViewer from '../messages/MessageHistoryViewer';
 import IconButton from '../../components/IconButton';
 import TabView from '../../components/views/TabView';
 import ProtocolIcon from './ProtocolIcon';
 import { useConnections } from './context';
-import { ConnectionDefinition, protocols } from '.';
+import { AnyConnectionDto, ConnectionDefinition, protocols } from '.';
 
 export default function ConnectionView() {
     const { connectionId } = useParams();
-    const fetchConnection = useCallback((signal: AbortSignal) => api.connections.get(connectionId ?? '', signal), [connectionId]);
-    const [connection, isRefreshing, refresh, notFound] = useFetchData(fetchConnection, true);
+    const fetchConnection = useCallback(() => api.connections.get(connectionId ?? ''), [connectionId]);
     const [savedDefinition, setSavedDefinition] = useState<ConnectionDefinition>();
     const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
+    const [connection, setConnection] = useState<AnyConnectionDto | null>(null);
+    const [notFound, setNotFound] = useState(false);
     const connections = useConnections();
     const editorFormRef = useRef<HTMLFormElement>(null);
     const toasterDispatch = useToasterDispatch();
 
-    const [startConnection, isStarting] = useAsync(useCallback(() => api.connections.start(connection?.id ?? '').then(refresh), [connection, refresh]));
-    const [restartConnection, isRestarting] = useAsync(useCallback(() => api.connections.restart(connection?.id ?? '').then(refresh), [connection, refresh]));
-    const [stopConnection, isStopping] = useAsync(useCallback(() => api.connections.stop(connection?.id ?? '').then(refresh), [connection, refresh]));
+    const [startConnection, isStarting] = useAsync(useCallback(() => api.connections.start(connection?.id ?? '').then(fetchConnection).then(connection => connections?.actions.updated(connection)), [connection, connections?.actions, fetchConnection]));
+    const [restartConnection, isRestarting] = useAsync(useCallback(() => api.connections.restart(connection?.id ?? '').then(fetchConnection).then(connection => connections?.actions.updated(connection)), [connection, connections?.actions, fetchConnection]));
+    const [stopConnection, isStopping] = useAsync(useCallback(() => api.connections.stop(connection?.id ?? '').then(fetchConnection).then(connection => connections?.actions.updated(connection)), [connection, connections?.actions, fetchConnection]));
 
     const canBeStarted = connection && (connection.status === ConnectionStatus.NotConnected || connection.status === ConnectionStatus.Error);
     const canBeRestarted = connection && (connection.status !== ConnectionStatus.NotConnected && connection.status !== ConnectionStatus.Stopping && connection.status !== ConnectionStatus.Error);
     const canBeStopped = connection && (connection.status !== ConnectionStatus.NotConnected && connection.status !== ConnectionStatus.Stopping && connection.status !== ConnectionStatus.Error);
 
-    const isLoading = isRefreshing || isStarting || isRestarting || isStopping;
+    const isLoading = !connections || isStarting || isRestarting || isStopping;
 
     const onError = useCallback((err: unknown) => {
         toasterDispatch?.({ action: 'show', toast: { variant: 'danger', title: 'Failed to save', text: err instanceof Error ? err.message : 'Unknown error' } });
     }, [toasterDispatch]);
+
+    useEffect(() => {
+        if (connections?.state.list) {
+            const newConnection = connections.state.list.find(c => c.id === connectionId) ?? null;
+            setConnection(newConnection);
+            setNotFound(!newConnection);
+        }
+    }, [connections?.state.list, connectionId]);
 
     const [save, isSaving] = useAsync(useCallback(async (formData: ConnectionDefinition) => {
         if (!connection) {
@@ -46,8 +55,7 @@ export default function ConnectionView() {
 
         const newConnection = await api.connections.update(connection.id, formData);
         connections?.actions.updated(newConnection.connection);
-        refresh();
-    }, [connection, connections?.actions, refresh]));
+    }, [connection, connections?.actions]));
 
     let editor = <></>;
     if (!isLoading && connection) {
