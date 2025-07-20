@@ -8,7 +8,7 @@ import { useAsync, useFetchData } from '../../app/hooks';
 import { UserDto } from '../api/dtos.gen';
 import DeleteConfirmationDialog from '../../components/DeleteConfirmationDialog';
 
-const fetchUsers = (signal: AbortSignal) => api.users.list(signal).then(response => response.users);
+const fetchUsers = (signal: AbortSignal) => api.users.list(signal).then(response => response.result);
 
 export default function UsersView() {
     const [users, usersLoading, refreshUsers] = useFetchData(fetchUsers);

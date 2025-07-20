@@ -23,7 +23,7 @@ public class ConnectionsController(IOptions<JsonOptions> jsonOptions, ProtocolRe
     {
         return Ok(new
         {
-            Connections = await Task.WhenAll((await db.Connections.Where(connection => !connection.IsDeleted).ToArrayAsync()).Select(async connection => connection.ToDto(await akka.AskAsync<ConnectionStatus>(new IConnectionsMessage.GetStatus(connection.Id))))),
+            Result = await Task.WhenAll((await db.Connections.Where(connection => !connection.IsDeleted).ToArrayAsync()).Select(async connection => connection.ToDto(await akka.AskAsync<ConnectionStatus>(new IConnectionsMessage.GetStatus(connection.Id))))),
         });
     }
 
@@ -81,7 +81,7 @@ public class ConnectionsController(IOptions<JsonOptions> jsonOptions, ProtocolRe
 
         return Ok(new
         {
-            Connection = connection.ToDto(ConnectionStatus.Connecting),
+            Result = connection.ToDto(ConnectionStatus.Connecting),
         });
     }
 
@@ -118,7 +118,7 @@ public class ConnectionsController(IOptions<JsonOptions> jsonOptions, ProtocolRe
             var connection = await akka.AskAsync<ConnectionEntity>(new IConnectionsMessage.Update(id, request.Name, request.AutoStart, request.Config));
             return Ok(new
             {
-                Connection = connection.ToDto(await akka.AskAsync<ConnectionStatus>(new IConnectionsMessage.GetStatus(id))),
+                Result = connection.ToDto(await akka.AskAsync<ConnectionStatus>(new IConnectionsMessage.GetStatus(id))),
             });
         }
         catch (KeyNotFoundException)

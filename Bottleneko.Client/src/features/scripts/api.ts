@@ -2,15 +2,15 @@
 import { ScriptCode, ScriptDto } from '../api/dtos.gen';
 
 export interface ListScriptsResponse {
-    scripts: ScriptDto[];
+    result: ScriptDto[];
 }
 
 export interface AddScriptResponse {
-    script: ScriptDto;
+    result: ScriptDto;
 }
 
 export interface UpdateScriptResponse {
-    script: ScriptDto;
+    result: ScriptDto;
 }
 
 export default {

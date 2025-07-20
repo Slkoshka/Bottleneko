@@ -83,7 +83,7 @@ public class UsersController(NekoDbContext db) : CrudController<UsersController.
 
             return Ok(new
             {
-                User = user.ToDto(),
+                Result = user.ToDto(),
             });
         }
         catch (Exception e) when (e.IsDuplicateKeyException())
@@ -96,7 +96,7 @@ public class UsersController(NekoDbContext db) : CrudController<UsersController.
     {
         return Ok(new
         {
-            Users = await db.Users.Where(u => !u.IsDeleted).Select(user => user.ToDto()).ToArrayAsync(),
+            Result = await db.Users.Where(u => !u.IsDeleted).Select(user => user.ToDto()).ToArrayAsync(),
         });
     }
     

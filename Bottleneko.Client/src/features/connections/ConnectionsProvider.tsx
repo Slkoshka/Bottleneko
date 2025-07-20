@@ -40,7 +40,7 @@ export default function ConnectionsProvider({ children }: { children?: ReactNode
 
     useEffect(() => {
         if (remoteList) {
-            setList(remoteList.connections);
+            setList(remoteList.result);
         }
     }, [remoteList]);
 

@@ -22,7 +22,7 @@ export default function AddConnectionFinish({ protocol, definition, setStage }: 
 
     const [addConnection, isLoading] = useAsync(useCallback(async () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const newConnection = (await api.connections.add<any>(protocol, definition.name, definition.config)).connection;
+        const newConnection = (await api.connections.add<any>(protocol, definition.name, definition.config)).result;
         connections?.actions.added(newConnection);
         navigate(`/connections/${newConnection.id}`);
     }, [protocol, definition, connections?.actions, navigate]));

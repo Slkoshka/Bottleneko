@@ -98,3 +98,55 @@ export function useFetchData<T>(api: (signal: AbortSignal) => Promise<T>, keepSt
         notFound,
     ];
 }
+
+interface Entity {
+    id: string;
+}
+
+interface EntityApi<T extends Entity, TUpdate> {
+    get: (id: string, signal?: AbortSignal) => Promise<T>;
+    update: (id: string, entity: TUpdate) => Promise<{ result: T }>;
+}
+
+interface Context<T extends Entity> {
+    actions: {
+        updated: (entity: T) => void;
+    };
+
+    state: {
+        list: T[] | null;
+    };
+}
+
+export function useEntityEditor<T extends Entity, TUpdate = never>(id: string | undefined, api: EntityApi<T, TUpdate>, context: Context<T> | null): [T | undefined, () => Promise<T>, boolean, (update: TUpdate) => Promise<void>, boolean] {
+    const fetchEntity = useCallback(() => {
+        if (id) {
+            return api.get(id);
+        }
+        else {
+            return new Promise<T>(() => undefined);
+        }
+    }, [id, api]);
+
+    const [entity, setEntity] = useState<T | undefined>(undefined);
+    const [notFound, setNotFound] = useState(false);
+
+    const [save, isSaving] = useAsync(useCallback(async (update: TUpdate) => {
+        if (!id) {
+            return;
+        }
+
+        const updated = await api.update(id, update);
+        context?.actions.updated(updated.result);
+    }, [id, api, context?.actions]));
+
+    useEffect(() => {
+        if (context?.state.list) {
+            const newEntity = context.state.list.find(c => c.id === id) ?? null;
+            setEntity(newEntity ?? undefined);
+            setNotFound(!newEntity);
+        }
+    }, [id, context?.state.list]);
+
+    return [entity, fetchEntity, notFound, save, isSaving];
+}

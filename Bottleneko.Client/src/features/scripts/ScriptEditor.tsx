@@ -40,7 +40,7 @@ export default function ScriptEditor({ initialScript, onSaved }: { initialScript
         }
         else {
             const response = await api.scripts.add(formData.name, formData.description, formData.code);
-            onSaved?.(response.script);
+            onSaved?.(response.result);
         }
     }, [initialScript, onSaved]));
 

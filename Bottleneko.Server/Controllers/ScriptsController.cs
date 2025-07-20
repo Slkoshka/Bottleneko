@@ -18,7 +18,7 @@ public class ScriptsController(NekoDbContext db, AkkaService akka) : CrudControl
         var script = await akka.AskAsync<ScriptEntity>(new IScriptingMessage.Add(request.Name, request.Description, request.Code, true));
         return Ok(new
         {
-            Script = script.ToDto(ScriptStatus.Starting),
+            Result = script.ToDto(ScriptStatus.Starting),
         });
     }
     
@@ -26,7 +26,7 @@ public class ScriptsController(NekoDbContext db, AkkaService akka) : CrudControl
     {
         return Ok(new
         {
-            Scripts = await Task.WhenAll((await db.Scripts.Where(connection => !connection.IsDeleted).ToArrayAsync()).Select(async script => script.ToDto(await akka.AskAsync<ScriptStatus>(new IScriptingMessage.GetStatus(script.Id))))),
+            Result = await Task.WhenAll((await db.Scripts.Where(connection => !connection.IsDeleted).ToArrayAsync()).Select(async script => script.ToDto(await akka.AskAsync<ScriptStatus>(new IScriptingMessage.GetStatus(script.Id))))),
         });
     }
     
@@ -51,7 +51,7 @@ public class ScriptsController(NekoDbContext db, AkkaService akka) : CrudControl
             var script = await akka.AskAsync<ScriptEntity>(new IScriptingMessage.Update(id, request.Name, request.Description, request.Code, request.AutoStart));
             return Ok(new
             {
-                Script = script.ToDto(await akka.AskAsync<ScriptStatus>(new IScriptingMessage.GetStatus(id))),
+                Result = script.ToDto(await akka.AskAsync<ScriptStatus>(new IScriptingMessage.GetStatus(id))),
             });
         }
         catch (KeyNotFoundException)

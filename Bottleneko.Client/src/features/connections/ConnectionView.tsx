@@ -1,4 +1,4 @@
-import { createElement, useCallback, useEffect, useRef, useState } from 'react';
+import { createElement, useCallback, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Alert, Button } from 'react-bootstrap';
 import api from '../api';
@@ -6,56 +6,40 @@ import View from '../../components/views/View';
 import ModalDialog from '../../components/ModalDialog';
 import LogViewer from '../log/LogViewer';
 import { ConnectionStatus, LogSourceType } from '../api/dtos.gen';
-import { useAsync } from '../../app/hooks';
+import { useAsync, useEntityEditor } from '../../app/hooks';
 import { useToasterDispatch } from '../toaster/context';
 import MessageHistoryViewer from '../messages/MessageHistoryViewer';
-import IconButton from '../../components/IconButton';
 import TabView from '../../components/views/TabView';
+import StateControlButtons from '../../components/StateControlButtons';
 import ProtocolIcon from './ProtocolIcon';
 import { useConnections } from './context';
 import { AnyConnectionDto, ConnectionDefinition, protocols } from '.';
 
 export default function ConnectionView() {
-    const { connectionId } = useParams();
-    const fetchConnection = useCallback(() => api.connections.get(connectionId ?? ''), [connectionId]);
+    const { connectionId: id } = useParams();
+    const connections = useConnections();
+    const [connection, fetch, notFound, save, isSaving] = useEntityEditor<AnyConnectionDto, ConnectionDefinition>(id, api.connections, connections);
+
     const [savedDefinition, setSavedDefinition] = useState<ConnectionDefinition>();
     const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
-    const [connection, setConnection] = useState<AnyConnectionDto | null>(null);
-    const [notFound, setNotFound] = useState(false);
-    const connections = useConnections();
     const editorFormRef = useRef<HTMLFormElement>(null);
     const toasterDispatch = useToasterDispatch();
 
-    const [startConnection, isStarting] = useAsync(useCallback(() => api.connections.start(connection?.id ?? '').then(fetchConnection).then(connection => connections?.actions.updated(connection)), [connection, connections?.actions, fetchConnection]));
-    const [restartConnection, isRestarting] = useAsync(useCallback(() => api.connections.restart(connection?.id ?? '').then(fetchConnection).then(connection => connections?.actions.updated(connection)), [connection, connections?.actions, fetchConnection]));
-    const [stopConnection, isStopping] = useAsync(useCallback(() => api.connections.stop(connection?.id ?? '').then(fetchConnection).then(connection => connections?.actions.updated(connection)), [connection, connections?.actions, fetchConnection]));
+    const doAction = useCallback((action: (id: string) => Promise<void>) => action(id ?? '').then(fetch).then(connection => connections?.actions.updated(connection)), [id, connections?.actions, fetch]);
 
-    const canBeStarted = connection && (connection.status === ConnectionStatus.NotConnected || connection.status === ConnectionStatus.Error);
-    const canBeRestarted = connection && (connection.status !== ConnectionStatus.NotConnected && connection.status !== ConnectionStatus.Stopping && connection.status !== ConnectionStatus.Error);
-    const canBeStopped = connection && (connection.status !== ConnectionStatus.NotConnected && connection.status !== ConnectionStatus.Stopping && connection.status !== ConnectionStatus.Error);
+    const [start, isStarting] = useAsync(() => doAction(api.connections.start));
+    const [restart, isRestarting] = useAsync(() => doAction(api.connections.restart));
+    const [stop, isStopping] = useAsync(() => doAction(api.connections.stop));
+
+    const canBeStarted = !!connection && (connection.status === ConnectionStatus.NotConnected || connection.status === ConnectionStatus.Error);
+    const canBeRestarted = !!connection && (connection.status !== ConnectionStatus.NotConnected && connection.status !== ConnectionStatus.Stopping && connection.status !== ConnectionStatus.Error);
+    const canBeStopped = !!connection && (connection.status !== ConnectionStatus.NotConnected && connection.status !== ConnectionStatus.Stopping && connection.status !== ConnectionStatus.Error);
 
     const isLoading = !connections || isStarting || isRestarting || isStopping;
 
     const onError = useCallback((err: unknown) => {
         toasterDispatch?.({ action: 'show', toast: { variant: 'danger', title: 'Failed to save', text: err instanceof Error ? err.message : 'Unknown error' } });
     }, [toasterDispatch]);
-
-    useEffect(() => {
-        if (connections?.state.list) {
-            const newConnection = connections.state.list.find(c => c.id === connectionId) ?? null;
-            setConnection(newConnection);
-            setNotFound(!newConnection);
-        }
-    }, [connections?.state.list, connectionId]);
-
-    const [save, isSaving] = useAsync(useCallback(async (formData: ConnectionDefinition) => {
-        if (!connection) {
-            return;
-        }
-
-        const newConnection = await api.connections.update(connection.id, formData);
-        connections?.actions.updated(newConnection.connection);
-    }, [connection, connections?.actions]));
 
     let editor = <></>;
     if (!isLoading && connection) {
@@ -84,9 +68,20 @@ export default function ConnectionView() {
                         {' '}
                         {connection?.name}
                     </span>
-                    <IconButton icon="play-fill" tooltip="Connect" style={{ width: '2.75rem', height: '2.75rem' }} variant="success" disabled={!canBeStarted || isLoading} onClick={() => { void startConnection(); }} />
-                    <IconButton icon="arrow-clockwise" tooltip="Reconnect" style={{ width: '2.75rem', height: '2.75rem' }} variant="warning" disabled={!canBeRestarted || isLoading} onClick={() => { void restartConnection(); }} />
-                    <IconButton icon="stop-circle" tooltip="Disconnect" style={{ width: '2.75rem', height: '2.75rem' }} variant="danger" disabled={!canBeStopped || isLoading} onClick={() => { void stopConnection(); }} />
+
+                    <StateControlButtons
+                        onStart={() => void start()}
+                        canStart={canBeStarted && !isLoading}
+                        startTooltip="Connect"
+
+                        onRestart={() => void restart()}
+                        canRestart={canBeRestarted && !isLoading}
+                        restartTooltip="Reconnect"
+
+                        onStop={() => void stop()}
+                        canStop={canBeStopped && !isLoading}
+                        stopTooltip="Disconnect"
+                    />
                 </div>
             )}
             loading={!connection}
@@ -110,16 +105,16 @@ export default function ConnectionView() {
                 <p>This may cause the connection to be restarted, and it might miss messages or other events that have occured while it was reconnecting.</p>
             </ModalDialog>
 
-            {connectionId
+            {id
                 ? (
                         <TabView.Tab id="messages" title="Messages" margin={false}>
-                            <MessageHistoryViewer className="h-100" connectionId={connectionId} />
+                            <MessageHistoryViewer className="h-100" connectionId={id} />
                         </TabView.Tab>
                     )
                 : <></>}
 
             <TabView.Tab id="logs" title="Logs" margin={false}>
-                <LogViewer sourceType={LogSourceType.Connection} sourceId={connectionId} />
+                <LogViewer sourceType={LogSourceType.Connection} sourceId={id} />
             </TabView.Tab>
 
             <TabView.Tab id="edit" title="Settings">

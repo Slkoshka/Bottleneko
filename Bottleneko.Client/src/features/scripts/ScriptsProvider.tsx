@@ -40,7 +40,7 @@ export default function ScriptsProvider({ children }: { children?: ReactNode | u
 
     useEffect(() => {
         if (remoteList) {
-            setList(remoteList.scripts);
+            setList(remoteList.result);
         }
     }, [remoteList]);
 

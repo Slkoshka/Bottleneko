@@ -2,11 +2,11 @@ import { request } from '../api/utils';
 import { UserDto } from '../api/dtos.gen';
 
 export interface ListUsersResponse {
-    users: UserDto[];
+    result: UserDto[];
 }
 
 export interface AddUserResponse {
-    user: UserDto;
+    result: UserDto;
 }
 
 export interface LoginResponse {

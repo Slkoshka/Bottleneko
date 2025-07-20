@@ -16,7 +16,7 @@ export default function AddUserView() {
 
     const [addUser, isLoading] = useAsync(useCallback(async (formData: EditedUser) => {
         const response = await api.users.add(formData.login, formData.password);
-        navigate(`/users/${response.user.id}`);
+        navigate(`/users/${response.result.id}`);
     }, [navigate]));
 
     const onValidated = useCallback((formData: EditedUser) => {

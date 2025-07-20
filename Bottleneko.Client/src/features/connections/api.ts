@@ -2,7 +2,7 @@ import { request } from '../api/utils';
 import { AnyConnection, AnyConnectionConfig, AnyConnectionDto, ExtractConfig, ExtractProtocol } from '.';
 
 export interface ListConnectionsResponse {
-    connections: AnyConnectionDto[];
+    result: AnyConnectionDto[];
 }
 
 export interface TestConnectionResponse {
@@ -11,11 +11,11 @@ export interface TestConnectionResponse {
 }
 
 export interface AddConnectionResponse {
-    connection: AnyConnectionDto;
+    result: AnyConnectionDto;
 }
 
 export interface UpdateConnectionResponse {
-    connection: AnyConnectionDto;
+    result: AnyConnectionDto;
 }
 
 export default {
