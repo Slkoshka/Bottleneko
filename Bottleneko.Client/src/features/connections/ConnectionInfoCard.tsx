@@ -1,10 +1,11 @@
-import { Button, Card, Form, Table } from 'react-bootstrap';
+import { Button, Form, Table } from 'react-bootstrap';
 import { LinkContainer } from 'react-router-bootstrap';
 import { useCallback } from 'react';
 import api from '../api';
 import { useAsync } from '../../app/hooks';
 import { ConnectionStatus } from '../api/dtos.gen';
 import IconButton from '../../components/IconButton';
+import InfoCard from '../../components/info-card/InfoCard';
 import ConnectionStatusIcon from './ConnectionStatusIcon';
 import ProtocolIcon from './ProtocolIcon';
 import { useConnections } from './context';
@@ -28,52 +29,47 @@ export default function ConnectionInfoCard({ connection, onDelete, className = '
     const isLoading = isRefreshing || isStarting || isRestarting || isStopping || isUpdatingAutoStart;
 
     return (
-        <Card className={`dashboard-card ${className}`} {...props}>
-            <Card.Header style={{ display: 'grid', gap: '0.6em', gridTemplateColumns: '0fr 1fr 0fr' }}>
+        <InfoCard title={connection.name} className={`dashboard-card ${className}`} {...props}>
+            <InfoCard.HeaderExtra position="start">
                 <LinkContainer to={`/connections/${connection.id}`}>
                     <IconButton as="a" icon="gear-fill" tooltip="View connection information and settings" />
                 </LinkContainer>
+            </InfoCard.HeaderExtra>
 
-                <div className="flex-grow-1 text-truncate">
-                    <span className="fs-5">
-                        <strong>{connection.name}</strong>
-                    </span>
-                </div>
-
+            <InfoCard.HeaderExtra position="end">
                 <Form>
                     <Form.Switch disabled={isLoading} style={{ fontSize: '1.25em', width: '10rem' }} checked={connection.autoStart} onChange={() => { void toggleAutoStart(); }} label="Auto Start" reverse />
                 </Form>
-            </Card.Header>
-            <Card.Body>
-                <Table>
-                    <tbody>
-                        <tr>
-                            <td className="w-50">Protocol</td>
-                            <td className="w-50">
-                                <ProtocolIcon protocol={connection.protocol} />
-                                {' '}
-                                {connection.protocol}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td className="w-50">Status</td>
-                            <td className="w-50"><ConnectionStatusIcon status={connection.status} showLabel /></td>
-                        </tr>
-                    </tbody>
-                </Table>
-                <div style={{ gap: '0.5em', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 0fr' }}>
-                    <Button className="flex-grow-1" variant="success" disabled={!canBeStarted || isLoading} onClick={() => { void startConnection(); }}>
-                        Start
-                    </Button>
-                    <Button className="flex-grow-1" variant="warning" disabled={!canBeRestarted || isLoading} onClick={() => { void restartConnection(); }}>
-                        Restart
-                    </Button>
-                    <Button className="flex-grow-1" variant="danger" disabled={!canBeStopped || isLoading} onClick={() => { void stopConnection(); }}>
-                        Stop
-                    </Button>
-                    <IconButton icon="trash3-fill" tooltip="Delete connection" style={{ padding: '0.5em', height: '2.5em' }} variant="outline-danger" onClick={onDelete} />
-                </div>
-            </Card.Body>
-        </Card>
+            </InfoCard.HeaderExtra>
+
+            <Table>
+                <tbody>
+                    <tr>
+                        <td className="w-50">Protocol</td>
+                        <td className="w-50">
+                            <ProtocolIcon protocol={connection.protocol} />
+                            {' '}
+                            {connection.protocol}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td className="w-50">Status</td>
+                        <td className="w-50"><ConnectionStatusIcon status={connection.status} showLabel /></td>
+                    </tr>
+                </tbody>
+            </Table>
+            <div style={{ gap: '0.5em', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 0fr' }}>
+                <Button className="flex-grow-1" variant="success" disabled={!canBeStarted || isLoading} onClick={() => { void startConnection(); }}>
+                    Start
+                </Button>
+                <Button className="flex-grow-1" variant="warning" disabled={!canBeRestarted || isLoading} onClick={() => { void restartConnection(); }}>
+                    Restart
+                </Button>
+                <Button className="flex-grow-1" variant="danger" disabled={!canBeStopped || isLoading} onClick={() => { void stopConnection(); }}>
+                    Stop
+                </Button>
+                <IconButton icon="trash3-fill" tooltip="Delete connection" style={{ padding: '0.5em', height: '2.5em' }} variant="outline-danger" onClick={onDelete} />
+            </div>
+        </InfoCard>
     );
 }

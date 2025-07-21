@@ -1,10 +1,11 @@
-﻿import { Button, Card, Form, Table } from 'react-bootstrap';
+﻿import { Button, Form, Table } from 'react-bootstrap';
 import { useCallback } from 'react';
 import { LinkContainer } from 'react-router-bootstrap';
 import { ScriptDto, ScriptStatus } from '../api/dtos.gen';
 import { useAsync } from '../../app/hooks';
 import api from '../api';
 import IconButton from '../../components/IconButton';
+import InfoCard from '../../components/info-card/InfoCard';
 import ScriptStatusIcon from './ScriptStatusIcon';
 import { useScripts } from './context';
 
@@ -28,53 +29,50 @@ export default function ScriptInfoCard({ script, onDelete }: { script: ScriptDto
     const isLoading = isRefreshing || isStarting || isRestarting || isStopping || isUpdatingAutoStart;
 
     return (
-        <Card>
-            <Card.Header style={{ display: 'grid', gap: '0.6em', gridTemplateColumns: '0fr 1fr 0fr' }}>
+        <InfoCard title={script.name}>
+            <InfoCard.HeaderExtra position="start">
                 <LinkContainer to={`/scripts/${script.id}`}>
                     <IconButton as="a" icon="gear-fill" tooltip="View script information and properties" />
                 </LinkContainer>
+            </InfoCard.HeaderExtra>
 
-                <div className="flex-grow-1 text-truncate">
-                    <span className="fs-5"><strong>{script.name}</strong></span>
-                </div>
-
+            <InfoCard.HeaderExtra position="end">
                 <Form>
                     <Form.Switch disabled={isLoading} style={{ fontSize: '1.25em', width: '10rem' }} checked={script.autoStart} onChange={() => { void toggleAutoStart(); }} label="Auto Start" reverse />
                 </Form>
-            </Card.Header>
-            <Card.Body>
-                <Table>
-                    <tbody>
-                        <tr>
-                            <td className="w-100" colSpan={2}>
-                                <span className="text-secondary">
-                                    {
-                                        script.description === ''
-                                            ? <em>(no description)</em>
-                                            : script.description
-                                    }
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td className="w-50">Status</td>
-                            <td className="w-50"><ScriptStatusIcon status={script.status} showLabel /></td>
-                        </tr>
-                    </tbody>
-                </Table>
-                <div style={{ gap: '0.5em', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 0fr' }}>
-                    <Button variant="success" disabled={!canBeStarted || isLoading} onClick={() => { void startScript(); }}>
-                        Start
-                    </Button>
-                    <Button variant="warning" disabled={!canBeRestarted || isLoading} onClick={() => { void restartScript(); }}>
-                        Restart
-                    </Button>
-                    <Button variant="danger" disabled={!canBeStopped || isLoading} onClick={() => { void stopScript(); }}>
-                        Stop
-                    </Button>
-                    <IconButton icon="trash3-fill" tooltip="Delete script" style={{ padding: '0.5em', height: '2.5em' }} variant="outline-danger" onClick={onDelete} />
-                </div>
-            </Card.Body>
-        </Card>
+            </InfoCard.HeaderExtra>
+
+            <Table>
+                <tbody>
+                    <tr>
+                        <td className="w-100" colSpan={2}>
+                            <span className="text-secondary">
+                                {
+                                    script.description === ''
+                                        ? <em>(no description)</em>
+                                        : script.description
+                                }
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td className="w-50">Status</td>
+                        <td className="w-50"><ScriptStatusIcon status={script.status} showLabel /></td>
+                    </tr>
+                </tbody>
+            </Table>
+            <div style={{ gap: '0.5em', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 0fr' }}>
+                <Button variant="success" disabled={!canBeStarted || isLoading} onClick={() => { void startScript(); }}>
+                    Start
+                </Button>
+                <Button variant="warning" disabled={!canBeRestarted || isLoading} onClick={() => { void restartScript(); }}>
+                    Restart
+                </Button>
+                <Button variant="danger" disabled={!canBeStopped || isLoading} onClick={() => { void stopScript(); }}>
+                    Stop
+                </Button>
+                <IconButton icon="trash3-fill" tooltip="Delete script" style={{ padding: '0.5em', height: '2.5em' }} variant="outline-danger" onClick={onDelete} />
+            </div>
+        </InfoCard>
     );
 }
