@@ -1,12 +1,11 @@
 import { OverlayTrigger, Table, Tooltip } from 'react-bootstrap';
 import { useCallback, useEffect, useState } from 'react';
 import dateFormat from 'dateformat';
-import * as clipboard from 'clipboard-polyfill';
 import LoadingBanner from '../../../components/LoadingBanner';
 import { formatDuration } from '../../../app/utils';
 import { EnvironmentInfoDto } from '../../api/dtos.gen';
 import { useInterval } from '../../../app/hooks';
-import IconButton from '../../../components/IconButton';
+import CopyableLabel from '../../../components/CopyableLabel';
 import DashboardCard from './DashboardCard';
 
 export default function SystemDashboardCard({ systemInfo }: { systemInfo?: EnvironmentInfoDto }) {
@@ -47,12 +46,11 @@ export default function SystemDashboardCard({ systemInfo }: { systemInfo?: Envir
                         <td>
                             { systemInfo
                                 ? (
-                                        <div style={{ display: 'grid', gap: '0.5em', gridTemplateColumns: '1fr 0fr' }}>
+                                        <CopyableLabel text={systemVersion}>
                                             <OverlayTrigger placement="bottom" overlay={renderTooltip}>
                                                 <span className="text-collapse">{systemVersion}</span>
                                             </OverlayTrigger>
-                                            <IconButton icon="copy" tooltip="Copy to clipboard" style={{ width: '1.75em', height: '1.75em' }} onClick={() => void clipboard.writeText(systemVersion)} />
-                                        </div>
+                                        </CopyableLabel>
                                     )
                                 : <LoadingBanner />}
                         </td>
