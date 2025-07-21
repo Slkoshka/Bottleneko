@@ -1,0 +1,12 @@
+.dashboard-card table tr {
+    width: 100%;
+    height: 3em;
+}
+
+.dashboard-card-bot td:nth-child(1) {
+    width: 7em;
+}
+
+.dashboard-card-system td:nth-child(1) {
+    width: 7em;
+}

@@ -79,37 +79,10 @@ aside {
     }
 }
 
-.dashboard-card table {
-    table-layout: fixed;
-}
-
-.dashboard-card table tr {
-    width: 100%;
-    height: 3em;
-}
-
-.dashboard-card .text-collapse {
+.text-collapse {
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow-x: hidden;
-}
-
-.dashboard-card-bot td:nth-child(1) {
-    width: 7em;
-}
-
-.dashboard-card-system td:nth-child(1) {
-    width: 7em;
-}
-
-.view-content {
-    flex-grow: 1;
-    height: calc(100% - 5rem);
-}
-
-.tab-content {
-    flex-grow: 1;
-    height: calc(100% - 10rem);
 }
 
 .nav-item {

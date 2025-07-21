@@ -3,8 +3,8 @@ import MessageHistoryViewer from './MessageHistoryViewer';
 
 export default function MessagesView() {
     return (
-        <View title="Messages">
-            <MessageHistoryViewer className="view-content" />
+        <View title="Messages" fillScreen>
+            <MessageHistoryViewer />
         </View>
     );
 }

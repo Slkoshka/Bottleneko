@@ -1,0 +1,17 @@
+.view.fill-screen > .content {
+    flex-grow: 1;
+    height: calc(100% - 5rem);
+}
+
+.view.fill-screen > .content > * {
+    height: 100%;
+}
+
+.tab-view.fill-screen > .tab-content {
+    flex-grow: 1;
+    height: calc(100% - 7.5rem);
+}
+
+.tab-view.fill-screen > .tab-content > * {
+    height: 100%;
+}

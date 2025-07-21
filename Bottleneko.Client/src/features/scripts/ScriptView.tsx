@@ -67,6 +67,7 @@ export default function ScriptView() {
             )}
             defaultTab="logs"
             loading={!script}
+            fillScreen
         >
             <TabView.Tab id="logs" title="Logs" margin={false}>
                 <LogViewer sourceType={LogSourceType.Script} sourceId={script?.id} />

@@ -85,6 +85,7 @@ export default function ConnectionView() {
                 </div>
             )}
             loading={!connection}
+            fillScreen
             defaultTab="messages"
         >
             <ModalDialog
@@ -108,7 +109,7 @@ export default function ConnectionView() {
             {id
                 ? (
                         <TabView.Tab id="messages" title="Messages" margin={false}>
-                            <MessageHistoryViewer className="h-100" connectionId={id} />
+                            <MessageHistoryViewer className="h-100 fill" connectionId={id} />
                         </TabView.Tab>
                     )
                 : <></>}

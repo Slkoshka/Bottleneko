@@ -4,7 +4,7 @@ import ProxySettings from '../proxies/ProxySettings';
 
 export default function SettingsView() {
     return (
-        <TabView title="Settings" defaultTab="network">
+        <TabView title="Settings" defaultTab="network" fillScreen>
             <TabView.Tab id="network" title="Network">
                 <ProxySettings />
             </TabView.Tab>
