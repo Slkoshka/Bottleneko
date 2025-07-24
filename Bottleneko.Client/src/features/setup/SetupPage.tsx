@@ -5,7 +5,6 @@ import FullscreenPage from '../../components/fullscreen-page/FullscreenPage';
 type SetupPageVariant = 'normal' | 'working' | 'error' | 'finish';
 
 export default function SetupPage({ title, variant, progress, emoji, children }: { title: ReactNode; variant: SetupPageVariant; progress: number; emoji?: string; children: ReactNode[] | ReactNode }) {
-    const childList = Array.isArray(children) ? children : [children];
     return (
         <FullscreenPage>
             <FullscreenPage.Title variant={variant === 'error' ? 'danger' : 'primary'}>
@@ -22,7 +21,7 @@ export default function SetupPage({ title, variant, progress, emoji, children }:
                     : <></>
             }
 
-            {...childList}
+            {...(Array.isArray(children) ? children : [children])}
         </FullscreenPage>
     );
 }

@@ -33,7 +33,8 @@ export function extractErrorInfo(err: unknown): ErrorMetadata {
     }
 }
 
-export function splitChildren(children: ReactNode | undefined, categories: (FC<never>[] | FC<never>)[]): ReactNode[][] {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function splitChildren(children: ReactNode | undefined, categories: (FC<any>[] | FC<any>)[]): ReactNode[][] {
     const childList = children === undefined ? [] : typeof children === 'object' && typeof (children as Iterable<ReactNode>)[Symbol.iterator] === 'function' ? [...(children as Iterable<ReactNode>)] : [children];
     const unclaimedChildren = new Set(childList);
 
@@ -48,7 +49,7 @@ export function splitChildren(children: ReactNode | undefined, categories: (FC<n
         }
 
         if (Array.isArray(category)) {
-            if (category.includes(childType as FC<never>)) {
+            if (category.includes(childType as FC)) {
                 return true;
             }
         }

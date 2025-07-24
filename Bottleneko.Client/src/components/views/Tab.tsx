@@ -5,7 +5,7 @@ export interface TabProps {
     title: ReactNode;
     margin?: boolean;
     children: ReactNode;
-}
+};
 
 const Tab = (function () {
     throw new Error('Cannot render Tab component');

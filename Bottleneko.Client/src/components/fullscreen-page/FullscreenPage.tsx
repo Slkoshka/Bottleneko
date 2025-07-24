@@ -1,13 +1,11 @@
 ﻿import { ReactNode } from 'react';
 import { Card } from 'react-bootstrap';
+import { splitChildren } from '../../app/utils';
 import FullscreenPageTitle from './FullscreenPageTitle';
 import FullscreenPageButton from './FullscreenPageButton';
 
 export default function FullscreenPage({ children }: { children?: ReactNode }) {
-    let childList: ReactNode[] = children === undefined ? [] : typeof children === 'object' && typeof (children as Iterable<ReactNode>)[Symbol.iterator] === 'function' ? [...(children as Iterable<ReactNode>)] : [children];
-    const title: ReactNode = childList.find(child => typeof child === 'object' && (child as { type: object }).type === FullscreenPageTitle);
-    const buttons: ReactNode[] = childList.filter(child => typeof child === 'object' && (child as { type: object }).type === FullscreenPageButton);
-    childList = childList.filter(child => child !== title && !buttons.includes(child));
+    const [title, buttons, rest] = splitChildren(children, [FullscreenPageTitle, FullscreenPageButton]);
 
     return (
         <div className="d-flex vw-100 vh-100 align-items-center justify-content-center">
@@ -16,7 +14,7 @@ export default function FullscreenPage({ children }: { children?: ReactNode }) {
 
                 <Card.Body>
                     <Card.Text as="div">
-                        {childList}
+                        {rest}
                     </Card.Text>
                 </Card.Body>
                 {

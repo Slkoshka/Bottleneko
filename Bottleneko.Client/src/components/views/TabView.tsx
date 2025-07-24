@@ -1,5 +1,6 @@
-import { ReactElement, ReactNode } from 'react';
+import { ReactElement } from 'react';
 import { Tabs, Tab as BootstrapTab } from 'react-bootstrap';
+import { splitChildren } from '../../app/utils';
 import Tab, { TabProps } from './Tab';
 import ViewBase, { ViewBaseProps } from './ViewBase';
 
@@ -8,15 +9,13 @@ interface TabViewProps extends ViewBaseProps {
 }
 
 export default function TabView(props: TabViewProps) {
-    let childList: ReactNode[] = props.children === undefined ? [] : typeof props.children === 'object' && typeof (props.children as Iterable<ReactNode>)[Symbol.iterator] === 'function' ? [...(props.children as Iterable<ReactNode>)] : [props.children];
-    const tabs = childList.filter(child => typeof child === 'object' && (child as { type: object }).type === Tab) as ReactElement<TabProps>[];
-    childList = childList.filter(child => !(tabs as unknown[]).includes(child));
+    const [tabs, rest] = splitChildren(props.children, [Tab]);
 
     return (
         <ViewBase {...props} className={`tab-view ${props.className ?? ''}`}>
             <Tabs defaultActiveKey={props.defaultTab}>
                 {
-                    tabs.map(tab => (
+                    (tabs as ReactElement<TabProps>[]).map(tab => (
                         <BootstrapTab key={tab.props.id} eventKey={tab.props.id} title={tab.props.title} className={`h-100 ${!('margin' in tab.props) || tab.props.margin ? 'm-3' : ''}`}>
                             {tab.props.children}
                         </BootstrapTab>
@@ -24,7 +23,7 @@ export default function TabView(props: TabViewProps) {
                 }
             </Tabs>
 
-            {childList}
+            {rest}
         </ViewBase>
     );
 }
