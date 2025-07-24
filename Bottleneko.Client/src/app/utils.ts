@@ -1,3 +1,4 @@
+import { FC, ReactNode } from 'react';
 import { RequestError } from '../features/api/errors';
 import { ErrorCode } from '../features/api/responses';
 
@@ -30,4 +31,40 @@ export function extractErrorInfo(err: unknown): ErrorMetadata {
     else {
         return { code: ErrorCode.UnknownError, message: err instanceof Error ? err.message : 'Unknown error', extra: null };
     }
+}
+
+export function splitChildren(children: ReactNode | undefined, categories: (FC<never>[] | FC<never>)[]): ReactNode[][] {
+    const childList = children === undefined ? [] : typeof children === 'object' && typeof (children as Iterable<ReactNode>)[Symbol.iterator] === 'function' ? [...(children as Iterable<ReactNode>)] : [children];
+    const unclaimedChildren = new Set(childList);
+
+    const childrenByCategory = categories.map(category => childList.filter((child) => {
+        if (typeof child !== 'object') {
+            return false;
+        }
+
+        const childType = (child as { type: unknown }).type;
+        if (typeof childType !== 'function') {
+            return false;
+        }
+
+        if (Array.isArray(category)) {
+            if (category.includes(childType as FC<never>)) {
+                return true;
+            }
+        }
+        else if (category === childType) {
+            return true;
+        }
+
+        return false;
+    }));
+
+    for (const category of childrenByCategory) {
+        for (const child of category) {
+            unclaimedChildren.delete(child);
+        }
+    }
+
+    childrenByCategory.push([...unclaimedChildren]);
+    return childrenByCategory;
 }

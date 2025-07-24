@@ -3,7 +3,6 @@ import { useParams } from 'react-router-dom';
 import { Alert, Button } from 'react-bootstrap';
 import api from '../api';
 import View from '../../components/views/View';
-import ModalDialog from '../../components/ModalDialog';
 import LogViewer from '../log/LogViewer';
 import { ConnectionStatus, LogSourceType } from '../api/dtos.gen';
 import { useAsync, useEntityEditor } from '../../app/hooks';
@@ -11,6 +10,7 @@ import { useToasterDispatch } from '../toaster/context';
 import MessageHistoryViewer from '../messages/MessageHistoryViewer';
 import TabView from '../../components/views/TabView';
 import StateControlButtons from '../../components/StateControlButtons';
+import ConfirmationDialog from '../../components/ConfirmationDialog';
 import ProtocolIcon from './ProtocolIcon';
 import { useConnections } from './context';
 import { AnyConnectionDto, ConnectionDefinition, protocols } from '.';
@@ -88,23 +88,21 @@ export default function ConnectionView() {
             fillScreen
             defaultTab="messages"
         >
-            <ModalDialog
-                header="Confirmation"
+            <ConfirmationDialog
+                title="Confirmation"
                 show={showSaveConfirmation}
                 onCancel={() => { setShowSaveConfirmation(false); }}
-                buttons={[
-                    { key: 'cancel', text: 'Cancel', onClick: () => { setShowSaveConfirmation(false); }, props: { variant: 'secondary' } },
-                    { key: 'apply', text: 'Apply', onClick: () => {
-                        setShowSaveConfirmation(false);
-                        if (savedDefinition) {
-                            void save(savedDefinition).catch(onError);
-                        }
-                    }, props: { variant: 'primary' } },
-                ]}
+                onAccept={() => {
+                    setShowSaveConfirmation(false);
+                    if (savedDefinition) {
+                        void save(savedDefinition).catch(onError);
+                    }
+                }}
+                acceptText="Apply"
             >
                 <p>Are you sure you want to apply new settings?</p>
                 <p>This may cause the connection to be restarted, and it might miss messages or other events that have occured while it was reconnecting.</p>
-            </ModalDialog>
+            </ConfirmationDialog>
 
             {id
                 ? (

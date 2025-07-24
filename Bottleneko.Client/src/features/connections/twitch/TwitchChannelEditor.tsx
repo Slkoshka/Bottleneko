@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { Formik } from 'formik';
 import { Card, Form } from 'react-bootstrap';
-import ModalDialog from '../../../components/ModalDialog';
+import ModalDialog from '../../../components/modal-dialog/ModalDialog';
 import { TwitchProtocolChannel } from '../../api/dtos.gen';
 import { topicsInfo } from './topics';
 import { TwitchProtocolChannelSchema } from '.';
@@ -11,12 +11,8 @@ export default function TwitchChannelEditor({ show, isMine, channel, onSuccess, 
 
     return (
         <ModalDialog
-            header="Twitch Channel"
+            title="Twitch Channel"
             show={show}
-            buttons={[
-                { key: 'cancel', text: 'Cancel', onClick: onCancel, props: { variant: 'secondary' } },
-                { key: 'save', text: 'Save', onClick: () => { formRef.current?.requestSubmit(); } },
-            ]}
             onCancel={onCancel}
         >
             <Formik validationSchema={TwitchProtocolChannelSchema} onSubmit={(channel) => { onSuccess(channel); }} initialValues={channel ?? TwitchProtocolChannelSchema.getDefault()} validateOnChange={false}>
@@ -94,6 +90,9 @@ export default function TwitchChannelEditor({ show, isMine, channel, onSuccess, 
                     </Form>
                 )}
             </Formik>
+
+            <ModalDialog.Button onClick={onCancel} variant="secondary">Cancel</ModalDialog.Button>
+            <ModalDialog.Button onClick={() => { formRef.current?.requestSubmit(); }}>Save</ModalDialog.Button>
         </ModalDialog>
     );
 }

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import * as yup from 'yup';
 import { Formik } from 'formik';
 import { Alert, Button, Card, Form } from 'react-bootstrap';
-import ModalDialog from '../../../components/ModalDialog';
+import ModalDialog from '../../../components/modal-dialog/ModalDialog';
 import { useAsync, useInterval } from '../../../app/hooks';
 import LoadingBanner from '../../../components/LoadingBanner';
 import { TwitchScope } from '../../api/dtos.gen';
@@ -180,12 +180,8 @@ export default function TwitchAuthWizard({ show, onSuccess, onCancel }: { show: 
         case 'start':
             return (
                 <ModalDialog
-                    header="Connect Twitch account"
+                    title="Connect Twitch account"
                     show={show}
-                    buttons={[
-                        { key: 'back', text: 'Back', onClick: onCancel, props: { variant: 'secondary' } },
-                        { key: 'next', text: 'Next', onClick: () => { formRef.current?.requestSubmit(); } },
-                    ]}
                     onCancel={onCancel}
                 >
                     <Formik validationSchema={schema} onSubmit={requestVerification} initialValues={stage.config ?? defaultConfig} validateOnChange={false}>
@@ -302,33 +298,31 @@ export default function TwitchAuthWizard({ show, onSuccess, onCancel }: { show: 
                             </Form>
                         )}
                     </Formik>
+
+                    <ModalDialog.Button onClick={onCancel} variant="secondary">Back</ModalDialog.Button>
+                    <ModalDialog.Button onClick={() => { formRef.current?.requestSubmit(); }}>Next</ModalDialog.Button>
                 </ModalDialog>
             );
 
         case 'requesting-verification':
             return (
                 <ModalDialog
-                    header="Connect Twitch account"
+                    title="Connect Twitch account"
                     show={show}
-                    buttons={[
-                        { key: 'back', text: 'Back', disabled: true, props: { variant: 'secondary' } },
-                        { key: 'next', text: 'Next', disabled: true },
-                    ]}
                     onCancel={onCancel}
                 >
                     <LoadingBanner />
+
+                    <ModalDialog.Button variant="secondary" disabled>Back</ModalDialog.Button>
+                    <ModalDialog.Button disabled>Next</ModalDialog.Button>
                 </ModalDialog>
             );
 
         case 'ready-for-authorization':
             return (
                 <ModalDialog
-                    header="Connect Twitch account"
+                    title="Connect Twitch account"
                     show={show}
-                    buttons={[
-                        { key: 'back', text: 'Back', onClick: () => { setStage({ id: 'start', config: stage.config }); }, props: { variant: 'secondary' } },
-                        { key: 'next', text: 'Next', disabled: true },
-                    ]}
                     onCancel={onCancel}
                 >
                     <div className="d-flex justify-content-center pb-3">
@@ -349,33 +343,31 @@ export default function TwitchAuthWizard({ show, onSuccess, onCancel }: { show: 
                             </Form>
                         </Card.Body>
                     </Card>
+
+                    <ModalDialog.Button onClick={() => { setStage({ id: 'start', config: stage.config }); }} variant="secondary">Back</ModalDialog.Button>
+                    <ModalDialog.Button disabled>Next</ModalDialog.Button>
                 </ModalDialog>
             );
 
         case 'loading-user-data':
             return (
                 <ModalDialog
-                    header="Connect Twitch account"
+                    title="Connect Twitch account"
                     show={show}
-                    buttons={[
-                        { key: 'back', text: 'Back', disabled: true, props: { variant: 'secondary' } },
-                        { key: 'next', text: 'Next', disabled: true },
-                    ]}
                     onCancel={onCancel}
                 >
                     <LoadingBanner />
+
+                    <ModalDialog.Button variant="secondary" disabled>Back</ModalDialog.Button>
+                    <ModalDialog.Button disabled>Next</ModalDialog.Button>
                 </ModalDialog>
             );
 
         case 'authorization-failed':
             return (
                 <ModalDialog
-                    header="Connect Twitch account"
+                    title="Connect Twitch account"
                     show={show}
-                    buttons={[
-                        { key: 'back', text: 'Back', onClick: () => { setStage({ id: 'start', config: stage.config }); }, props: { variant: 'secondary' } },
-                        { key: 'next', text: 'Next', disabled: true },
-                    ]}
                     onCancel={onCancel}
                 >
                     <Alert variant="danger">
@@ -383,6 +375,9 @@ export default function TwitchAuthWizard({ show, onSuccess, onCancel }: { show: 
 
                         Twitch returned an error. Please try again later.
                     </Alert>
+
+                    <ModalDialog.Button onClick={() => { setStage({ id: 'start', config: stage.config }); }} variant="secondary">Back</ModalDialog.Button>
+                    <ModalDialog.Button disabled>Next</ModalDialog.Button>
                 </ModalDialog>
             );
 

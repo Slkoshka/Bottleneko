@@ -2,7 +2,7 @@ import * as yup from 'yup';
 import { useEffect, useRef, useState } from 'react';
 import { Form } from 'react-bootstrap';
 import { Formik } from 'formik';
-import ModalDialog from '../../components/ModalDialog';
+import ModalDialog from '../../components/modal-dialog/ModalDialog';
 import { ProxyDto, ProxyType } from '../api/dtos.gen';
 import ProxyTypePicker from './ProxyTypePicker';
 
@@ -43,18 +43,17 @@ export default function ProxyEditor({ show, proxy, onSuccess, onCancel }: { show
         case 'select-type':
             return (
                 <ModalDialog
-                    header="Proxy type"
+                    title="Proxy type"
                     show={show}
-                    buttons={[
-                        { key: 'back', text: 'Back', onClick: () => { onCancel(); }, props: { variant: 'secondary' } },
-                        { key: 'next', text: 'Next', onClick: () => { setStage({ id: 'edit', proxy: { id: '', name: '', hostname: '', port: 1080, type: stage.type, isAuthRequired: false, username: '', password: '' }, isNew: true }); } },
-                    ]}
                     onCancel={onCancel}
                 >
                     <ProxyTypePicker
                         type={stage.type}
                         onChange={(type) => { setStage({ ...stage, type }); }}
                     />
+
+                    <ModalDialog.Button onClick={onCancel} variant="secondary">Back</ModalDialog.Button>
+                    <ModalDialog.Button onClick={() => { setStage({ id: 'edit', proxy: { id: '', name: '', hostname: '', port: 1080, type: stage.type, isAuthRequired: false, username: '', password: '' }, isNew: true }); }}>Next</ModalDialog.Button>
                 </ModalDialog>
             );
             break;
@@ -62,25 +61,25 @@ export default function ProxyEditor({ show, proxy, onSuccess, onCancel }: { show
         case 'edit':
             return (
                 <ModalDialog
-                    header="Proxy configuration"
+                    title="Proxy configuration"
                     show={show}
-                    buttons={[
-                        {
-                            key: 'back',
-                            text: 'Back',
-                            onClick: () => {
-                                if (stage.isNew) {
-                                    setStage({ id: 'select-type', type: stage.proxy.type });
-                                }
-                                else {
-                                    onCancel();
-                                }
-                            },
-                            props: { variant: 'secondary' } },
-                        { key: 'save', text: 'Save', onClick: () => { formRef.current?.requestSubmit(); } },
-                    ]}
                     onCancel={onCancel}
                 >
+                    <ModalDialog.Button
+                        onClick={() => {
+                            if (stage.isNew) {
+                                setStage({ id: 'select-type', type: stage.proxy.type });
+                            }
+                            else {
+                                onCancel();
+                            }
+                        }}
+                        variant="secondary"
+                    >
+                        Back
+                    </ModalDialog.Button>
+                    <ModalDialog.Button onClick={() => { formRef.current?.requestSubmit(); }}>Save</ModalDialog.Button>
+
                     <Formik validationSchema={schema} onSubmit={(proxy) => { onSuccess(proxy); }} initialValues={stage.proxy} enableReinitialize={true} validateOnChange={false}>
                         {({ handleSubmit, handleChange, values, setFieldValue, errors }) => (
                             <Form
