@@ -1,4 +1,5 @@
 ﻿using Bottleneko.Server.Controllers.WebSockets;
+using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.WebSockets;
 
@@ -16,7 +17,7 @@ public class WebSocketController(WebSocketHandler wsHandler) : NekoController
             {
                 await wsHandler.HandleConnectionAsync(await HttpContext.WebSockets.AcceptWebSocketAsync(), cancellationToken);
             }
-            catch (WebSocketException ex) when (ex.WebSocketErrorCode == WebSocketError.ConnectionClosedPrematurely)
+            catch (Exception ex) when (ex is ConnectionAbortedException or WebSocketException { WebSocketErrorCode: WebSocketError.ConnectionClosedPrematurely })
             {
                 // This isn't strictly an error, so let's not pollute the log with scary error messages
             }
