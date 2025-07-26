@@ -1,10 +1,45 @@
-﻿using Bottleneko.Api.Dtos;
+﻿using Akka.Actor;
+using Bottleneko.Api.Dtos;
+using Bottleneko.Api.Protocols;
+using Bottleneko.Connections;
+using Bottleneko.Logging;
+using Bottleneko.Scripting.Bindings;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace Bottleneko.Protocols;
 
-public record ProtocolDescription(Protocol Id, Type ConnectionType, Type ConfigType, Type BindingType);
+public delegate ConnectionBase ConnectionFactory<TConfig>(IServiceProvider services, INekoLogger logger, ConnectionCreationData<TConfig> data) where TConfig : ProtocolConfiguration;
+public delegate RawConnectionBinding ConnectionBindingFactory(long connectionId, IActorRef connection);
+public delegate Task<object?> ConnectionTest<TConfig>(IServiceProvider services, TConfig config, CancellationToken cancellationToken) where TConfig: ProtocolConfiguration;
+public class ProtocolDescription
+{
+    public Protocol Id { get; }
+    public ConnectionFactory<ProtocolConfiguration> Factory { get; }
+    public ConnectionTest<ProtocolConfiguration> Test { get; }
+    public Type ConfigType { get; }
+    public ConnectionBindingFactory BindingFactory { get; }
+
+    private ProtocolDescription(Protocol id, ConnectionFactory<ProtocolConfiguration> factory, ConnectionTest<ProtocolConfiguration> test, Type configType, ConnectionBindingFactory bindingFactory)
+    {
+        Id = id;
+        Factory = factory;
+        Test = test;
+        ConfigType = configType;
+        BindingFactory = bindingFactory;
+    }
+
+    public static ProtocolDescription Make<TConfig>(Protocol id, ConnectionFactory<TConfig> factory, ConnectionTest<TConfig> test, ConnectionBindingFactory bindingFactory) where TConfig: ProtocolConfiguration
+    {
+        return new(
+            id,
+            (services, logger, data) => factory(services, logger, data.To<TConfig>()),
+            (services, config, cancellationToken) => test(services, (TConfig)config, cancellationToken),
+            typeof(TConfig),
+            bindingFactory
+        );
+    }
+}
 
 public class ProtocolRegistry
 {
@@ -15,20 +50,10 @@ public class ProtocolRegistry
     {
         _services = services;
 
-        foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(t => t.IsDefined(typeof(ProtocolAttribute), false)))
+        foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(t => !t.IsAbstract && t.IsSubclassOf(typeof(ConnectionBase)) && t.IsAssignableTo(typeof(IProtocol))))
         {
-            var attr = type.GetCustomAttribute<ProtocolAttribute>();
-            if (attr is null)
-            {
-                continue;
-            }
-
-            if (!type.IsSubclassOf(typeof(ConnectionBase)))
-            {
-                throw new NotSupportedException($"Type '{type.FullName}' must inherit from '{nameof(ConnectionBase)}'");
-            }
-
-            _protocols.Add(attr.Id, new ProtocolDescription(attr.Id, type, attr.Config, attr.Binding));
+            var desc = (ProtocolDescription)type.GetMethod(nameof(IProtocol.GetDescription), BindingFlags.Public | BindingFlags.Static)?.Invoke(null, [])!;
+            _protocols.Add(desc.Id, desc);
         }
     }
 
@@ -40,10 +65,5 @@ public class ProtocolRegistry
     public bool TryGetProtocol(Protocol id, [MaybeNullWhen(false)] out ProtocolDescription protocol)
     {
         return _protocols.TryGetValue(id, out protocol);
-    }
-
-    public async Task<object?> TestAsync(ProtocolDescription protocol, object config, CancellationToken cancellationToken = default)
-    {
-        return await (Task<object?>)protocol.ConnectionType.GetMethod(nameof(TestAsync), BindingFlags.Public | BindingFlags.Static)!.Invoke(null, [_services, config, cancellationToken])!;
     }
 }

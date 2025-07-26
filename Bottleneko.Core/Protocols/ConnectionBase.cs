@@ -8,7 +8,12 @@ using System.Net;
 
 namespace Bottleneko.Protocols;
 
-abstract class ConnectionBase : IAsyncDisposable
+interface IProtocol
+{
+    abstract static ProtocolDescription GetDescription();
+}
+
+public abstract class ConnectionBase : IAsyncDisposable
 {
     public event EventHandler? OnConnected;
     public event EventHandler? OnRestartRequested;

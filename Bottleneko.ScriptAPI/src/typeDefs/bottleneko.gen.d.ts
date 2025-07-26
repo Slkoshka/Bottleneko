@@ -39,7 +39,9 @@ declare interface Chat {
     connectionId: bigint;
     displayName: string;
     flags: ChatFlags;
-    raw: DiscordChat | TelegramChat | TwitchChat;
+    discord: DiscordChat;
+    telegram: TelegramChat;
+    twitch: TwitchChat;
 
     sendMessage: (text: string) => void;
     ToString: () => string | null;
@@ -50,7 +52,9 @@ declare interface ChatMessageAttachment {
     messageId: bigint;
     contentType: string;
     fileName: string | null;
-    raw: DiscordChatMessageAttachment | TelegramChatMessageAttachment;
+    discord: DiscordChatMessageAttachment;
+    telegram: TelegramChatMessageAttachment;
+    twitch: never;
 
     ToString: () => string | null;
 }
@@ -74,7 +78,9 @@ declare interface ChatMessage {
     text: string | null;
     replyToId: bigint | null;
     flags: ChatMessageFlags;
-    raw: DiscordChatMessage | TelegramChatMessage | TwitchChatMessage;
+    discord: DiscordChatMessage;
+    telegram: TelegramChatMessage;
+    twitch: TwitchChatMessage;
 
     reply: (text: string) => void;
     ToString: () => string | null;
@@ -93,7 +99,9 @@ declare interface Chatter {
     displayName: string;
     username: string;
     flags: ChatterFlags;
-    raw: DiscordChatter | TelegramChatter | TwitchChatter;
+    discord: DiscordChatter;
+    telegram: TelegramChatter;
+    twitch: TwitchChatter;
 
     ToString: () => string | null;
 }
@@ -103,7 +111,9 @@ declare interface Connection {
     protocol: EnumValue<Protocol>;
     name: string;
     status: EnumValue<ConnectionStatus>;
-    raw: DiscordConnection | TelegramConnection | TwitchConnection;
+    discord: DiscordConnection;
+    telegram: TelegramConnection;
+    twitch: TwitchConnection;
 
     ToString: () => string | null;
 }
@@ -114,9 +124,6 @@ declare interface TwitchChat {
     displayName: string;
     isWhisper: boolean;
 
-    asDiscord: () => DiscordChat | null;
-    asTelegram: () => TelegramChat | null;
-    asTwitch: () => TwitchChat | null;
     ToString: () => string | null;
 }
 
@@ -141,9 +148,6 @@ declare interface TwitchChatMessage {
     isVip: boolean | null;
     isStaff: boolean | null;
 
-    asDiscord: () => DiscordChatMessage | null;
-    asTelegram: () => TelegramChatMessage | null;
-    asTwitch: () => TwitchChatMessage | null;
     ToString: () => string | null;
 }
 
@@ -152,16 +156,10 @@ declare interface TwitchChatter {
     login: string;
     displayName: string;
 
-    asDiscord: () => DiscordChatter | null;
-    asTelegram: () => TelegramChatter | null;
-    asTwitch: () => TwitchChatter | null;
     ToString: () => string | null;
 }
 
 declare interface TwitchConnection {
-    asDiscord: () => DiscordConnection | null;
-    asTwelegram: () => TelegramConnection | null;
-    asTwitch: () => TwitchConnection | null;
     ToString: () => string | null;
 }
 
@@ -181,9 +179,6 @@ declare interface TelegramChat {
     lastName: string;
     isForum: boolean;
 
-    asDiscord: () => DiscordChat | null;
-    asTelegram: () => TelegramChat | null;
-    asTwitch: () => TwitchChat | null;
     ToString: () => string | null;
 }
 
@@ -258,16 +253,10 @@ declare interface TelegramChatMessageAttachment {
     fileSize: bigint | null;
     extra: AnimationTelegramAttachmentExtra | AudioTelegramAttachmentExtra | DocumentTelegramAttachmentExtra | PhotoTelegramAttachmentExtra | StickerTelegramAttachmentExtra | VideoTelegramAttachmentExtra | VideoNoteTelegramAttachmentExtra | VoiceTelegramAttachmentExtra | UnknownTelegramAttachmentExtra;
 
-    asDiscord: () => DiscordChatMessageAttachment | null;
-    asTelegram: () => TelegramChatMessageAttachment | null;
-    asTwitch: () => never | null;
     ToString: () => string | null;
 }
 
 declare interface TelegramChatMessage {
-    asDiscord: () => DiscordChatMessage | null;
-    asTelegram: () => TelegramChatMessage | null;
-    asTwitch: () => TwitchChatMessage | null;
     ToString: () => string | null;
 }
 
@@ -280,16 +269,10 @@ declare interface TelegramChatter {
     isPremium: boolean;
     addedToAttachmentMenu: boolean;
 
-    asDiscord: () => DiscordChatter | null;
-    asTelegram: () => TelegramChatter | null;
-    asTwitch: () => TwitchChatter | null;
     ToString: () => string | null;
 }
 
 declare interface TelegramConnection {
-    asDiscord: () => DiscordConnection | null;
-    asTwelegram: () => TelegramConnection | null;
-    asTwitch: () => TwitchConnection | null;
     ToString: () => string | null;
 }
 
@@ -331,9 +314,6 @@ declare interface DiscordChat {
     guild: DiscordGuild;
     channel: DiscordChannel;
 
-    asDiscord: () => DiscordChat | null;
-    asTelegram: () => TelegramChat | null;
-    asTwitch: () => TwitchChat | null;
     ToString: () => string | null;
 }
 
@@ -344,9 +324,6 @@ declare interface DiscordChatMessageAttachment {
     url: string;
     proxyUrl: string;
 
-    asDiscord: () => DiscordChatMessageAttachment | null;
-    asTelegram: () => TelegramChatMessageAttachment | null;
-    asTwitch: () => never | null;
     ToString: () => string | null;
 }
 
@@ -358,9 +335,6 @@ declare interface DiscordChatMessage {
     roleMentions: bigint[];
     userMentions: bigint[];
 
-    asDiscord: () => DiscordChatMessage | null;
-    asTelegram: () => TelegramChatMessage | null;
-    asTwitch: () => TwitchChatMessage | null;
     ToString: () => string | null;
 }
 
@@ -371,16 +345,10 @@ declare interface DiscordChatter {
     globalName: string;
     localName: string;
 
-    asDiscord: () => DiscordChatter | null;
-    asTelegram: () => TelegramChatter | null;
-    asTwitch: () => TwitchChatter | null;
     ToString: () => string | null;
 }
 
 declare interface DiscordConnection {
     getChat: (id: bigint) => Promise<Chat>;
-    asDiscord: () => DiscordConnection | null;
-    asTwelegram: () => TelegramConnection | null;
-    asTwitch: () => TwitchConnection | null;
     ToString: () => string | null;
 }

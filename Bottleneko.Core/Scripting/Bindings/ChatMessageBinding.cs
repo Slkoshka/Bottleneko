@@ -4,7 +4,6 @@ using Bottleneko.Messages;
 using Bottleneko.Scripting.Bindings.Discord;
 using Bottleneko.Scripting.Bindings.Telegram;
 using Bottleneko.Scripting.Bindings.Twitch;
-using Microsoft.ClearScript;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
@@ -20,17 +19,13 @@ public class ChatMessageFlags
 }
 
 [ExposeToScripts(typeof(DiscordChatMessageBinding), typeof(TelegramChatMessageBinding), typeof(TwitchChatMessageBinding))]
-[SuppressMessage("Style", "IDE1006:Naming Styles")]
 public abstract class RawChatMessageBinding
 {
-    public DiscordChatMessageBinding? asDiscord() => this as DiscordChatMessageBinding;
-    public TelegramChatMessageBinding? asTelegram() => this as TelegramChatMessageBinding;
-    public TwitchChatMessageBinding? asTwitch() => this as TwitchChatMessageBinding;
 }
 
 [ExposeToScripts]
 [SuppressMessage("Style", "IDE1006:Naming Styles")]
-public class ChatMessageBinding(IActorRef connection)
+public class ChatMessageBinding(IActorRef connection, RawChatMessageBinding raw)
 {
     public required BigInteger id { get; init; }
     public required Protocol protocol { get; init; }
@@ -43,8 +38,9 @@ public class ChatMessageBinding(IActorRef connection)
     public required BigInteger? replyToId { get; init; }
     public required ChatMessageFlags flags { get; init; }
 
-    [ScriptMember(ScriptMemberFlags.ExposeRuntimeType)]
-    public required RawChatMessageBinding raw { get; init; }
+    public DiscordChatMessageBinding? discord => raw as DiscordChatMessageBinding;
+    public TelegramChatMessageBinding? telegram => raw as TelegramChatMessageBinding;
+    public TwitchChatMessageBinding? twitch => raw as TwitchChatMessageBinding;
 
     public void reply(string text)
     {

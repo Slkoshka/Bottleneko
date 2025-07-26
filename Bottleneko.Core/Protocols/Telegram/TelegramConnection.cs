@@ -16,10 +16,7 @@ using Telegram.Bot.Types.Enums;
 
 namespace Bottleneko.Protocols.Telegram;
 
-[Protocol(ProtocolId, typeof(TelegramProtocolConfiguration), typeof(TelegramConnectionBinding))]
-#pragma warning disable CS9113 // Parameter is unread.
-class TelegramConnection(IServiceProvider services, INekoLogger logger, ConnectionCreationData<TelegramProtocolConfiguration> data) : ConnectionBase, IAsyncDisposable
-#pragma warning restore CS9113 // Parameter is unread.
+class TelegramConnection(INekoLogger logger, ConnectionCreationData<TelegramProtocolConfiguration> data) : ConnectionBase, IProtocol, IAsyncDisposable
 {
     public const Protocol ProtocolId = Protocol.Telegram;
     public const string LogCategory = "Bottleneko.Telegram";
@@ -28,6 +25,11 @@ class TelegramConnection(IServiceProvider services, INekoLogger logger, Connecti
     private readonly CancellationTokenSource _cts = new();
     private Task _mainLoopTask = Task.CompletedTask;
     private User _me = null!;
+
+    public static ProtocolDescription GetDescription()
+    {
+        return ProtocolDescription.Make<TelegramProtocolConfiguration>(ProtocolId, (_, logger, data) => new TelegramConnection(logger, data), TestAsync, (connectionId, connection) => new TelegramConnectionBinding(connectionId, connection));
+    }
 
     public static string FormatName(string firstName, string? lastName) => lastName is null ? firstName : $"{firstName} {lastName}";
 
@@ -259,21 +261,20 @@ class TelegramConnection(IServiceProvider services, INekoLogger logger, Connecti
             return;
         }
 
-        var msgBinding = new ChatMessageBinding(data.Owner)
+        var msgBinding = new ChatMessageBinding(data.Owner, new TelegramChatMessageBinding(update))
         {
             id = msg.Id,
             protocol = ProtocolId,
             connectionId = data.ConnectionId,
             timestamp = message.Date,
-            attachments = [.. attachments.DistinctBy(attachment => attachment.Entity.Id).Select(attachment => new ChatMessageAttachmentBinding()
+            attachments = [.. attachments.DistinctBy(attachment => attachment.Entity.Id).Select(attachment => new ChatMessageAttachmentBinding(new TelegramChatMessageAttachmentBinding(attachment.File))
             {
                 id = attachment.Entity.Id,
                 messageId = msg.Id,
                 contentType = attachment.Entity.ContentType,
                 fileName = attachment.Entity.FileName,
-                raw = new TelegramChatMessageAttachmentBinding(attachment.File),
             })],
-            chat = new ChatBinding(data.Owner)
+            chat = new ChatBinding(data.Owner, new TelegramChatBinding(message.Chat))
             {
                 id = chat.Id,
                 protocol = ProtocolId,
@@ -283,9 +284,8 @@ class TelegramConnection(IServiceProvider services, INekoLogger logger, Connecti
                 {
                     isPrivate = chat.IsPrivate,
                 },
-                raw = new TelegramChatBinding(message.Chat),
             },
-            author = new ChatterBinding()
+            author = new ChatterBinding(new TelegramChatterBinding(message.From))
             {
                 id = author.Id,
                 protocol = ProtocolId,
@@ -296,7 +296,6 @@ class TelegramConnection(IServiceProvider services, INekoLogger logger, Connecti
                 {
                     isBot = author.IsBot,
                 },
-                raw = new TelegramChatterBinding(message.From),
             },
             text = msg.TextContent,
             replyToId = msg.ReplyToId,
@@ -306,7 +305,6 @@ class TelegramConnection(IServiceProvider services, INekoLogger logger, Connecti
                 isDirect = msg.IsDirect,
                 isOffline = msg.IsOffline,
             },
-            raw = new TelegramChatMessageBinding(update),
         };
 
         MessageReceived(msg, msgBinding);
@@ -392,7 +390,7 @@ class TelegramConnection(IServiceProvider services, INekoLogger logger, Connecti
 
             case IConnectionsMessage.SimpleReply simpleReply:
                 {
-                    if (simpleReply.ReplyTo.chat.raw is TelegramChatBinding telegramChat && simpleReply.ReplyTo.raw is TelegramChatMessageBinding telegramMessage && telegramMessage.Update.Message is not null)
+                    if (simpleReply.ReplyTo.chat.telegram is TelegramChatBinding telegramChat && simpleReply.ReplyTo.telegram is TelegramChatMessageBinding telegramMessage && telegramMessage.Update.Message is not null)
                     {
                         await _bot.SendMessage(telegramChat.Chat.Id, simpleReply.Text, ParseMode.None, replyParameters: telegramMessage.Update.Message);
                     }
@@ -405,7 +403,7 @@ class TelegramConnection(IServiceProvider services, INekoLogger logger, Connecti
 
             case IConnectionsMessage.SendMessage sendMessage:
                 {
-                    if (sendMessage.Chat.raw is TelegramChatBinding telegramChat)
+                    if (sendMessage.Chat.telegram is TelegramChatBinding telegramChat)
                     {
                         await _bot.SendMessage(telegramChat.Chat.Id, sendMessage.Text, ParseMode.None);
                     }

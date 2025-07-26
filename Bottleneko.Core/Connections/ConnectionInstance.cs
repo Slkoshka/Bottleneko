@@ -78,13 +78,12 @@ class ConnectionInstance(IServiceProvider services, INekoLogger logger, Protocol
                 return true;
 
             case IConnectionsMessage.Get:
-                Sender.Tell(new ConnectionBinding()
+                Sender.Tell(new ConnectionBinding(registry.GetProtocol(_protocol).BindingFactory(_id, Self))
                 {
                     id = _id,
                     name = _name,
                     status = _status,
                     protocol = _protocol,
-                    raw = (RawConnectionBinding)registry.GetProtocol(_protocol).BindingType.GetConstructor([typeof(long), typeof(IActorRef)])!.Invoke([_id, Self]),
                 });
                 return true;
 

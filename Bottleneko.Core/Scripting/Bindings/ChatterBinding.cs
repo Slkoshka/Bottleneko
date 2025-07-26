@@ -2,7 +2,6 @@
 using Bottleneko.Scripting.Bindings.Discord;
 using Bottleneko.Scripting.Bindings.Telegram;
 using Bottleneko.Scripting.Bindings.Twitch;
-using Microsoft.ClearScript;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
@@ -16,17 +15,13 @@ public class ChatterFlags
 }
 
 [ExposeToScripts(typeof(DiscordChatterBinding), typeof(TelegramChatterBinding), typeof(TwitchChatterBinding))]
-[SuppressMessage("Style", "IDE1006:Naming Styles")]
 public abstract class RawChatterBinding
 {
-    public DiscordChatterBinding? asDiscord() => this as DiscordChatterBinding;
-    public TelegramChatterBinding? asTelegram() => this as TelegramChatterBinding;
-    public TwitchChatterBinding? asTwitch() => this as TwitchChatterBinding;
 }
 
 [ExposeToScripts]
 [SuppressMessage("Style", "IDE1006:Naming Styles")]
-public class ChatterBinding
+public class ChatterBinding(RawChatterBinding raw)
 {
     public required BigInteger id { get; init; }
     public required Protocol protocol { get; init; }
@@ -35,6 +30,7 @@ public class ChatterBinding
     public required string username { get; init; }
     public required ChatterFlags flags { get; init; }
 
-    [ScriptMember(ScriptMemberFlags.ExposeRuntimeType)]
-    public required RawChatterBinding raw { get; init; }
+    public DiscordChatterBinding? discord => raw as DiscordChatterBinding;
+    public TelegramChatterBinding? telegram => raw as TelegramChatterBinding;
+    public TwitchChatterBinding? twitch => raw as TwitchChatterBinding;
 }

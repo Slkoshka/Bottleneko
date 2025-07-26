@@ -12,12 +12,11 @@ using Bottleneko.Server.Utils;
 using Bottleneko.Api.Protocols;
 using Bottleneko.Services;
 using Bottleneko.Messages;
-using System.Web;
 
 namespace Bottleneko.Server.Controllers;
 
 [Authorize]
-public class ConnectionsController(IOptions<JsonOptions> jsonOptions, ProtocolRegistry protocolRegistry, AkkaService akka, NekoDbContext db) : CrudController<ConnectionsController.AddConnectionRequest, ConnectionsController.UpdateConnectionRequest>
+public class ConnectionsController(IServiceProvider services, IOptions<JsonOptions> jsonOptions, ProtocolRegistry protocolRegistry, AkkaService akka, NekoDbContext db) : CrudController<ConnectionsController.AddConnectionRequest, ConnectionsController.UpdateConnectionRequest>
 {
     public override async Task<IActionResult> ListAsync()
     {
@@ -42,7 +41,7 @@ public class ConnectionsController(IOptions<JsonOptions> jsonOptions, ProtocolRe
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10.0));
             try
             {
-                var extra = await protocolRegistry.TestAsync(connectionType, config, cts.Token);
+                var extra = await connectionType.Test(services, (ProtocolConfiguration)config, cts.Token);
                 timer.Stop();
 
                 return Ok(new

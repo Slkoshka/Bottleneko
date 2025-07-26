@@ -31,10 +31,7 @@ using TwitchLib.EventSub.Websockets.Interfaces;
 
 namespace Bottleneko.Protocols.Twitch;
 
-[Protocol(ProtocolId, typeof(TwitchProtocolConfiguration), typeof(TwitchConnectionBinding))]
-#pragma warning disable CS9113 // Parameter is unread.
-class TwitchConnection(IServiceProvider services, INekoLogger logger, ConnectionCreationData<TwitchProtocolConfiguration> data) : ConnectionBase
-#pragma warning restore CS9113 // Parameter is unread.
+class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocolConfiguration> data) : ConnectionBase, IProtocol
 {
     class WebsocketClientServiceProvider(IClientWebsocketProvider clientWebsocketProvider) : IServiceProvider
     {
@@ -148,6 +145,11 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
     private readonly CancellationTokenSource _cts = new();
     private Task _checkTokenTask = Task.CompletedTask;
     private (User ChannelInfo, EventSubSubscription Subscription)[] _subscriptions = [];
+
+    public static ProtocolDescription GetDescription()
+    {
+        return ProtocolDescription.Make<TwitchProtocolConfiguration>(ProtocolId, (_, logger, data) => new TwitchConnection(logger, data), TestAsync, (connectionId, connection) => new TwitchConnectionBinding(connectionId, connection));
+    }
 
     private static async Task<(TwitchAPI API, EventSubWebsocketClient? EventSub)> CreateAsync(INekoLogger logger, TwitchProtocolConfiguration config)
     {
@@ -397,14 +399,14 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
 
         await db.SaveChangesAsync();
 
-        var msgBinding = new ChatMessageBinding(data.Owner)
+        var msgBinding = new ChatMessageBinding(data.Owner, new TwitchChatMessageBinding(message))
         {
             id = msg.Id,
             protocol = ProtocolId,
             connectionId = data.ConnectionId,
             timestamp = msg.RemoteTimestamp,
             attachments = [],
-            chat = new ChatBinding(data.Owner)
+            chat = new ChatBinding(data.Owner, new TwitchChatBinding(message))
             {
                 id = chat.Id,
                 protocol = ProtocolId,
@@ -414,9 +416,8 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
                 {
                     isPrivate = chat.IsPrivate,
                 },
-                raw = new TwitchChatBinding(message),
             },
-            author = new ChatterBinding()
+            author = new ChatterBinding(new TwitchChatterBinding(message))
             {
                 id = author.Id,
                 protocol = ProtocolId,
@@ -427,7 +428,6 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
                 {
                     isBot = author.IsBot,
                 },
-                raw = new TwitchChatterBinding(message),
             },
             text = msg.TextContent,
             replyToId = msg.ReplyToId,
@@ -437,7 +437,6 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
                 isDirect = msg.IsDirect,
                 isOffline = msg.IsOffline,
             },
-            raw = new TwitchChatMessageBinding(message),
         };
 
         MessageReceived(msg, msgBinding);
@@ -545,14 +544,14 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
 
         await db.SaveChangesAsync();
 
-        var msgBinding = new ChatMessageBinding(data.Owner)
+        var msgBinding = new ChatMessageBinding(data.Owner, new TwitchChatMessageBinding(message))
         {
             id = msg.Id,
             protocol = ProtocolId,
             connectionId = data.ConnectionId,
             timestamp = msg.RemoteTimestamp,
             attachments = [],
-            chat = new ChatBinding(data.Owner)
+            chat = new ChatBinding(data.Owner, new TwitchChatBinding(message))
             {
                 id = chat.Id,
                 protocol = ProtocolId,
@@ -562,9 +561,8 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
                 {
                     isPrivate = chat.IsPrivate,
                 },
-                raw = new TwitchChatBinding(message),
             },
-            author = new ChatterBinding()
+            author = new ChatterBinding(new TwitchChatterBinding(message))
             {
                 id = author.Id,
                 protocol = ProtocolId,
@@ -575,7 +573,6 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
                 {
                     isBot = author.IsBot,
                 },
-                raw = new TwitchChatterBinding(message),
             },
             text = msg.TextContent,
             replyToId = null,
@@ -585,7 +582,6 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
                 isDirect = msg.IsDirect,
                 isOffline = msg.IsOffline,
             },
-            raw = new TwitchChatMessageBinding(message),
         };
 
         MessageReceived(msg, msgBinding);
@@ -759,7 +755,7 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
 
             case IConnectionsMessage.SimpleReply simpleReply:
                 {
-                    if (simpleReply.ReplyTo.raw is TwitchChatMessageBinding twitchMessage)
+                    if (simpleReply.ReplyTo.twitch is TwitchChatMessageBinding twitchMessage)
                     {
                         switch (twitchMessage.Message)
                         {
@@ -781,7 +777,7 @@ class TwitchConnection(IServiceProvider services, INekoLogger logger, Connection
 
             case IConnectionsMessage.SendMessage sendMessage:
                 {
-                    if (sendMessage.Chat.raw is TwitchChatBinding twitchChat)
+                    if (sendMessage.Chat.twitch is TwitchChatBinding twitchChat)
                     {
                         switch (twitchChat.Message)
                         {

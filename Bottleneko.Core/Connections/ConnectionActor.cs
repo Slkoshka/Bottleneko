@@ -9,7 +9,13 @@ using Bottleneko.Utils;
 
 namespace Bottleneko.Connections;
 
-record ConnectionCreationData<T>(IActorRef Owner, long ConnectionId, T Configuration);
+public record ConnectionCreationData<TConfig>(IActorRef Owner, long ConnectionId, TConfig Configuration) where TConfig: ProtocolConfiguration
+{
+    public ConnectionCreationData<T> To<T>() where T : ProtocolConfiguration
+    {
+        return new(Owner, ConnectionId, (T)(object)Configuration);
+    }
+}
 
 class ConnectionActor(IServiceProvider services, AkkaService akka, INekoLogger logger, IActorRef owner, long id, ProtocolDescription protocol, ProtocolConfiguration configuration) : NekoActor(services)
 {
@@ -26,12 +32,7 @@ class ConnectionActor(IServiceProvider services, AkkaService akka, INekoLogger l
     {
         try
         {
-            var dataType = typeof(ConnectionCreationData<>).MakeGenericType(protocol.ConfigType);
-            var data = dataType.GetConstructor([typeof(IActorRef), typeof(long), protocol.ConfigType])!.Invoke([self, id, configuration]);
-
-            Type[] contructorArgs = [typeof(IServiceProvider), typeof(INekoLogger), dataType];
-            var constructor = protocol.ConnectionType.GetConstructor(contructorArgs) ?? throw new NotSupportedException($"Type '{protocol.ConnectionType.FullName}' must have a constructor with parameters ({string.Join(", ", contructorArgs.Select(arg => arg.FullName))})");
-            _connection = (ConnectionBase)constructor.Invoke([Services, logger, data]);
+            _connection = protocol.Factory(Services, logger, new ConnectionCreationData<ProtocolConfiguration>(self, id, configuration));
 
             try
             {
@@ -125,7 +126,7 @@ class ConnectionActor(IServiceProvider services, AkkaService akka, INekoLogger l
     {
         if (!_connectionDisposed)
         {
-            _ = _connection.DisposeAsync().AsTask();
+            _ = _connection?.DisposeAsync().AsTask();
         }
     }
 }

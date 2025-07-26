@@ -24,8 +24,7 @@ using Discord.Net.WebSockets;
 
 namespace Bottleneko.Protocols.Discord;
 
-[Protocol(ProtocolId, typeof(DiscordProtocolConfiguration), typeof(DiscordConnectionBinding))]
-class DiscordConnection(IServiceProvider services, INekoLogger logger, ConnectionCreationData<DiscordProtocolConfiguration> data) : ConnectionBase, IAsyncDisposable
+class DiscordConnection(IServiceProvider services, INekoLogger logger, ConnectionCreationData<DiscordProtocolConfiguration> data) : ConnectionBase, IProtocol, IAsyncDisposable
 {
     public const Protocol ProtocolId = Protocol.Discord;
     public const string LogCategory = "Bottleneko.Discord";
@@ -35,6 +34,11 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
     private DiscordRestClient _rest = null!;
     private DiscordSocketClient? _client = null;
     private bool _disposed = false;
+
+    public static ProtocolDescription GetDescription()
+    {
+        return ProtocolDescription.Make<DiscordProtocolConfiguration>(ProtocolId, (services, logger, data) => new DiscordConnection(services, logger, data), TestAsync, (connectionId, connection) => new DiscordConnectionBinding(connectionId, connection));
+    }
 
     private static GatewayIntents GetIntents(DiscordProtocolConfiguration config)
     {
@@ -241,21 +245,20 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
 
         await db.SaveChangesAsync();
 
-        var msgBinding = new ChatMessageBinding(data.Owner)
+        var msgBinding = new ChatMessageBinding(data.Owner, new DiscordChatMessageBinding(message))
         {
             id = msg.Id,
             protocol = ProtocolId,
             connectionId = data.ConnectionId,
             timestamp = message.Timestamp.UtcDateTime,
-            attachments = [.. message.Attachments.Select(attachment => new ChatMessageAttachmentBinding()
+            attachments = [.. message.Attachments.Select(attachment => new ChatMessageAttachmentBinding(new DiscordChatMessageAttachmentBinding(attachment))
             {
                 id = attachment.Id,
                 messageId = msg.Id,
                 contentType = attachment.ContentType ?? "application/octet-stream",
                 fileName = attachment.Filename,
-                raw = new DiscordChatMessageAttachmentBinding(attachment),
             })],
-            chat = new ChatBinding(data.Owner)
+            chat = new ChatBinding(data.Owner, new DiscordChatBinding(message.Channel))
             {
                 id = chat.Id,
                 protocol = ProtocolId,
@@ -265,9 +268,8 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
                 {
                     isPrivate = chat.IsPrivate,
                 },
-                raw = new DiscordChatBinding(message.Channel),
             },
-            author = new ChatterBinding()
+            author = new ChatterBinding(new DiscordChatterBinding(message.Author))
             {
                 id = author.Id,
                 protocol = ProtocolId,
@@ -278,7 +280,6 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
                 {
                     isBot = author.IsBot,
                 },
-                raw = new DiscordChatterBinding(message.Author),
             },
             text = msg.TextContent,
             replyToId = msg.ReplyToId,
@@ -288,7 +289,6 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
                 isDirect = msg.IsDirect,
                 isOffline = msg.IsOffline,
             },
-            raw = new DiscordChatMessageBinding(message),
         };
 
         MessageReceived(msg, msgBinding);
@@ -428,7 +428,7 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
                 {
                     try
                     {
-                        if (_client is not null && simpleReply.ReplyTo.chat.raw is DiscordChatBinding discordChat && discordChat.channel.Channel is ITextChannel textChannel && simpleReply.ReplyTo.raw is DiscordChatMessageBinding discordMessage)
+                        if (_client is not null && simpleReply.ReplyTo.chat.discord is DiscordChatBinding discordChat && discordChat.channel.Channel is ITextChannel textChannel && simpleReply.ReplyTo.discord is DiscordChatMessageBinding discordMessage)
                         {
                             await textChannel.SendMessageAsync(simpleReply.Text, messageReference: new MessageReference((ulong)discordMessage.id));
                         }
@@ -448,7 +448,7 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
                 {
                     try
                     {
-                        if (_client is not null && sendMessage.Chat.raw is DiscordChatBinding discordChat && discordChat.channel.Channel is ITextChannel textChannel)
+                        if (_client is not null && sendMessage.Chat.discord is DiscordChatBinding discordChat && discordChat.channel.Channel is ITextChannel textChannel)
                         {
                             await textChannel.SendMessageAsync(sendMessage.Text);
                         }
@@ -500,7 +500,7 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
                         }
                         var chat = await SaveChatAsync(db, channel);
 
-                        sender.Tell(new ChatBinding(data.Owner)
+                        sender.Tell(new ChatBinding(data.Owner, new DiscordChatBinding(channel))
                         {
                             id = chat.Id,
                             protocol = ProtocolId,
@@ -510,7 +510,6 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
                             {
                                 isPrivate = chat.IsPrivate,
                             },
-                            raw = new DiscordChatBinding(channel),
                         });
                     }
                     catch (Exception ex)
