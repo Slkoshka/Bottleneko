@@ -5,6 +5,7 @@ import * as yup from 'yup';
 import { useAsync } from '../../app/hooks';
 import { JsScriptCode, ScriptDto } from '../api/dtos.gen';
 import api from '../api';
+import { useScripts } from './context';
 import JsScriptEditor from './JsScriptEditor';
 
 // eslint-disable-next-line import/default
@@ -23,6 +24,7 @@ export type EditedScript = yup.InferType<typeof EditedScriptSchema>;
 
 export default function ScriptEditor({ initialScript, onSaved }: { initialScript?: ScriptDto; onSaved?: (script: ScriptDto) => void }) {
     const [error, setError] = useState<string | undefined>(undefined);
+    const scripts = useScripts();
 
     const onError = useCallback((err: unknown) => {
         setError(err instanceof Error ? err.message : 'Unknown error');
@@ -40,9 +42,10 @@ export default function ScriptEditor({ initialScript, onSaved }: { initialScript
         }
         else {
             const response = await api.scripts.add(formData.name, formData.description, formData.code);
+            scripts?.actions.added(response.result);
             onSaved?.(response.result);
         }
-    }, [initialScript, onSaved]));
+    }, [initialScript, onSaved, scripts]));
 
     const onValidated = useCallback((formData: EditedScript) => {
         saveScript(formData).catch(onError);
