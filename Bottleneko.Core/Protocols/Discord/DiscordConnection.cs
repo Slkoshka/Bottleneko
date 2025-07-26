@@ -318,6 +318,8 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
 
         try
         {
+            await rest.LoginAsync(TokenType.Bot, config.Token);
+
             if (client is null)
             {
                 var me = await rest.GetCurrentUserAsync();
