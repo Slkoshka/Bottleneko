@@ -52,9 +52,7 @@ For development:
 
 ## Useful links
 
-* Scripting API type definitions
-    * Automatically generated from C#: [`script.gen.d.ts`](Bottleneko.Client/src/features/scripts/script.gen.d.ts)
-    * Manually defined API: [`script.api.d.ts`](Bottleneko.Client/src/features/scripts/script.api.d.ts)
+* Scripting API type definitions: [`Bottleneko.Client/src/features/scripts/api`](Bottleneko.Client/src/features/scripts/api)
 
 ## Development
 
