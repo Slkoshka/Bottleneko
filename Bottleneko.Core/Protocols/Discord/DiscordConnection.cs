@@ -91,9 +91,10 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
                 Connected();
             }
         }
-        catch (HttpRequestException)
+        catch (HttpRequestException ex)
         {
-            RequestRestart();
+            logger.LogWarning(LogCategory, "An error has occured during connection startup", ex);
+            RequestRestart(false);
         }
     }
 
@@ -305,7 +306,7 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
         {
             if (!_disposed)
             {
-                RequestRestart();
+                RequestRestart(true);
             }
         }
 
@@ -421,7 +422,7 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
                 {
                     if (data.Configuration.ProxyId is not null && long.Parse(data.Configuration.ProxyId) == proxyUpdated.Id)
                     {
-                        RequestRestart();
+                        RequestRestart(true);
                     }
                     break;
                 }

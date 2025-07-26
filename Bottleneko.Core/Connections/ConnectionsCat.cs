@@ -93,7 +93,7 @@ class ConnectionsCat(IServiceProvider services, INekoLogger logger) : ContainerC
                     }
                     else
                     {
-                        Sender.Tell(ConnectionStatus.NotConnected);
+                        Sender.Tell(new ExtendedConnectionStatus(ConnectionStatus.NotConnected));
                     }
                     return true;
                 }

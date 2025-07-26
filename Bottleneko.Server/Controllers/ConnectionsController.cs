@@ -22,7 +22,7 @@ public class ConnectionsController(IServiceProvider services, IOptions<JsonOptio
     {
         return Ok(new
         {
-            Result = await Task.WhenAll((await db.Connections.Where(connection => !connection.IsDeleted).ToArrayAsync()).Select(async connection => connection.ToDto(await akka.AskAsync<ConnectionStatus>(new IConnectionsMessage.GetStatus(connection.Id))))),
+            Result = await Task.WhenAll((await db.Connections.Where(connection => !connection.IsDeleted).ToArrayAsync()).Select(async connection => connection.ToDto(await akka.AskAsync<ExtendedConnectionStatus>(new IConnectionsMessage.GetStatus(connection.Id))))),
         });
     }
 
@@ -80,7 +80,7 @@ public class ConnectionsController(IServiceProvider services, IOptions<JsonOptio
 
         return Ok(new
         {
-            Result = connection.ToDto(ConnectionStatus.Connecting),
+            Result = connection.ToDto(new(ConnectionStatus.Connecting)),
         });
     }
 
@@ -100,7 +100,7 @@ public class ConnectionsController(IServiceProvider services, IOptions<JsonOptio
     {
         if (await db.Connections.SingleOrDefaultAsync(connection => connection.Id == id && !connection.IsDeleted) is ConnectionEntity connection)
         {
-            return Ok(connection.ToDto(await akka.AskAsync<ConnectionStatus>(new IConnectionsMessage.GetStatus(id))));
+            return Ok(connection.ToDto(await akka.AskAsync<ExtendedConnectionStatus>(new IConnectionsMessage.GetStatus(id))));
         }
         else
         {
@@ -117,7 +117,7 @@ public class ConnectionsController(IServiceProvider services, IOptions<JsonOptio
             var connection = await akka.AskAsync<ConnectionEntity>(new IConnectionsMessage.Update(id, request.Name, request.AutoStart, request.Config));
             return Ok(new
             {
-                Result = connection.ToDto(await akka.AskAsync<ConnectionStatus>(new IConnectionsMessage.GetStatus(id))),
+                Result = connection.ToDto(await akka.AskAsync<ExtendedConnectionStatus>(new IConnectionsMessage.GetStatus(id))),
             });
         }
         catch (KeyNotFoundException)

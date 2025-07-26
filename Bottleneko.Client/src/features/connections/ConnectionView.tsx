@@ -31,9 +31,9 @@ export default function ConnectionView() {
     const [restart, isRestarting] = useAsync(() => doAction(api.connections.restart));
     const [stop, isStopping] = useAsync(() => doAction(api.connections.stop));
 
-    const canBeStarted = !!connection && (connection.status === ConnectionStatus.NotConnected || connection.status === ConnectionStatus.Error);
-    const canBeRestarted = !!connection && (connection.status !== ConnectionStatus.NotConnected && connection.status !== ConnectionStatus.Stopping && connection.status !== ConnectionStatus.Error);
-    const canBeStopped = !!connection && (connection.status !== ConnectionStatus.NotConnected && connection.status !== ConnectionStatus.Stopping && connection.status !== ConnectionStatus.Error);
+    const canBeStarted = !!connection && (connection.extendedStatus.status === ConnectionStatus.NotConnected || connection.extendedStatus.status === ConnectionStatus.Error || connection.extendedStatus.status === ConnectionStatus.DelayedReconnect);
+    const canBeRestarted = !!connection && connection.extendedStatus.status !== ConnectionStatus.NotConnected && connection.extendedStatus.status !== ConnectionStatus.Stopping && connection.extendedStatus.status !== ConnectionStatus.Error && connection.extendedStatus.status !== ConnectionStatus.DelayedReconnect;
+    const canBeStopped = !!connection && connection.extendedStatus.status !== ConnectionStatus.NotConnected && connection.extendedStatus.status !== ConnectionStatus.Stopping && connection.extendedStatus.status !== ConnectionStatus.Error;
 
     const isLoading = !connections || isStarting || isRestarting || isStopping;
 

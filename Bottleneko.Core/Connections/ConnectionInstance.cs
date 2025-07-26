@@ -7,19 +7,28 @@ using Bottleneko.Logging;
 using Bottleneko.Messages;
 using Bottleneko.Protocols;
 using Bottleneko.Scripting.Bindings;
+using Bottleneko.Utils;
 
 namespace Bottleneko.Connections;
 
 class ConnectionInstance(IServiceProvider services, INekoLogger logger, ProtocolRegistry registry, ConnectionEntity connection) : ContainerItem<ConnectionEntity, IConnectionsMessage.Update>(services, connection, connection.AutoStart)
 {
+    public record DelayedRestart : SingletonMessage<DelayedRestart>;
+
     public LogRouter LocalLog { get; } = new LogRouter(LogSourceType.Connection, connection.Id.ToString());
-    
+
+    private static readonly TimeSpan _defaultReconnectDelay = TimeSpan.FromSeconds(3.0);
+    private static readonly TimeSpan _maxReconnectDelay = TimeSpan.FromHours(1.0);
+
     private readonly long _id = connection.Id;
     private string _name = connection.Name;
     private readonly Protocol _protocol = connection.Protocol;
     private bool _autoStart = connection.AutoStart;
     private ProtocolConfiguration _configuration = connection.Configuration;
     private ConnectionStatus _status = ConnectionStatus.NotConnected;
+    private DateTime _statusChangeTime;
+
+    private TimeSpan _reconnectDelay = _defaultReconnectDelay;
 
     public override async Task InitAsync(IActorRef self)
     {
@@ -50,19 +59,21 @@ class ConnectionInstance(IServiceProvider services, INekoLogger logger, Protocol
         return needRestart;
     }
 
-    protected override void OnStatusChange(ItemStatus status)
+    protected override void OnStatusChange(ItemStatus status, TimeSpan delay)
     {
         var oldStatus = _status;
         _status = status switch
         {
             ItemStatus.Waiting when _status != ConnectionStatus.Error => ConnectionStatus.NotConnected,
-            ItemStatus.Starting => _status == ConnectionStatus.Reconnecting ? ConnectionStatus.Reconnecting : ConnectionStatus.Connecting,
-            ItemStatus.Running => _status == ConnectionStatus.Reconnecting ? ConnectionStatus.Reconnecting : _status == ConnectionStatus.Connected ? ConnectionStatus.Connected : ConnectionStatus.Connecting,
+            ItemStatus.Starting => _status is ConnectionStatus.Reconnecting or ConnectionStatus.DelayedReconnect ? ConnectionStatus.Reconnecting : ConnectionStatus.Connecting,
+            ItemStatus.Running => _status is ConnectionStatus.Reconnecting or ConnectionStatus.DelayedReconnect ? ConnectionStatus.Reconnecting : _status == ConnectionStatus.Connected ? ConnectionStatus.Connected : ConnectionStatus.Connecting,
             ItemStatus.Restarting => ConnectionStatus.Reconnecting,
+            ItemStatus.DelayedRestart => ConnectionStatus.DelayedReconnect,
             ItemStatus.Stopping when _status != ConnectionStatus.Error => ConnectionStatus.Stopping,
             ItemStatus.ShuttingDown when _status != ConnectionStatus.Error => ConnectionStatus.Stopping,
             _ => _status,
         };
+        _statusChangeTime = DateTime.UtcNow + delay;
         if (_status != oldStatus)
         {
             LocalLog.LogInfo("Bottleneko.Connection", $"Connection status changed: {oldStatus} -> {_status}");
@@ -74,7 +85,7 @@ class ConnectionInstance(IServiceProvider services, INekoLogger logger, Protocol
         switch(message)
         {
             case IConnectionsMessage.GetStatus:
-                Sender.Tell(_status);
+                Sender.Tell(new ExtendedConnectionStatus(_status, _status == ConnectionStatus.DelayedReconnect ? Math.Max(0, (float)(_statusChangeTime - DateTime.UtcNow).TotalSeconds) : 0.0f));
                 return true;
 
             case IConnectionsMessage.Get:
@@ -91,8 +102,14 @@ class ConnectionInstance(IServiceProvider services, INekoLogger logger, Protocol
                 Sender.Tell(LocalLog);
                 return true;
 
+            case DelayedRestart:
+                Self.Tell(new IContainerMessage.DelayedRestart(_id, _reconnectDelay));
+                _reconnectDelay = TimeSpan.FromSeconds(Math.Min(_reconnectDelay.TotalSeconds * 2, _maxReconnectDelay.TotalSeconds));
+                return true;
+
             case ConnectionActor.Connected:
-                if (_status == ConnectionStatus.Connecting || _status == ConnectionStatus.Reconnecting)
+                _reconnectDelay = _defaultReconnectDelay;
+                if (_status is ConnectionStatus.Connecting or ConnectionStatus.Reconnecting or ConnectionStatus.DelayedReconnect)
                 {
                     LocalLog.LogInfo("Bottleneko.Connection", $"Connection status changed: {_status} -> {ConnectionStatus.Connected}");
                     _status = ConnectionStatus.Connected;

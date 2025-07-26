@@ -287,6 +287,7 @@ export enum ConnectionStatus {
     Connecting = 'Connecting',
     Connected = 'Connected',
     Reconnecting = 'Reconnecting',
+    DelayedReconnect = 'DelayedReconnect',
     Stopping = 'Stopping',
     Error = 'Error',
 }
@@ -297,13 +298,18 @@ export enum Protocol {
     Twitch = 'Twitch',
 }
 
+export interface ExtendedConnectionStatus {
+    status: ConnectionStatus;
+    statusChangeDelay: number;
+}
+
 export interface ConnectionDto {
     id: string;
     name: string;
     protocol: Protocol;
     autoStart: boolean;
     config: ProtocolConfiguration;
-    status: ConnectionStatus;
+    extendedStatus: ExtendedConnectionStatus;
 }
 
 export interface SystemInfoDto {

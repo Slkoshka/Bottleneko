@@ -16,7 +16,7 @@ interface IProtocol
 public abstract class ConnectionBase : IAsyncDisposable
 {
     public event EventHandler? OnConnected;
-    public event EventHandler? OnRestartRequested;
+    public event EventHandler<bool>? OnRestartRequested;
     public event EventHandler<(ChatMessageEntity Entity, ChatMessageBinding Binding)>? OnMessageReceived;
     public event EventHandler<Exception>? OnDied;
 
@@ -30,7 +30,7 @@ public abstract class ConnectionBase : IAsyncDisposable
     }
 
     protected void Connected() => OnConnected?.Invoke(this, EventArgs.Empty);
-    protected void RequestRestart() => OnRestartRequested?.Invoke(this, EventArgs.Empty);
+    protected void RequestRestart(bool immediate) => OnRestartRequested?.Invoke(this, immediate);
     protected void MessageReceived(ChatMessageEntity entity, ChatMessageBinding binding) => OnMessageReceived?.Invoke(this, (entity, binding));
     protected void Die(Exception exception) => OnDied?.Invoke(this, exception);
 

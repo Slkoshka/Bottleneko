@@ -8,6 +8,7 @@ declare interface ConnectionStatus {
     Connecting: EnumValue<ConnectionStatus>;
     Connected: EnumValue<ConnectionStatus>;
     Reconnecting: EnumValue<ConnectionStatus>;
+    DelayedReconnect: EnumValue<ConnectionStatus>;
     Stopping: EnumValue<ConnectionStatus>;
     Error: EnumValue<ConnectionStatus>;
 }

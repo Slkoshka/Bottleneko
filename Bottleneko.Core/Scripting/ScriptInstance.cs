@@ -57,7 +57,7 @@ class ScriptInstance(IServiceProvider services, INekoLogger logger, ScriptEntity
         return needRestart;
     }
 
-    protected override void OnStatusChange(ItemStatus status)
+    protected override void OnStatusChange(ItemStatus status, TimeSpan delay)
     {
         var oldStatus = _status;
         _status = status switch
@@ -66,6 +66,7 @@ class ScriptInstance(IServiceProvider services, INekoLogger logger, ScriptEntity
             ItemStatus.Starting => _status == ScriptStatus.Restarting ? ScriptStatus.Restarting : ScriptStatus.Starting,
             ItemStatus.Running => ScriptStatus.Running,
             ItemStatus.Restarting => ScriptStatus.Restarting,
+            ItemStatus.DelayedRestart => ScriptStatus.Restarting,
             ItemStatus.Stopping when _status != ScriptStatus.Error => ScriptStatus.Stopping,
             ItemStatus.ShuttingDown when _status != ScriptStatus.Error => ScriptStatus.Stopping,
             _ => _status,

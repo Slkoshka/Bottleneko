@@ -207,15 +207,24 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
     {
         (_api, _eventSub) = await CreateAsync(logger, data.Configuration);
 
-        await RefreshTokenAsync();
-        _me = (await _api.Helix.Users.GetUsersAsync()).Users.Single();
-        _usersCache[_me.Login] = _me;
-
-        _subscriptions = await GetSubscriptionsAsync();
-
-        if (_subscriptions.Length == 0)
+        try
         {
-            _eventSub = null;
+            await RefreshTokenAsync();
+            _me = (await _api.Helix.Users.GetUsersAsync()).Users.Single();
+            _usersCache[_me.Login] = _me;
+
+            _subscriptions = await GetSubscriptionsAsync();
+
+            if (_subscriptions.Length == 0)
+            {
+                _eventSub = null;
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            logger.LogWarning(LogCategory, "An error has occured during connection startup", ex);
+            RequestRestart(false);
+            return;
         }
 
         _checkTokenTask = Task.Run(async () =>
@@ -708,7 +717,7 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
         logger.LogVerbose(LogCategory, $"WebSocket {_eventSub!.SessionId} disconnected");
         if (!_disconnectRequested)
         {
-            RequestRestart();
+            RequestRestart(false);
         }
         return Task.CompletedTask;
     }
@@ -748,7 +757,7 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
                 {
                     if (data.Configuration.ProxyId is not null && long.Parse(data.Configuration.ProxyId) == proxyUpdated.Id)
                     {
-                        RequestRestart();
+                        RequestRestart(true);
                     }
                     break;
                 }

@@ -37,7 +37,7 @@ class ConnectionActor(IServiceProvider services, AkkaService akka, INekoLogger l
             try
             {
                 _connection.OnConnected += (_, _) => owner.Tell(Connected.Instance);
-                _connection.OnRestartRequested += (_, _) => owner.Tell(new IContainerMessage.Restart(id));
+                _connection.OnRestartRequested += (_, isImmediate) => owner.Tell(isImmediate ? new IContainerMessage.Restart(id) : ConnectionInstance.DelayedRestart.Instance);
                 _connection.OnMessageReceived += (_, msg) =>
                 {
                     akka.Tell(new IEventBusMessage.Publish("internal/connection/message_received", msg.Entity));

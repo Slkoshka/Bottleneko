@@ -5,7 +5,7 @@ using Bottleneko.Utils;
 
 namespace Bottleneko.Actors;
 
-abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEntity entity, bool autoStart) : NekoActor(services)
+abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEntity entity, bool autoStart) : NekoActor(services), IWithTimers
     where TEntity : Entity
     where TUpdateMsg: IContainerMessage.Update
 {
@@ -18,13 +18,17 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
         Starting,
         Running,
         Restarting,
+        DelayedRestart,
         Stopping,
         ShuttingDown,
     }
 
+    public ITimerScheduler Timers { get; set; } = null!;
     protected ItemStatus Status { get; private set; } = ItemStatus.Waiting;
     private IActorRef? _actor = null;
-    private bool _delayedRestart = false;
+
+    private object? _requestedRestart = null;
+    private object? _requestedStart = null;
 
     public override async Task InitAsync(IActorRef self)
     {
@@ -38,7 +42,7 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
     protected abstract IActorRef CreateActor();
     protected abstract bool ApplyUpdate(TUpdateMsg update);
 
-    private new void Become(UntypedReceive receive)
+    private void Become(UntypedReceive receive, TimeSpan delay = default)
     {
         Status = receive switch
         {
@@ -46,11 +50,12 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
             { } when receive == Starting => Status == ItemStatus.Restarting ? ItemStatus.Restarting : ItemStatus.Starting,
             { } when receive == Running => ItemStatus.Running,
             { } when receive == Restarting => ItemStatus.Restarting,
+            { } when receive == WaitingForStart => ItemStatus.DelayedRestart,
             { } when receive == Stopping => ItemStatus.Stopping,
             { } when receive == ShuttingDown => ItemStatus.ShuttingDown,
             _ => throw new Exception("Invalid receive function"),
         };
-        OnStatusChange(Status);
+        OnStatusChange(Status, delay);
         base.Become(receive);
     }
 
@@ -67,9 +72,16 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
         Become(Starting);
     }
 
-    private void Restart()
+    private void StartDelayed(TimeSpan delay)
+    {
+        Timers.StartSingleTimer("delayed-start", new IContainerMessage.Start(entity.Id), delay);
+        Become(WaitingForStart, delay);
+    }
+
+    private void TerminateAndStart(object? requestedStart = null)
     {
         _actor.Tell(IControlMessage.Shutdown.Instance);
+        _requestedStart = requestedStart;
         Become(Restarting);
     }
 
@@ -78,7 +90,7 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
         return false;
     }
 
-    protected virtual void OnStatusChange(ItemStatus status) { }
+    protected virtual void OnStatusChange(ItemStatus status, TimeSpan delay) { }
 
     protected override void OnMessage(object message)
     {
@@ -90,6 +102,10 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
 
             case IContainerMessage.Restart:
                 Start();
+                break;
+
+            case IContainerMessage.DelayedRestart delayedRestart:
+                StartDelayed(delayedRestart.Delay);
                 break;
 
             case IContainerMessage.Stop:
@@ -120,7 +136,11 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
                 break;
 
             case IContainerMessage.Restart:
-                _delayedRestart = true;
+                _requestedRestart = message;
+                break;
+
+            case IContainerMessage.DelayedRestart:
+                _requestedRestart = message;
                 break;
 
             case IContainerMessage.Stop:
@@ -129,7 +149,7 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
 
             case TUpdateMsg update:
                 ApplyUpdate(update);
-                _delayedRestart = true;
+                _requestedRestart = true;
                 break;
 
             case IControlMessage.Shutdown:
@@ -138,15 +158,18 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
 
             case Started started:
                 Stash.UnstashAll();
-                if (_delayedRestart)
+                switch (_requestedRestart)
                 {
-                    _delayedRestart = false;
-                    Restart();
+                    case null:
+                        Become(Running);
+                        break;
+
+                    default:
+                        TerminateAndStart(_requestedRestart);
+                        break;
                 }
-                else
-                {
-                    Become(Running);
-                }
+                _requestedRestart = null;
+
                 break;
 
             case FailedToStart failedToStart:
@@ -154,14 +177,30 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
                 Context.Stop(_actor);
                 _actor = null;
                 Stash.UnstashAll();
-                Become(OnMessage);
+
+                switch (_requestedRestart)
+                {
+                    case IContainerMessage.Restart:
+                        Start();
+                        break;
+
+                    case IContainerMessage.DelayedRestart delayedRestart:
+                        StartDelayed(delayedRestart.Delay);
+                        break;
+
+                    default:
+                        Become(OnMessage);
+                        break;
+                };
+                _requestedRestart = null;
+
                 break;
 
             case Terminated terminated:
                 if (terminated.ActorRef == _actor)
                 {
                     _actor = null;
-                    _delayedRestart = false;
+                    _requestedRestart = null;
                     Stash.UnstashAll();
                     Become(OnMessage);
                 }
@@ -184,7 +223,11 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
                 break;
 
             case IContainerMessage.Restart:
-                Restart();
+                TerminateAndStart();
+                break;
+
+            case IContainerMessage.DelayedRestart delayedRestart:
+                TerminateAndStart(delayedRestart);
                 break;
 
             case IContainerMessage.Stop:
@@ -195,7 +238,7 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
             case TUpdateMsg update:
                 if (ApplyUpdate(update))
                 {
-                    Restart();
+                    TerminateAndStart();
                 }
                 break;
 
@@ -229,6 +272,11 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
                 break;
 
             case IContainerMessage.Restart:
+                _requestedStart = null;
+                break;
+
+            case IContainerMessage.DelayedRestart delayedRestart:
+                _requestedStart = delayedRestart;
                 break;
 
             case IContainerMessage.Stop:
@@ -250,7 +298,16 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
                 {
                     _actor = null;
                     Stash.UnstashAll();
-                    Start();
+                    switch (_requestedStart)
+                    {
+                        case IContainerMessage.DelayedRestart delayedRestart:
+                            StartDelayed(delayedRestart.Delay);
+                            break;
+
+                        default:
+                            Start();
+                            break;
+                    }
                 }
                 break;
 
@@ -263,15 +320,62 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
         }
     }
 
+    private void WaitingForStart(object message)
+    {
+        switch (message)
+        {
+            case IContainerMessage.Start:
+                Timers.Cancel("delayed-start");
+                Start();
+                break;
+
+            case IContainerMessage.Restart:
+                Timers.Cancel("delayed-start");
+                Start();
+                break;
+
+            case IContainerMessage.DelayedRestart delayedRestart:
+                StartDelayed(delayedRestart.Delay);
+                break;
+
+            case IContainerMessage.Stop:
+                Timers.Cancel("delayed-start");
+                Become(OnMessage);
+                break;
+
+            case TUpdateMsg update:
+                ApplyUpdate(update);
+                break;
+
+            case IControlMessage.Shutdown:
+                Context.Stop(Self);
+                break;
+
+            default:
+                if (!CustomMessageHandler(message))
+                {
+                    Unhandled(message);
+                }
+                break;
+        }
+    }
+
     private void Stopping(object message)
     {
         switch (message)
         {
             case IContainerMessage.Start:
+                _requestedStart = null;
                 Become(Restarting);
                 break;
 
             case IContainerMessage.Restart:
+                _requestedStart = null;
+                Become(Restarting);
+                break;
+
+            case IContainerMessage.DelayedRestart delayedRestart:
+                _requestedStart = delayedRestart;
                 Become(Restarting);
                 break;
 

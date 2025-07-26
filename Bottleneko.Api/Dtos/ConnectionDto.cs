@@ -10,6 +10,7 @@ public enum ConnectionStatus
     Connecting,
     Connected,
     Reconnecting,
+    DelayedReconnect,
     Stopping,
 
     Error,
@@ -23,4 +24,6 @@ public enum Protocol
     Twitch,
 }
 
-public record ConnectionDto(string Id, string Name, Protocol Protocol, bool AutoStart, ProtocolConfiguration Config, ConnectionStatus Status);
+public record ExtendedConnectionStatus(ConnectionStatus Status, float StatusChangeDelay = 0.0f);
+
+public record ConnectionDto(string Id, string Name, Protocol Protocol, bool AutoStart, ProtocolConfiguration Config, ExtendedConnectionStatus ExtendedStatus);

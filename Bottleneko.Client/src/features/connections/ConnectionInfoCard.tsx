@@ -14,9 +14,9 @@ import { AnyConnectionDto } from '.';
 export default function ConnectionInfoCard({ connection, onDelete, className = '', props }: { connection: AnyConnectionDto; onDelete: () => void; className?: string; props?: object }) {
     const connections = useConnections();
 
-    const canBeStarted = connection.status === ConnectionStatus.NotConnected || connection.status === ConnectionStatus.Error;
-    const canBeRestarted = connection.status !== ConnectionStatus.NotConnected && connection.status !== ConnectionStatus.Stopping && connection.status !== ConnectionStatus.Error;
-    const canBeStopped = connection.status !== ConnectionStatus.NotConnected && connection.status !== ConnectionStatus.Stopping && connection.status !== ConnectionStatus.Error;
+    const canBeStarted = connection.extendedStatus.status === ConnectionStatus.NotConnected || connection.extendedStatus.status === ConnectionStatus.Error || connection.extendedStatus.status === ConnectionStatus.DelayedReconnect;
+    const canBeRestarted = connection.extendedStatus.status !== ConnectionStatus.NotConnected && connection.extendedStatus.status !== ConnectionStatus.Stopping && connection.extendedStatus.status !== ConnectionStatus.Error && connection.extendedStatus.status !== ConnectionStatus.DelayedReconnect;
+    const canBeStopped = connection.extendedStatus.status !== ConnectionStatus.NotConnected && connection.extendedStatus.status !== ConnectionStatus.Stopping && connection.extendedStatus.status !== ConnectionStatus.Error;
 
     const [refresh, isRefreshing] = useAsync(useCallback(async () => connections?.actions.updated(await api.connections.get(connection.id)), [connection, connections?.actions]));
 
@@ -54,7 +54,7 @@ export default function ConnectionInfoCard({ connection, onDelete, className = '
                     </tr>
                     <tr>
                         <td className="w-50">Status</td>
-                        <td className="w-50"><ConnectionStatusIcon status={connection.status} showLabel /></td>
+                        <td className="w-50"><ConnectionStatusIcon status={connection.extendedStatus} showLabel /></td>
                     </tr>
                 </tbody>
             </Table>

@@ -30,7 +30,7 @@ public static class DbConversionExtensions
         );
     }
 
-    public static ConnectionDto ToDto(this ConnectionEntity connection, ConnectionStatus status)
+    public static ConnectionDto ToDto(this ConnectionEntity connection, ExtendedConnectionStatus status)
     {
         return new ConnectionDto(
             connection.Id.ToString(),

@@ -11,6 +11,7 @@ using Bottleneko.Scripting.Bindings;
 using Bottleneko.Scripting.Bindings.Telegram;
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot;
+using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
@@ -47,7 +48,17 @@ class TelegramConnection(INekoLogger logger, ConnectionCreationData<TelegramProt
     {
         _bot = await CreateAsync(data.Configuration);
 
-        _me = await _bot.GetMe();
+        try
+        {
+            _me = await _bot.GetMe();
+        }
+        catch (RequestException ex)
+        {
+            logger.LogWarning(LogCategory, "An error has occured during connection startup", ex);
+            RequestRestart(false);
+            return;
+        }
+
         if (data.Configuration.ReceiveEvents)
         {
             _mainLoopTask = MainLoopAsync(_cts.Token);
@@ -383,7 +394,7 @@ class TelegramConnection(INekoLogger logger, ConnectionCreationData<TelegramProt
                 {
                     if (data.Configuration.ProxyId is not null && long.Parse(data.Configuration.ProxyId) == proxyUpdated.Id)
                     {
-                        RequestRestart();
+                        RequestRestart(true);
                     }
                     break;
                 }

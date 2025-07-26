@@ -11,5 +11,6 @@ public interface IContainerMessage
 
     public record Start(long Id) : ContainerItemMessage(Id);
     public record Restart(long Id) : ContainerItemMessage(Id);
+    public record DelayedRestart(long Id, TimeSpan Delay) : ContainerItemMessage(Id);
     public record Stop(long Id) : ContainerItemMessage(Id);
 }

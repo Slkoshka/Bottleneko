@@ -133,7 +133,7 @@ export default function SidePanel({ className = '', style = {}, props }: { class
                                             <div className="d-flex align-items-center" style={{ gap: '1rem' }}>
                                                 <ProtocolIcon protocol={c.protocol} size="2em" className="flex-shrink-0 mt-0" />
                                                 <span className="flex-grow-1 overflow-hidden" style={{ textOverflow: 'ellipsis' }}>{c.name}</span>
-                                                <div className="flex-shrink-0"><ConnectionStatusIcon status={c.status} /></div>
+                                                <div className="flex-shrink-0"><ConnectionStatusIcon status={c.extendedStatus} /></div>
                                             </div>
                                         </Nav.Link>
                                     </LinkContainer>
