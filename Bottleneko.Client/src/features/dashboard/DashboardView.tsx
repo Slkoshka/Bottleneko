@@ -4,7 +4,7 @@ import { useFetchData } from '../../app/hooks';
 import SystemDashboardCard from './cards/SystemDashboardCard';
 import BotDashboardCard from './cards/BotDashboardCard';
 import ConnectionsDashboardCard from './cards/ConnectionsDashboardCard';
-import MessagesDashboardCard from './cards/MessagesDashboardCard';
+import ActivityHistoryGraphCard from './cards/ActivityHistoryGraphCard';
 
 const fetchInfo = (signal: AbortSignal) => api.system.getInfo(signal);
 
@@ -13,11 +13,14 @@ export default function DashboardView() {
 
     return (
         <View title="Dashboard">
-            <div className="d-flex flex-wrap justify-content-start align-items-stretch" style={{ gap: '30px' }}>
-                <BotDashboardCard systemInfo={systemInfo ?? undefined} />
-                <SystemDashboardCard systemInfo={systemInfo ?? undefined} />
-                <ConnectionsDashboardCard />
-                <MessagesDashboardCard systemInfo={systemInfo ?? undefined} />
+            <div className="d-flex flex-column" style={{ gap: '30px' }}>
+                <ActivityHistoryGraphCard />
+
+                <div className="d-flex flex-wrap justify-content-start align-items-stretch" style={{ gap: '30px' }}>
+                    <BotDashboardCard systemInfo={systemInfo ?? undefined} />
+                    <SystemDashboardCard systemInfo={systemInfo ?? undefined} />
+                    <ConnectionsDashboardCard />
+                </div>
             </div>
         </View>
     );

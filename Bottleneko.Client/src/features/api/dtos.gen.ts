@@ -326,16 +326,19 @@ export interface NekoInfoDto {
     uptime: number;
 }
 
-export interface MessageStatsDto {
-    messagesInLastMinute: number;
-    messagesInLastHour: number;
-    messagesInLastDay: number;
-}
-
 export interface EnvironmentInfoDto {
     system: SystemInfoDto;
     neko: NekoInfoDto;
-    messageStats: MessageStatsDto;
+}
+
+export interface ActivityStatsItemDto {
+    period: string;
+    totalMessages: number;
+    messagesPerMinute: number;
+}
+
+export interface ActivityStatsDto {
+    items: ActivityStatsItemDto[];
 }
 
 export enum ProxyType {

@@ -4,6 +4,7 @@ public record SystemInfoDto(string Hostname, string OperatingSystem, string Arch
 
 public record NekoInfoDto(string Version, double Uptime);
 
-public record MessageStatsDto(int MessagesInLastMinute, int MessagesInLastHour, int MessagesInLastDay);
+public record EnvironmentInfoDto(SystemInfoDto System, NekoInfoDto Neko);
 
-public record EnvironmentInfoDto(SystemInfoDto System, NekoInfoDto Neko, MessageStatsDto MessageStats);
+public record ActivityStatsItemDto(string Period, int TotalMessages, float MessagesPerMinute);
+public record ActivityStatsDto(ActivityStatsItemDto[] Items);
