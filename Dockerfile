@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7-labs
 
-FROM mcr.microsoft.com/dotnet/sdk:9.0@sha256:fe3c1ed472bb0964c100f06aa9b1759f5ed84e0dfe6904d60f6a82159d3c7ae4 AS build-dotnet
+FROM mcr.microsoft.com/dotnet/sdk:9.0@sha256:86fe223b90220ec8607652914b1d7dc56fc8ff422ca1240bb81e54c4b06509e6 AS build-dotnet
 
 ARG VERSION_SUFFIX="-local"
 
@@ -25,7 +25,7 @@ RUN set -eux; \
     esac; \
     dotnet publish ./Bottleneko.Server/Bottleneko.Server.csproj -c Release -r ${dotnetArch} /p:VersionSuffix=${VERSION_SUFFIX} -o /app
 
-FROM node:24-slim@sha256:f403f3b5054f8f35ebe8dd167e0c608945a8fd992f3d278d2a8652b58b80dc92 AS build-node
+FROM node:24-slim@sha256:36ae19f59c91f3303c7a648f07493fe14c4bd91320ac8d898416327bacf1bbfa AS build-node
 WORKDIR /src
 
 # Install packages
@@ -37,7 +37,7 @@ RUN npm install
 COPY ./Bottleneko.Client/ .
 RUN npm run build -- --outDir /app/ --emptyOutDir
 
-FROM mcr.microsoft.com/dotnet/aspnet:9.0@sha256:96db63a87bb638bf3189a1763f0361f52a7793bca2a8056d2f4f2ac91915bccf AS base
+FROM mcr.microsoft.com/dotnet/aspnet:9.0@sha256:7ccab69cb986ab83c359552c86e9cef2b2238e7c4b75a75a7b60a3e26c1bc3cd AS base
 WORKDIR /app
 COPY --from=build-dotnet /app .
 COPY --from=build-node /app ./wwwroot

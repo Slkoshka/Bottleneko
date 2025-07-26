@@ -7,12 +7,12 @@
   <Import Project="$(MSBuildProjectDirectory)\..\Bottleneko.Common.props" />
 
   <ItemGroup>
-    <PackageReference Include="Akka" Version="1.5.40" />
-    <PackageReference Include="Akka.DependencyInjection" Version="1.5.40" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.4" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.4" />
+    <PackageReference Include="Akka" Version="1.5.46" />
+    <PackageReference Include="Akka.DependencyInjection" Version="1.5.46" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.7" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.7" />
     <PackageReference Include="Spectre.Console.Cli" Version="0.50" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.3" />
   </ItemGroup>
 
   <ItemGroup>
