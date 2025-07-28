@@ -24,7 +24,7 @@ export default function ConnectionsDashboardCard() {
                 Connections
 
                 <LinkContainer to="/connections/">
-                    <IconButton as="a" icon="gear-fill" tooltip="View connections" />
+                    <IconButton as="a" icon="gear-fill" tooltip="View connections" variant="dark" />
                 </LinkContainer>
             </div>
         )}

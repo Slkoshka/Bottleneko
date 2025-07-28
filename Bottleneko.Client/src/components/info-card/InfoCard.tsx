@@ -13,7 +13,7 @@ export default function InfoCard({ title, children, className = '', props }: { t
                 <div>{(headerExtra as ReactElement<InfoCardHeaderExtraProps>[]).filter(item => item.props.position === 'start')}</div>
                 <div className="flex-grow-1 text-truncate">
                     <span className="fs-5">
-                        <strong>{title}</strong>
+                        {title}
                     </span>
                 </div>
                 <div>{(headerExtra as ReactElement<InfoCardHeaderExtraProps>[]).filter(item => item.props.position === 'end')}</div>

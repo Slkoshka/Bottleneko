@@ -4,6 +4,10 @@
     vertical-align: middle;
 }
 
+.dashboard-card-header {
+    background-color: var(--primary-color) !important;
+}
+
 .dashboard-card-bot td:nth-child(1) {
     width: 7em;
 }

@@ -74,19 +74,19 @@ export default function ActivityHistoryGraphCard() {
                     Activity History
 
                     <ButtonGroup>
-                        <DropdownButton as={ButtonGroup} title={period.name} size="sm">
+                        <DropdownButton as={ButtonGroup} title={period.name} size="sm" variant="dark">
                             <Dropdown.Item onClick={() => { setPeriod(getPeriod('last-year', period.data([]).id)); }}>Last Year</Dropdown.Item>
                             <Dropdown.Item onClick={() => { setPeriod(getPeriod('last-month', period.data([]).id)); }}>Last Month</Dropdown.Item>
                             <Dropdown.Item onClick={() => { setPeriod(getPeriod('last-day', period.data([]).id)); }}>Last Day</Dropdown.Item>
                             <Dropdown.Item onClick={() => { setPeriod(getPeriod('last-hour', period.data([]).id)); }}>Last Hour</Dropdown.Item>
                         </DropdownButton>
 
-                        <DropdownButton as={ButtonGroup} title={period.data([]).label} size="sm">
+                        <DropdownButton as={ButtonGroup} title={period.data([]).label} size="sm" variant="dark">
                             <Dropdown.Item onClick={() => { setPeriod(getPeriod(period.id, 'total-messages')); }}># of Messages</Dropdown.Item>
                             <Dropdown.Item onClick={() => { setPeriod(getPeriod(period.id, 'messages-per-minute')); }}>Messages per Minute</Dropdown.Item>
                         </DropdownButton>
 
-                        <IconButton icon="arrow-clockwise" tooltip="Refresh" onClick={refresh} />
+                        <IconButton icon="arrow-clockwise" tooltip="Refresh" variant="dark" onClick={refresh} />
                     </ButtonGroup>
                 </div>
             )}
