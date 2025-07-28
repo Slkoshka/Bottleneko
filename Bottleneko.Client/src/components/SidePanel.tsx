@@ -1,5 +1,5 @@
 import { LinkContainer } from 'react-router-bootstrap';
-import { Button, Dropdown, Nav, Spinner } from 'react-bootstrap';
+import { Dropdown, Nav, Spinner } from 'react-bootstrap';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { CSSProperties, useEffect, useRef } from 'react';
 import ProtocolIcon from '../features/connections/ProtocolIcon';
@@ -62,7 +62,9 @@ export default function SidePanel({ className = '', style = {}, props }: { class
                         <Nav.Link active={location.pathname === '/connections/add'} className="d-flex">
                             <span className="flex-grow-1 text-white fs-5 fw-bold">Connections</span>
 
-                            <Button
+                            <IconButton
+                                icon="plus-lg"
+                                tooltip="Add a new connection"
                                 variant={(location.pathname === '/connections' || location.pathname === '/connections/add') ? 'light' : 'primary'}
                                 size="sm"
                                 onClick={(e) => {
@@ -70,9 +72,7 @@ export default function SidePanel({ className = '', style = {}, props }: { class
                                     e.stopPropagation();
                                     navigate('/connections/add');
                                 }}
-                            >
-                                +
-                            </Button>
+                            />
                         </Nav.Link>
                     </LinkContainer>
                 </Nav.Item>
@@ -82,7 +82,9 @@ export default function SidePanel({ className = '', style = {}, props }: { class
                         <Nav.Link active={location.pathname === '/scripts' || location.pathname.startsWith('/scripts/')} className="d-flex">
                             <span className="flex-grow-1 text-white fs-5 fw-bold">Scripting</span>
 
-                            <Button
+                            <IconButton
+                                icon="plus-lg"
+                                tooltip="Create a new script"
                                 variant={(location.pathname === '/scripts' || location.pathname.startsWith('/scripts/')) ? 'light' : 'primary'}
                                 size="sm"
                                 onClick={(e) => {
@@ -90,9 +92,7 @@ export default function SidePanel({ className = '', style = {}, props }: { class
                                     e.stopPropagation();
                                     navigate('/scripts/add');
                                 }}
-                            >
-                                +
-                            </Button>
+                            />
                         </Nav.Link>
                     </LinkContainer>
                 </Nav.Item>
@@ -102,7 +102,9 @@ export default function SidePanel({ className = '', style = {}, props }: { class
                         <Nav.Link active={location.pathname === '/users' || location.pathname.startsWith('/users/')} className="d-flex">
                             <span className="flex-grow-1 text-white fs-5 fw-bold">Users</span>
 
-                            <Button
+                            <IconButton
+                                icon="plus-lg"
+                                tooltip="Add a new user"
                                 variant={(location.pathname === '/users' || location.pathname.startsWith('/users/')) ? 'light' : 'primary'}
                                 size="sm"
                                 onClick={(e) => {
@@ -110,9 +112,7 @@ export default function SidePanel({ className = '', style = {}, props }: { class
                                     e.stopPropagation();
                                     navigate('/users/add');
                                 }}
-                            >
-                                +
-                            </Button>
+                            />
                         </Nav.Link>
                     </LinkContainer>
                 </Nav.Item>
