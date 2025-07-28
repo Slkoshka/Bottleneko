@@ -3,3 +3,11 @@
     height: 3em;
     vertical-align: middle;
 }
+
+.info-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: calc(min(100%, 600px));
+    height: 600px;
+}

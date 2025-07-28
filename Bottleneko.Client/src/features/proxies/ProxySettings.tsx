@@ -4,6 +4,7 @@ import { useAsync } from '../../app/hooks';
 import { ProxyDto, ProxyType } from '../api/dtos.gen';
 import api from '../api';
 import DeleteConfirmationDialog from '../../components/DeleteConfirmationDialog';
+import InfoCardList from '../../components/info-card/InfoCardList';
 import { useProxies } from './context';
 import ProxyEditor from './ProxyEditor';
 import ProxyInfoCard from './ProxyInfoCard';
@@ -101,7 +102,7 @@ export default function ProxySettings() {
             />
 
             <h2 className="pb-3">Proxy servers</h2>
-            <div className="d-flex flex-column" style={{ gap: '10px', width: 'calc(min(100%, 600px))', maxWidth: '600px' }}>
+            <InfoCardList>
                 <Button
                     onClick={() => {
                         setEditorState({ shown: true, editing: null });
@@ -122,7 +123,7 @@ export default function ProxySettings() {
                         />
                     ))
                 }
-            </div>
+            </InfoCardList>
         </>
     );
 }

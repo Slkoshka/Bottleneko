@@ -6,6 +6,7 @@ import { useAsync } from '../../app/hooks';
 import api from '../api';
 import { ScriptDto } from '../api/dtos.gen';
 import DeleteConfirmationDialog from '../../components/DeleteConfirmationDialog';
+import InfoCardList from '../../components/info-card/InfoCardList';
 import ScriptInfoCard from './ScriptInfoCard';
 import { useScripts } from './context';
 
@@ -52,11 +53,11 @@ export default function ScriptsView() {
                 itemInfoBuilder={getScriptInfo}
             />
 
-            <div className="d-flex flex-column" style={{ gap: '10px', width: 'calc(min(100%, 600px))', maxWidth: '600px' }}>
-                <LinkContainer to="/scripts/add"><Button size="lg" variant="primary">Add Script</Button></LinkContainer>
+            <InfoCardList>
+                <LinkContainer to="/scripts/add"><Button size="lg" variant="primary">Create Script</Button></LinkContainer>
 
                 {scripts?.state.list?.map(script => <ScriptInfoCard key={script.id} script={script} onDelete={() => { setDeletingScript(script); }} />)}
-            </div>
+            </InfoCardList>
         </View>
     );
 }

@@ -3,6 +3,7 @@ import { Button } from 'react-bootstrap';
 import { useCallback, useState } from 'react';
 import View from '../../components/views/View';
 import DeleteConfirmationDialog from '../../components/DeleteConfirmationDialog';
+import InfoCardList from '../../components/info-card/InfoCardList';
 import { useAsync } from '../../app/hooks';
 import api from '../api';
 import ConnectionInfoCard from './ConnectionInfoCard';
@@ -52,11 +53,11 @@ export default function ConnectionsView() {
                 itemInfoBuilder={getConnectionInfo}
             />
 
-            <div className="d-flex flex-column" style={{ gap: '10px', width: 'calc(min(100%, 600px))', maxWidth: '600px' }}>
+            <InfoCardList>
                 <LinkContainer to="/connections/add"><Button size="lg" variant="primary">Add Connection</Button></LinkContainer>
 
                 {connections?.state.list?.map(c => <ConnectionInfoCard key={c.id} connection={c} onDelete={() => { setDeletingConnection(c); }} />) }
-            </div>
+            </InfoCardList>
         </View>
     );
 }
