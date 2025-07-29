@@ -16,7 +16,7 @@ export const TwitchProtocolChannelSchema = yup.object().shape({
 });
 
 export const TwitchConfigSchema = yup.object().noUnknown().shape({
-    $type: yup.string().default(Protocol.Twitch),
+    $type: yup.string().oneOf([Protocol.Twitch]).default(Protocol.Twitch),
     receiveEvents: yup.boolean().default(true),
     channels: yup.array().of(TwitchProtocolChannelSchema).max(100).default([]).required(),
     auth: TwitchAuthSchema.required(),

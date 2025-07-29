@@ -9,7 +9,7 @@ export default function InfoCard({ title, children, className = '', props }: { t
 
     return (
         <Card className={`info-card ${className}`} {...props}>
-            <Card.Header style={{ display: 'grid', gap: '0.6em', gridTemplateColumns: '0fr 1fr 0fr' }}>
+            <Card.Header className="info-card-header" style={{ display: 'grid', gap: '0.6em', gridTemplateColumns: '0fr 1fr 0fr' }}>
                 <div>{(headerExtra as ReactElement<InfoCardHeaderExtraProps>[]).filter(item => item.props.position === 'start')}</div>
                 <div className="flex-grow-1 text-truncate">
                     <span className="fs-5">

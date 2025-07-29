@@ -1,0 +1,306 @@
+$node-border-radius: 10px;
+
+$socket-size: 15px;
+$socket-margin: 12px;
+
+$background-color: #222;
+$background-grid-color: #333;
+
+$context-menu-width: 300px;
+$context-menu-border-width: 2px;
+$context-menu-border-radius: 10px;
+$context-menu-safe-zone: 100px;
+$context-submenu-border-width: 2px;
+$context-submenu-border-radius: 5px;
+
+.graph-editor {
+  min-height: 300px;
+
+  --graph-type-color: gray;
+
+  .graph-type-boolean {
+    --graph-type-color: #4c4;
+  }
+
+  .graph-type-number {
+    --graph-type-color: #cc4;
+  }
+
+  .graph-type-string {
+    --graph-type-color: #a2a;
+  }
+
+  .graph-type-id {
+    --graph-type-color: #111;
+  }
+
+  .graph-background {
+    display: table;
+    z-index: -1;
+    position: absolute;
+    top: -320000px;
+    left: -320000px;
+    width: 640000px;
+    height: 640000px;
+
+    opacity: 1;
+    background-color: $background-color;
+    background-image:
+      linear-gradient($background-grid-color 3.2px, transparent 3.2px),
+      linear-gradient(90deg, $background-grid-color 3.2px, transparent 3.2px),
+      linear-gradient($background-grid-color 1.6px, transparent 1.6px),
+      linear-gradient(90deg, $background-grid-color 1.6px, $background-color 1.6px);
+
+    background-size: 80px 80px, 80px 80px, 16px 16px, 16px 16px;
+    background-position: -3.2px -3.2px, -3.2px -3.2px, -1.6px -1.6px, -1.6px -1.6px;
+  }
+
+  .graph-node {
+    background: #111;
+    border: 2px solid black;
+    cursor: pointer;
+    border-radius: $node-border-radius;
+    box-sizing: border-box;
+    padding-bottom: 6px;
+    position: relative;
+    user-select: none;
+
+    &:hover {
+      background: #222;
+    }
+
+    &.selected {
+      border-color: var(--primary-color);
+    }
+
+    .title {
+      color: white;
+      background: var(--primary-color);
+      font-size: 18px;
+      font-weight: bold;
+      padding: 4px;
+      padding-left: 16px;
+      padding-right: 16px;
+      border-top-left-radius: $node-border-radius / 1.25;
+      border-top-right-radius: $node-border-radius / 1.25;
+    }
+
+    .output {
+      text-align: right;
+    }
+    
+    .input {
+      text-align: left;
+    }
+
+    .output-socket {
+      text-align: right;
+      margin-right: -$socket-size;
+      display: inline-block;
+    }
+
+    .input-socket {
+      text-align: left;
+      margin-left: -$socket-size;
+      display: inline-block;
+    }
+
+    .input-title, .output-title {
+      vertical-align: middle;
+      color: white;
+      display: inline-block;
+      font-size: 18px;
+      margin: $socket-margin;
+      line-height: $socket-size;
+    }
+
+    .input-control {
+      z-index: 1;
+      width: calc(100% - ($socket-size + 2 * $socket-margin));
+      vertical-align: middle;
+      display: inline-block;
+    }
+
+    .control {
+      display: block;
+      padding: $socket-margin ($socket-size / 2 + $socket-margin);
+      color: black;
+    }
+    
+    .input .graph-socket {
+        border-right-width: 0px;
+        border-top-left-radius: 5px;
+        border-bottom-left-radius: 5px;
+    }
+
+    .output .graph-socket {
+        border-left-width: 0px;
+        border-top-right-radius: 5px;
+        border-bottom-right-radius: 5px;
+    }
+
+    .graph-socket {
+      display: inline-block;
+      cursor: pointer;
+      border: solid;
+      border-color: var(--graph-type-color);
+      width: $socket-size * 1.5;
+      height: $socket-size;
+      vertical-align: middle;
+      background: #fff;
+      z-index: 2;
+      box-sizing: border-box;
+
+      &:hover {
+        background: #ddd;
+      }
+
+      &.graph-socket-optional {
+        border: dashed;
+        border-color: var(--graph-type-color);
+      }
+
+      &.graph-type-exec {
+        border-color: var(--primary-color);
+        width: $socket-size * 1.5;
+        height: $socket-size * 1.5;
+        border-width: 5px;
+        border-radius: $socket-size !important;
+      }
+    }
+
+    .inputs-outputs {
+      display: grid;
+      grid-template-areas: "inner-div";
+      padding: 10px 0px;
+
+      .inputs, .outputs {
+        grid-area: inner-div;
+      }
+
+      .inputs {
+        margin-right: 100px;
+      }
+
+      .outputs {
+        margin-left: 100px;
+      }
+    }
+  }
+
+  .graph-connection {
+    overflow: visible !important;
+    position: absolute;
+    pointer-events: none;
+    width: 9999px;
+    height: 9999px;
+
+    path {
+      fill: none;
+      stroke: var(--graph-type-color);
+      stroke-width: 5px;
+      pointer-events: auto;
+      opacity: 0.9;
+    }
+
+    &.graph-connection-pseudo path {
+      stroke: #fff4;
+      stroke-width: 3px;
+    }
+
+    &.graph-type-exec path {
+      stroke: var(--primary-color);
+      stroke-dasharray: 10 5;
+      animation: dash 1s linear infinite;
+      stroke-dashoffset: 45;
+
+      @keyframes dash {
+        to {
+          stroke-dashoffset: 0;
+        }
+      }
+    }
+  }
+
+  .graph-context-menu {
+    padding: $context-menu-safe-zone;
+    padding: $context-menu-safe-zone;
+    margin: -$context-menu-safe-zone;
+    width: $context-menu-width + $context-menu-safe-zone * 2;
+    position: absolute;
+    z-index: 100;
+
+    .graph-context-menu-search {
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .graph-context-menu-common, .graph-context-menu-item {
+      color: #fff;
+      padding: 8px;
+      border: $context-menu-border-width solid var(--primary-color);
+      border-top: 0;
+      border-bottom: 0;
+      background-color: #222;
+      cursor: pointer;
+      width: 100%;
+      position: relative;
+
+      &:first-child {
+        border-top: $context-menu-border-width solid var(--primary-color);
+        border-top-left-radius: $context-menu-border-radius;
+        border-top-right-radius: $context-menu-border-radius;
+      }
+
+      &:last-child {
+        border-bottom: $context-menu-border-width solid var(--primary-color);
+        border-bottom-left-radius: $context-menu-border-radius;
+        border-bottom-right-radius: $context-menu-border-radius;
+      }
+      &:hover {
+        background-color: #333;
+      }
+    }
+
+    .graph-context-menu-common {
+      border-bottom: 1px solid #333;
+    }
+
+    .graph-context-menu-item {
+      padding-left: 15px;
+      border-top: 0;
+
+      &.graph-context-menu-item-folder:after {
+        content: '>';
+        position: absolute;
+        opacity: 0.6;
+        right: 5px;
+        top: 7px;
+      }
+    }
+
+    .graph-context-menu-subitems {
+      position: absolute;
+      top: 0;
+      left: calc(100% + $context-submenu-border-width);
+      width: $context-menu-width;
+
+      .graph-context-menu-item {
+        border-left: $context-submenu-border-width solid var(--primary-color);
+        border-right: $context-submenu-border-width solid var(--primary-color);
+
+        &:first-child {
+          border-top: $context-submenu-border-width solid var(--primary-color);
+          border-top-left-radius: $context-submenu-border-radius;
+          border-top-right-radius: $context-submenu-border-radius;
+        }
+
+        &:last-child {
+          border-bottom: $context-submenu-border-width solid var(--primary-color);
+          border-bottom-left-radius: $context-submenu-border-radius;
+          border-bottom-right-radius: $context-submenu-border-radius;
+        }
+      }
+    }
+  }
+}

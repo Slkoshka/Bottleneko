@@ -167,7 +167,6 @@ export default function TwitchAuthWizard({ show, onSuccess, onCancel }: { show: 
             });
 
             const verification = await result.json() as TwitchVerification;
-            console.log(verification);
             setStage({ id: 'ready-for-authorization', config, verification });
         }
         catch (err) {

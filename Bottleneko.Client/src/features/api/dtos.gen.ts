@@ -13,8 +13,7 @@ export interface DiscordProtocolConfiguration {
 export type ProtocolConfiguration =
     DiscordProtocolConfiguration |
     TelegramProtocolConfiguration |
-    TwitchProtocolConfiguration |
-    { $type: string };
+    TwitchProtocolConfiguration;
 
 export interface TelegramProtocolConfiguration {
     $type: 'Telegram';
@@ -199,8 +198,7 @@ export interface ChatMessageLetter {
 
 export type Letter =
     LogLetter |
-    ChatMessageLetter |
-    { $type: string };
+    ChatMessageLetter;
 
 export interface MailPacket {
     $type: 'Mail';
@@ -212,8 +210,7 @@ export type Packet =
     AuthenticatePacket |
     SubscribePacket |
     MailPacket |
-    UnsubscribePacket |
-    { $type: string };
+    UnsubscribePacket;
 
 export interface SubscribePacket {
     $type: 'Subscribe';
@@ -245,8 +242,7 @@ export interface ChatMessagesSubscriptionTopic {
 
 export type SubscriptionTopic =
     LogsSubscriptionTopic |
-    ChatMessagesSubscriptionTopic |
-    { $type: string };
+    ChatMessagesSubscriptionTopic;
 
 export interface UnsubscribePacket {
     $type: 'Unsubscribe';
@@ -371,11 +367,16 @@ export enum ScriptStatus {
 
 export type ScriptCode =
     JsScriptCode |
-    { $type: string };
+    GraphScriptCode;
 
 export interface JsScriptCode {
     $type: 'JavaScript';
     source: string;
+}
+
+export interface GraphScriptCode {
+    $type: 'Graph';
+    data: string;
 }
 
 export interface ScriptDto {

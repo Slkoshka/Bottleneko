@@ -14,9 +14,12 @@ public enum ScriptStatus
 }
 
 [JsonDerivedType(typeof(JsScriptCode), "JavaScript")]
+[JsonDerivedType(typeof(GraphScriptCode), "Graph")]
 [SerializeAsJson]
 public abstract record ScriptCode();
 
 public record JsScriptCode(string Source) : ScriptCode;
+
+public record GraphScriptCode(string Data) : ScriptCode;
 
 public record ScriptDto(string Id, string Name, string Description, bool AutoStart, ScriptCode Code, ScriptStatus Status);

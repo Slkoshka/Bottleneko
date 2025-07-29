@@ -1,4 +1,5 @@
 import { FC, ReactNode } from 'react';
+import { addMethod, MixedSchema, AnySchema } from 'yup';
 import { RequestError } from '../features/api/errors';
 import { ErrorCode } from '../features/api/responses';
 
@@ -69,3 +70,21 @@ export function splitChildren(children: ReactNode | undefined, categories: (FC<a
     childrenByCategory.push([...unclaimedChildren]);
     return childrenByCategory;
 }
+
+declare module 'yup' {
+    interface MixedSchema {
+        oneOfSchemas<T>(schemas: AnySchema[]): MixedSchema<T>;
+    }
+}
+
+export const oneOfSchemas: Parameters<typeof addMethod> = [
+    MixedSchema,
+    'oneOfSchemas',
+    function (schemas: AnySchema[]) {
+        return (this as AnySchema).when(
+            (_, __, options) => schemas.find(one => one.isValidSync(options.value)) ?? schemas[0],
+        );
+    },
+];
+
+addMethod(...oneOfSchemas);

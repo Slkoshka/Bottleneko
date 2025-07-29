@@ -13,7 +13,7 @@ export default function AddConnectionView() {
     const [stage, setStage] = useState<AddConnectionStage>({ stage: 'select' });
     const [protocol, setProtocol] = useState<Protocol>(Protocol.Discord);
 
-    let stageView = <div />;
+    let stageView = <></>;
     switch (stage.stage) {
         case 'select':
             stageView = <AddConnectionSelect protocol={protocol} setStage={setStage} onChanged={setProtocol} />;
@@ -33,7 +33,7 @@ export default function AddConnectionView() {
     }
 
     return (
-        <View title={stage.stage === 'select' ? 'Add new connection' : stage.stage === 'config' ? `Connect to ${protocols[protocol].name}` : stage.definition.name}>
+        <View title={stage.stage === 'select' ? 'Add a new connection' : stage.stage === 'config' ? `Connect to ${protocols[protocol].name}` : stage.definition.name}>
             {stageView}
         </View>
     );

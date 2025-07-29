@@ -162,11 +162,11 @@ class Program
                     case UnionDefinition unionDefinition:
                         generatedTypes.AppendLine();
                         generatedTypes.AppendLine($"export type {unionDefinition.Name} =");
-                        foreach (var subType in unionDefinition.Types)
+                        foreach (var subType in unionDefinition.Types.Take(unionDefinition.Types.Length - 1))
                         {
                             generatedTypes.AppendLine($"    {GetType(destTypes, subType.Type).Name} |");
                         }
-                        generatedTypes.AppendLine($"    {{ $type: string }};");
+                        generatedTypes.AppendLine($"    {GetType(destTypes, unionDefinition.Types.Last().Type).Name};");
                         break;
                 }
             }

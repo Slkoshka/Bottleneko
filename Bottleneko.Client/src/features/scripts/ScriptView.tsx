@@ -76,7 +76,7 @@ export default function ScriptView() {
             <TabView.Tab id="settings" title="Edit">
                 {
                     script
-                        ? <ScriptEditor initialScript={script} onSaved={onSaved} />
+                        ? <ScriptEditor id={script.id} script={script} onSaved={onSaved} />
                         : <></>
                 }
             </TabView.Tab>

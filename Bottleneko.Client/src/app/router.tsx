@@ -9,7 +9,7 @@ import AddUserView from '../features/users/AddUserView';
 import UserView from '../features/users/UserView';
 import SettingsView from '../features/settings/SettingsView';
 import ScriptsView from '../features/scripts/ScriptsView';
-import AddScriptView from '../features/scripts/AddScriptView';
+import AddScriptView from '../features/scripts/add-wizard/AddScriptView';
 import ScriptView from '../features/scripts/ScriptView';
 import MessagesView from '../features/messages/MessagesView';
 import NotFoundPage from '../pages/NotFoundPage';

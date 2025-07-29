@@ -2,8 +2,8 @@
 import { editor } from 'monaco-editor';
 import { useRef } from 'react';
 import { Card } from 'react-bootstrap';
-import { ScriptCode } from '../api/dtos.gen';
-import typeDefs from './api/typeDefs';
+import { ScriptCode } from '../../api/dtos.gen';
+import typeDefs from '../api/typeDefs';
 
 export default function JsScriptEditor({ initialCode, onChange, props, className }: { initialCode?: string; onChange: (code: ScriptCode) => void; props?: object; className?: string }) {
     const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
