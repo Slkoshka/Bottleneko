@@ -25,7 +25,8 @@ type Requires<Schemes extends BaseSchemes> =
     { type: 'unmount'; data: { element: HTMLElement } } |
     { type: 'pointerdown'; data: { position: Position; event: PointerEvent } } |
     { type: 'pointermove'; data: { position: Position; event: PointerEvent } } |
-    { type: 'nodedragged'; data: AnyNekoNode };
+    { type: 'nodedragged'; data: AnyNekoNode } |
+    { type: 'nodepicked'; data: { id: string } };
 
 export type BSchemes = GetSchemes<
     AnyNekoNode,
@@ -232,7 +233,7 @@ export class ContextMenuPlugin<Schemes extends BSchemes> extends Scope<never, [R
                     void parent.emit({ type: 'unmount', data: { element } });
                 }
             }
-            else if (context.type === 'nodedragged') {
+            else if (context.type === 'nodedragged' || context.type === 'nodepicked') {
                 void parent.emit({ type: 'unmount', data: { element } });
             }
             return context;
