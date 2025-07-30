@@ -74,7 +74,6 @@ export async function createEditor(container: HTMLElement, onChange: (code: Scri
         selectorAccumulating,
     );
 
-    render.use(reroute);
     render.addPreset(
         Presets.reroute.setup({
             pointerdown(id) {
@@ -183,6 +182,9 @@ export async function createEditor(container: HTMLElement, onChange: (code: Scri
     area.use(contextMenu);
     area.use(render);
     area.use(history);
+    render.use(reroute);
+
+    contextMenu.useConnections(connection as never);
 
     let isDirty = false;
 

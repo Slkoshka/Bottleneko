@@ -1,7 +1,10 @@
-import { BaseSchemes, GetSchemes, NodeEditor, Scope } from 'rete';
+import { BaseSchemes, ClassicPreset, GetSchemes, NodeEditor, Scope } from 'rete';
 import { Position, RenderSignal } from 'rete-react-plugin';
 import { BaseArea, BaseAreaPlugin } from 'rete-area-plugin';
-import { NodeCollection, nodes } from '../nodes';
+import { Connection } from 'rete-connection-plugin';
+import { AnyNekoNode, NodeCollection, nodes } from '../nodes';
+import { NekoSocket } from '../sockets';
+import NekoConnection from '../connections/NekoConnection';
 import { Item } from '.';
 
 export type ContextMenuExtra =
@@ -11,17 +14,24 @@ export type ContextMenuExtra =
         searchBar?: boolean;
     }>;
 
+export interface SocketData {
+    nodeId: string;
+    key: string;
+    side: 'input' | 'output';
+}
+
 type Requires<Schemes extends BaseSchemes> =
-    { type: 'contextmenu'; data: { event: MouseEvent; context: 'root' | Schemes['Node'] | Schemes['Connection'] } } |
+    { type: 'contextmenu'; data: { event: MouseEvent; context: 'root' | AnyNekoNode | Schemes['Connection']; autoConnectTo?: SocketData } } |
     { type: 'unmount'; data: { element: HTMLElement } } |
-    { type: 'pointerdown'; data: { position: Position; event: PointerEvent } };
+    { type: 'pointerdown'; data: { position: Position; event: PointerEvent } } |
+    { type: 'pointermove'; data: { position: Position; event: PointerEvent } };
 
 export type BSchemes = GetSchemes<
-    BaseSchemes['Node'] & { clone?: () => BaseSchemes['Node'] },
+    AnyNekoNode,
     BaseSchemes['Connection']
 >;
 
-function getItems<Schemes extends BSchemes>(context: 'root' | Schemes['Node'], plugin: ContextMenuPlugin<Schemes>) {
+function getItems<Schemes extends BSchemes>(context: 'root' | AnyNekoNode | BaseSchemes['Connection'], plugin: ContextMenuPlugin<Schemes>) {
     const area = plugin.parentScope<BaseAreaPlugin<Schemes, unknown>>(BaseAreaPlugin);
     const editor = area.parentScope<NodeEditor<Schemes>>(NodeEditor);
 
@@ -41,10 +51,48 @@ function getItems<Schemes extends BSchemes>(context: 'root' | Schemes['Node'], p
             return {
                 label: name,
                 key: idx.toString(),
-                handler: async () => {
+                handler: async (autoConnectTo) => {
                     const node = items.default();
                     await editor.addNode(node);
                     void area.translate(node.id, area.area.pointer);
+
+                    type NamedPort = [name: string, port: ClassicPreset.Port<NekoSocket>];
+                    const findMatch = (node: AnyNekoNode, nodeSide: 'input' | 'output', connectTo: NamedPort) => {
+                        const pins = nodeSide === 'input' ? node.inputs : node.outputs;
+                        const sockets = Object.entries(pins) as NamedPort[];
+
+                        const isCompatible = (mySocket: NekoSocket) => nodeSide === 'input' ? connectTo[1].socket.isCompatibleWith(mySocket) : mySocket.isCompatibleWith(connectTo[1].socket);
+                        const strategies = [
+                            ([key, pin]: NamedPort) => {
+                                return key === connectTo[0] && isCompatible(pin.socket);
+                            },
+                            ([, pin]: NamedPort) => isCompatible(pin.socket),
+                        ];
+
+                        for (const strategy of strategies) {
+                            const match = sockets.find(strategy);
+                            if (match) {
+                                return match[0];
+                            }
+                        }
+                        return undefined;
+                    };
+
+                    const autoConnectNode = autoConnectTo ? editor.getNode(autoConnectTo.nodeId) : undefined;
+                    if (autoConnectTo && autoConnectNode) {
+                        const socket = ((autoConnectTo.side === 'input' ? autoConnectNode.inputs : autoConnectNode.outputs) as Record<string, ClassicPreset.Port<NekoSocket> | undefined>)[autoConnectTo.key];
+                        if (socket) {
+                            const matchingSocket = findMatch(node, autoConnectTo.side === 'input' ? 'output' : 'input', [autoConnectTo.key, socket]);
+                            if (matchingSocket) {
+                                if (autoConnectTo.side === 'input') {
+                                    await editor.addConnection(new NekoConnection(node, matchingSocket as never, autoConnectNode, autoConnectTo.key as never));
+                                }
+                                else {
+                                    await editor.addConnection(new NekoConnection(autoConnectNode, autoConnectTo.key as never, node, matchingSocket as never));
+                                }
+                            }
+                        }
+                    }
                 },
             };
         }
@@ -76,7 +124,7 @@ function getItems<Schemes extends BSchemes>(context: 'root' | Schemes['Node'], p
         },
     };
 
-    const clone = context.clone?.bind(context);
+    const clone = context instanceof ClassicPreset.Connection ? undefined : (context as AnyNekoNode).clone.bind(context);
     const cloneItem: undefined | Item = clone
         ? {
                 label: 'Clone',
@@ -98,9 +146,34 @@ function getItems<Schemes extends BSchemes>(context: 'root' | Schemes['Node'], p
     };
 }
 
-export class ContextMenuPlugin<Schemes extends BaseSchemes> extends Scope<never, [Requires<Schemes> | ContextMenuExtra]> {
+export class ContextMenuPlugin<Schemes extends BSchemes> extends Scope<never, [Requires<Schemes> | ContextMenuExtra]> {
+    lastPointerEvent?: PointerEvent;
+
     constructor() {
         super('context-menu');
+    }
+
+    useConnections(connections: Scope<Connection | Requires<Schemes>>) {
+        connections.addPipe((context) => {
+            if (context.type === 'pointermove') {
+                this.lastPointerEvent = context.data.event;
+            }
+            else if (this.lastPointerEvent && context.type === 'connectiondrop' && context.data.socket === null && !context.data.created) {
+                void this.parentScope().emit({
+                    type: 'contextmenu',
+                    data: {
+                        event: this.lastPointerEvent,
+                        context: 'root',
+                        autoConnectTo: {
+                            nodeId: context.data.initial.nodeId,
+                            key: context.data.initial.key,
+                            side: context.data.initial.side,
+                        },
+                    },
+                });
+            }
+            return context;
+        });
     }
 
     setParent(scope: Scope<Requires<Schemes>>): void {
@@ -146,6 +219,7 @@ export class ContextMenuPlugin<Schemes extends BaseSchemes> extends Scope<never,
                             void parent.emit({ type: 'unmount', data: { element } });
                         },
                         items: list,
+                        autoConnectTo: context.data.autoConnectTo,
                     },
                 });
             }

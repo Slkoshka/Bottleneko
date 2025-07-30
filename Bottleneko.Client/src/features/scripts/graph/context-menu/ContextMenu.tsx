@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Form } from 'react-bootstrap';
 import { useOnce } from '../../../../app/hooks';
 import { ContextMenuItem } from './ContextMenuItem';
+import { SocketData } from './ContextMenuPlugin';
 import { Item } from '.';
 
 interface ContextMenuProps {
@@ -9,6 +10,7 @@ interface ContextMenuProps {
     delay: number;
     searchBar?: boolean;
     onHide: () => void;
+    autoConnectTo?: SocketData;
 }
 
 const flattenItems = (items: Item[]): Item[] => {
@@ -64,6 +66,7 @@ export function ContextMenu(props: ContextMenuProps) {
                         data={item}
                         delay={props.delay}
                         hide={props.onHide}
+                        autoConnectTo={props.autoConnectTo}
                     >
                         {item.label}
                     </ContextMenuItem>

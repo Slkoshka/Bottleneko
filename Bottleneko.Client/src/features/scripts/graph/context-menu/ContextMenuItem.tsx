@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useDebounce } from '../../../../app/hooks';
+import { SocketData } from './ContextMenuPlugin';
 import { Item } from '.';
 
 interface ContextMenuItemProps {
@@ -7,6 +8,7 @@ interface ContextMenuItemProps {
     delay: number;
     hide: () => void;
     children: React.ReactNode;
+    autoConnectTo?: SocketData;
 }
 
 export function ContextMenuItem(props: ContextMenuItemProps) {
@@ -24,7 +26,7 @@ export function ContextMenuItem(props: ContextMenuItemProps) {
                     e.preventDefault();
                 }
                 else {
-                    void props.data.handler();
+                    void props.data.handler(props.autoConnectTo);
                     props.hide();
                 }
             }}
@@ -46,6 +48,7 @@ export function ContextMenuItem(props: ContextMenuItemProps) {
                             data={item}
                             delay={props.delay}
                             hide={props.hide}
+                            autoConnectTo={props.autoConnectTo}
                         >
                             {item.label}
                         </ContextMenuItem>

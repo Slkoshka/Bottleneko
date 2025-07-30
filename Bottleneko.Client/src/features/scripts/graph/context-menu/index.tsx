@@ -1,14 +1,22 @@
 import { BaseSchemes } from 'rete';
-import { ContextMenuRender } from 'rete-react-plugin/_types/presets/context-menu/types';
 import { RenderPreset } from 'rete-react-plugin/_types/presets/types';
+import { RenderSignal } from 'rete-react-plugin';
 import { ContextMenu } from './ContextMenu';
+import { SocketData } from './ContextMenuPlugin';
 
 export interface Item {
     label: string;
     key: string;
-    handler(): void | Promise<void>;
+    handler(autoConnectTo?: SocketData): void | Promise<void>;
     subitems?: Item[];
 }
+
+export type ContextMenuRender = RenderSignal<'contextmenu', {
+    items: Item[];
+    onHide(): void;
+    searchBar?: boolean;
+    autoConnectTo?: SocketData;
+}>;
 
 export function setupContextMenu<Schemes extends BaseSchemes, K extends ContextMenuRender>(): RenderPreset<Schemes, K> {
     return {
@@ -20,6 +28,7 @@ export function setupContextMenu<Schemes extends BaseSchemes, K extends ContextM
                         delay={200}
                         searchBar={context.data.searchBar}
                         onHide={() => { context.data.onHide(); }}
+                        autoConnectTo={context.data.autoConnectTo}
                     />
                 );
             }
