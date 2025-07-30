@@ -4,7 +4,7 @@ import { NodeEditor, GetSchemes, ClassicPreset } from 'rete';
 import { ReactPlugin, Presets, ReactArea2D } from 'rete-react-plugin';
 import { Area2D, AreaExtensions, AreaPlugin } from 'rete-area-plugin';
 import { ClassicFlow, ConnectionPlugin, getSourceTarget } from 'rete-connection-plugin';
-import { HistoryExtensions, HistoryPlugin, Presets as HistoryPresets } from 'rete-history-plugin';
+import { HistoryPlugin, Presets as HistoryPresets } from 'rete-history-plugin';
 import { ScriptCode } from '../../api/dtos.gen';
 import { AnyNekoNode } from './nodes';
 import NekoConnection from './connections/NekoConnection';
@@ -14,8 +14,10 @@ import { NekoSocket } from './sockets';
 import { ConnectionRenderer } from './renderers/ConnectionRenderer';
 import { NekoNode } from './nodes/NekoNode';
 import { ControlRenderer } from './renderers/ControlRenderer';
-import { setupContextMenu } from './context-menu';
-import { ContextMenuExtra, ContextMenuPlugin } from './context-menu/ContextMenuPlugin';
+import { setupContextMenu } from './plugins/context-menu';
+import { ContextMenuExtra, ContextMenuPlugin } from './plugins/context-menu/ContextMenuPlugin';
+import { nodeSelection } from './plugins/nodeSelection';
+import { setupShortcuts } from './plugins/keyboard';
 
 type Schemes = GetSchemes<
     AnyNekoNode,
@@ -53,17 +55,13 @@ export async function createEditor(container: HTMLElement, onChange: (code: Scri
     const connection = new ConnectionPlugin<Schemes, AreaExtra>();
     const history = new HistoryPlugin<Schemes>();
 
-    HistoryExtensions.keyboard(history);
     history.addPreset(HistoryPresets.classic.setup());
 
     const contextMenu = new ContextMenuPlugin<Schemes>();
 
     const selector = AreaExtensions.selector();
-    const selectorAccumulating = AreaExtensions.accumulateOnCtrl();
 
-    AreaExtensions.selectableNodes(area, selector, {
-        accumulating: selectorAccumulating,
-    });
+    const selection = nodeSelection(area, selector);
     AreaExtensions.simpleNodesOrder(area);
 
     render.addPreset(Presets.classic.setup<Schemes, ReactArea2D<Schemes>>({
@@ -159,8 +157,8 @@ export async function createEditor(container: HTMLElement, onChange: (code: Scri
     area.use(contextMenu);
     area.use(render);
     area.use(history);
-    render.use(reroute);
 
+    const shortcuts = setupShortcuts(container, editor, history);
     contextMenu.useConnections(connection as never);
 
     let isDirty = false;
@@ -238,6 +236,8 @@ export async function createEditor(container: HTMLElement, onChange: (code: Scri
             }
             clearInterval(delayedUpdateTimer);
             area.destroy();
+            selection.destroy();
+            shortcuts.destroy();
         },
     };
 };

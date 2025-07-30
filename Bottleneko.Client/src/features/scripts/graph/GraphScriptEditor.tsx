@@ -18,7 +18,7 @@ export default function GraphScriptEditor({ onChange, props, className }: { init
 
     return (
         <Card className={`graph-editor w-100 h-100 ${className ?? ''}`} {...props}>
-            <div ref={ref} className="graph-editor-content w-100 h-100" />
+            <div ref={ref} className="graph-editor-content w-100 h-100" tabIndex={0} style={{ outline: 'none' }} />
 
             <div style={{ position: 'absolute', zIndex: '0', margin: '10px' }}>
                 <Button

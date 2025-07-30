@@ -2,9 +2,9 @@ import { BaseSchemes, ClassicPreset, GetSchemes, NodeEditor, Scope } from 'rete'
 import { Position, RenderSignal } from 'rete-react-plugin';
 import { BaseArea, BaseAreaPlugin } from 'rete-area-plugin';
 import { Connection } from 'rete-connection-plugin';
-import { AnyNekoNode, NodeCollection, nodes } from '../nodes';
-import { NekoSocket } from '../sockets';
-import NekoConnection from '../connections/NekoConnection';
+import { AnyNekoNode, NodeCollection, nodes } from '../../nodes';
+import { NekoSocket } from '../../sockets';
+import NekoConnection from '../../connections/NekoConnection';
 import { Item } from '.';
 
 export type ContextMenuExtra =
@@ -24,7 +24,8 @@ type Requires<Schemes extends BaseSchemes> =
     { type: 'contextmenu'; data: { event: MouseEvent; context: 'root' | AnyNekoNode | Schemes['Connection']; autoConnectTo?: SocketData } } |
     { type: 'unmount'; data: { element: HTMLElement } } |
     { type: 'pointerdown'; data: { position: Position; event: PointerEvent } } |
-    { type: 'pointermove'; data: { position: Position; event: PointerEvent } };
+    { type: 'pointermove'; data: { position: Position; event: PointerEvent } } |
+    { type: 'nodedragged'; data: AnyNekoNode };
 
 export type BSchemes = GetSchemes<
     AnyNekoNode,
@@ -115,11 +116,14 @@ function getItems<Schemes extends BSchemes>(context: 'root' | AnyNekoNode | Base
             }
             else {
                 // Node
-                const connections = editor.getConnections().filter(c => c.source === context.id || c.target === context.id);
-                for (const connection of connections) {
-                    await editor.removeConnection(connection.id);
+                const nodes = context.selected ? editor.getNodes().filter(node => node.selected) : [context];
+                for (const node of nodes) {
+                    const connections = editor.getConnections().filter(c => c.source === node.id || c.target === node.id);
+                    for (const connection of connections) {
+                        await editor.removeConnection(connection.id);
+                    }
+                    await editor.removeNode(node.id);
                 }
-                await editor.removeNode(context.id);
             }
         },
     };
@@ -227,6 +231,9 @@ export class ContextMenuPlugin<Schemes extends BSchemes> extends Scope<never, [R
                 if (!context.data.event.composedPath().includes(element)) {
                     void parent.emit({ type: 'unmount', data: { element } });
                 }
+            }
+            else if (context.type === 'nodedragged') {
+                void parent.emit({ type: 'unmount', data: { element } });
             }
             return context;
         });
