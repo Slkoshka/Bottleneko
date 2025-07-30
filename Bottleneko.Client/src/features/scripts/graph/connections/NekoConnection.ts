@@ -1,8 +1,8 @@
 import { ClassicPreset } from 'rete';
-import { AnyNekoNode } from '../nodes';
+import { NekoNode } from '../nodes';
 import { NekoSocket, OptionalSocket } from '../sockets';
 
-export default class NekoConnection<A extends AnyNekoNode, B extends AnyNekoNode> extends ClassicPreset.Connection<A, B> {
+export default class NekoConnection<A extends NekoNode = NekoNode, B extends NekoNode = NekoNode> extends ClassicPreset.Connection<A, B> {
     sourceType: string;
     innerSourceType?: string;
     targetType: string;

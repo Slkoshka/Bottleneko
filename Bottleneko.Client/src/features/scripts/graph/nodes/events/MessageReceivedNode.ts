@@ -1,8 +1,8 @@
 import { ClassicPreset } from 'rete';
 import { ChatMessageSocket, ExecSocket } from '../../sockets';
-import { NekoNode } from '../NekoNode';
+import { NekoNodeBase } from '../NekoNodeBase';
 
-export class MessageReceivedNode extends NekoNode<
+export class MessageReceivedNode extends NekoNodeBase<
     object,
     {
         exec: ExecSocket;

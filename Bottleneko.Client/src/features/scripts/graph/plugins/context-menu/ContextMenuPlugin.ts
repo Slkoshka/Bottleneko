@@ -1,10 +1,11 @@
-import { BaseSchemes, ClassicPreset, GetSchemes, NodeEditor, Scope } from 'rete';
+import { ClassicPreset, NodeEditor, Scope } from 'rete';
 import { Position, RenderSignal } from 'rete-react-plugin';
 import { BaseArea, BaseAreaPlugin } from 'rete-area-plugin';
 import { Connection } from 'rete-connection-plugin';
-import { AnyNekoNode, NodeCollection, nodes } from '../../nodes';
+import { NekoNode, NodeCollection, nodes } from '../../nodes';
 import { NekoSocket } from '../../sockets';
 import NekoConnection from '../../connections/NekoConnection';
+import { Schemes } from '../../editor';
 import { Item } from '.';
 
 export type ContextMenuExtra =
@@ -12,7 +13,8 @@ export type ContextMenuExtra =
         items: Item[];
         onHide(): void;
         searchBar?: boolean;
-    }>;
+    }> |
+    { type: 'hidecontextmenu' };
 
 export interface SocketData {
     nodeId: string;
@@ -20,20 +22,17 @@ export interface SocketData {
     side: 'input' | 'output';
 }
 
-type Requires<Schemes extends BaseSchemes> =
-    { type: 'contextmenu'; data: { event: MouseEvent; context: 'root' | AnyNekoNode | Schemes['Connection']; autoConnectTo?: SocketData } } |
+type Requires =
+    { type: 'contextmenu'; data: { event: MouseEvent; context: 'root' | NekoNode | NekoConnection; autoConnectTo?: SocketData } } |
     { type: 'unmount'; data: { element: HTMLElement } } |
     { type: 'pointerdown'; data: { position: Position; event: PointerEvent } } |
     { type: 'pointermove'; data: { position: Position; event: PointerEvent } } |
-    { type: 'nodedragged'; data: AnyNekoNode } |
-    { type: 'nodepicked'; data: { id: string } };
+    { type: 'nodedragged'; data: NekoNode } |
+    { type: 'nodepicked'; data: { id: string } } |
+    { type: 'connectioncreated'; data: NekoConnection } |
+    { type: 'connectionremoved'; data: NekoConnection };
 
-export type BSchemes = GetSchemes<
-    AnyNekoNode,
-    BaseSchemes['Connection']
->;
-
-function getItems<Schemes extends BSchemes>(context: 'root' | AnyNekoNode | BaseSchemes['Connection'], plugin: ContextMenuPlugin<Schemes>) {
+function getItems(context: 'root' | NekoNode | NekoConnection, plugin: ContextMenuPlugin) {
     const area = plugin.parentScope<BaseAreaPlugin<Schemes, unknown>>(BaseAreaPlugin);
     const editor = area.parentScope<NodeEditor<Schemes>>(NodeEditor);
 
@@ -59,7 +58,7 @@ function getItems<Schemes extends BSchemes>(context: 'root' | AnyNekoNode | Base
                     void area.translate(node.id, area.area.pointer);
 
                     type NamedPort = [name: string, port: ClassicPreset.Port<NekoSocket>];
-                    const findMatch = (node: AnyNekoNode, nodeSide: 'input' | 'output', connectTo: NamedPort) => {
+                    const findMatch = (node: NekoNode, nodeSide: 'input' | 'output', connectTo: NamedPort) => {
                         const pins = nodeSide === 'input' ? node.inputs : node.outputs;
                         const sockets = Object.entries(pins) as NamedPort[];
 
@@ -129,7 +128,7 @@ function getItems<Schemes extends BSchemes>(context: 'root' | AnyNekoNode | Base
         },
     };
 
-    const clone = context instanceof ClassicPreset.Connection ? undefined : (context as AnyNekoNode).clone.bind(context);
+    const clone = context instanceof ClassicPreset.Connection ? undefined : context.clone.bind(context);
     const cloneItem: undefined | Item = clone
         ? {
                 label: 'Clone',
@@ -151,14 +150,14 @@ function getItems<Schemes extends BSchemes>(context: 'root' | AnyNekoNode | Base
     };
 }
 
-export class ContextMenuPlugin<Schemes extends BSchemes> extends Scope<never, [Requires<Schemes> | ContextMenuExtra]> {
+export class ContextMenuPlugin extends Scope<never, [Requires | ContextMenuExtra]> {
     lastPointerEvent?: PointerEvent;
 
     constructor() {
         super('context-menu');
     }
 
-    useConnections(connections: Scope<Connection | Requires<Schemes>>) {
+    useConnections(connections: Scope<Connection | Requires>) {
         connections.addPipe((context) => {
             if (context.type === 'pointermove') {
                 this.lastPointerEvent = context.data.event;
@@ -181,7 +180,7 @@ export class ContextMenuPlugin<Schemes extends BSchemes> extends Scope<never, [R
         });
     }
 
-    setParent(scope: Scope<Requires<Schemes>>): void {
+    setParent(scope: Scope<Requires>): void {
         super.setParent(scope);
 
         const area = this.parentScope<BaseAreaPlugin<Schemes, BaseArea<Schemes>>>(BaseAreaPlugin);
@@ -228,12 +227,15 @@ export class ContextMenuPlugin<Schemes extends BSchemes> extends Scope<never, [R
                     },
                 });
             }
+            else if (context.type === 'hidecontextmenu') {
+                void parent.emit({ type: 'unmount', data: { element } });
+            }
             else if (context.type === 'pointerdown') {
                 if (!context.data.event.composedPath().includes(element)) {
                     void parent.emit({ type: 'unmount', data: { element } });
                 }
             }
-            else if (context.type === 'nodedragged' || context.type === 'nodepicked') {
+            else if (context.type === 'nodedragged' || context.type === 'nodepicked' || context.type === 'connectioncreated' || context.type === 'connectionremoved') {
                 void parent.emit({ type: 'unmount', data: { element } });
             }
             return context;

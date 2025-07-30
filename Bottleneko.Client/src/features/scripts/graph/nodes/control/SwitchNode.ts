@@ -1,8 +1,9 @@
-import { ClassicPreset } from 'rete';
-import { ExecSocket, NekoSocket, SwitchableInputSocket, SwitchableObjectSocket } from '../../sockets';
-import { NekoNode } from '../NekoNode';
+import { ClassicPreset, NodeEditor } from 'rete';
+import { ExecSocket, SwitchableInputSocket, SwitchableObjectSocket } from '../../sockets';
+import { NekoNodeBase, NodeSocket } from '../NekoNodeBase';
+import { Schemes } from '../../editor';
 
-export class SwitchNode extends NekoNode<
+export class SwitchNode extends NekoNodeBase<
     {
         exec: ExecSocket;
         in: SwitchableInputSocket;
@@ -26,19 +27,23 @@ export class SwitchNode extends NekoNode<
         // Controls
     }
 
-    connect(source: NekoSocket, target: NekoSocket) {
-        if (target === this.inputs.in?.socket && source.type !== this.type) {
+    connect(editor: NodeEditor<Schemes>, source: NodeSocket, target: NodeSocket) {
+        if (target.socket === this.inputs.in?.socket && source.socket.type !== this.type) {
+            for (const connection of editor.getConnections().filter(connection => connection.source === this.id)) {
+                void editor.removeConnection(connection.id);
+            }
+
             for (const output of Object.keys(this.outputs)) {
                 this.removeOutput(output as never);
             }
 
-            if (source instanceof SwitchableObjectSocket) {
-                for (const { id, name } of source.options()) {
+            if (source.socket instanceof SwitchableObjectSocket) {
+                for (const { id, name } of source.socket.options()) {
                     this.addOutput(id, new ClassicPreset.Output(new ExecSocket(), name, false));
                 }
             }
 
-            this.type = source.type;
+            this.type = source.socket.type;
 
             return true;
         }
@@ -47,9 +52,13 @@ export class SwitchNode extends NekoNode<
         }
     }
 
-    disconnect(source: NekoSocket | null, target: NekoSocket) {
+    disconnect(editor: NodeEditor<Schemes>, source: NodeSocket | null, target: NodeSocket) {
         void source;
         void target;
+
+        for (const connection of editor.getConnections().filter(connection => connection.source === this.id)) {
+            void editor.removeConnection(connection.id);
+        }
 
         for (const output of Object.keys(this.outputs)) {
             this.removeOutput(output as never);

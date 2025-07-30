@@ -1,30 +1,31 @@
 import './graph.scss';
 import { createRoot } from 'react-dom/client';
-import { NodeEditor, GetSchemes, ClassicPreset } from 'rete';
+import { NodeEditor, GetSchemes, ClassicPreset, Root } from 'rete';
 import { ReactPlugin, Presets, ReactArea2D } from 'rete-react-plugin';
 import { Area2D, AreaExtensions, AreaPlugin } from 'rete-area-plugin';
-import { ClassicFlow, ConnectionPlugin, getSourceTarget } from 'rete-connection-plugin';
+import { ConnectionPlugin, getSourceTarget } from 'rete-connection-plugin';
 import { HistoryPlugin, Presets as HistoryPresets } from 'rete-history-plugin';
 import { ScriptCode } from '../../api/dtos.gen';
-import { AnyNekoNode } from './nodes';
+import { NekoNode } from './nodes';
 import NekoConnection from './connections/NekoConnection';
 import { NodeRenderer } from './renderers/NodeRenderer';
 import { SocketRenderer } from './renderers/SocketRenderer';
 import { NekoSocket } from './sockets';
 import { ConnectionRenderer } from './renderers/ConnectionRenderer';
-import { NekoNode } from './nodes/NekoNode';
+import { NekoNodeBase } from './nodes/NekoNodeBase';
 import { ControlRenderer } from './renderers/ControlRenderer';
 import { setupContextMenu } from './plugins/context-menu';
 import { ContextMenuExtra, ContextMenuPlugin } from './plugins/context-menu/ContextMenuPlugin';
 import { nodeSelection } from './plugins/nodeSelection';
 import { setupShortcuts } from './plugins/keyboard';
+import { ConnectionFlow } from './plugins/connections';
 
-type Schemes = GetSchemes<
-    AnyNekoNode,
-    NekoConnection<AnyNekoNode, AnyNekoNode>
+export type Schemes = GetSchemes<
+    NekoNode,
+    NekoConnection
 >;
 
-type AreaExtra = Area2D<Schemes> | ReactArea2D<Schemes> | ContextMenuExtra;
+type AreaExtra = Root<Schemes> | Area2D<Schemes> | ReactArea2D<Schemes> | ContextMenuExtra;
 
 export function getConnectionSockets(
     editor: NodeEditor<Schemes>,
@@ -57,7 +58,7 @@ export async function createEditor(container: HTMLElement, onChange: (code: Scri
 
     history.addPreset(HistoryPresets.classic.setup());
 
-    const contextMenu = new ContextMenuPlugin<Schemes>();
+    const contextMenu = new ContextMenuPlugin();
 
     const selector = AreaExtensions.selector();
 
@@ -86,7 +87,10 @@ export async function createEditor(container: HTMLElement, onChange: (code: Scri
 
     render.addPreset(setupContextMenu());
 
-    connection.addPreset(() => new ClassicFlow({
+    connection.addPreset(() => new ConnectionFlow({
+        connectionPicked() {
+            void area.emit({ type: 'hidecontextmenu' });
+        },
         canMakeConnection(from, to) {
             const [source, target] = getSourceTarget(from, to) ?? [null, null];
             if (!source || !target || from === to) {
@@ -141,7 +145,9 @@ export async function createEditor(container: HTMLElement, onChange: (code: Scri
                 target.key as never,
             );
 
-            connection.isLoop = true;
+            if (sourceNode === targetNode) {
+                connection.isLoop = true;
+            }
 
             void editor.addConnection(connection);
             return true;
@@ -178,10 +184,10 @@ export async function createEditor(container: HTMLElement, onChange: (code: Scri
         if (context.type === 'connectioncreated') {
             const sourceNode = editor.getNode(context.data.source);
             const targetNode = editor.getNode(context.data.target);
-            if (sourceNode && targetNode && targetNode instanceof NekoNode) {
+            if (sourceNode && targetNode && targetNode instanceof NekoNodeBase) {
                 const { source, target } = getConnectionSockets(editor, new NekoConnection(sourceNode, context.data.sourceOutput, targetNode, context.data.targetInput));
                 if (source && target) {
-                    if (targetNode.connect(source, target)) {
+                    if (targetNode.connect(editor, { node: sourceNode, socket: source }, { node: targetNode, socket: target })) {
                         void area.update('node', context.data.target);
                     }
                 }
@@ -193,7 +199,7 @@ export async function createEditor(container: HTMLElement, onChange: (code: Scri
             if (sourceNode && targetNode) {
                 const { source, target } = getConnectionSockets(editor, new NekoConnection(sourceNode, context.data.sourceOutput, targetNode, context.data.targetInput));
                 if (target) {
-                    if (targetNode.disconnect(source ?? null, target)) {
+                    if (targetNode.disconnect(editor, !source ? null : { node: sourceNode, socket: source }, { node: targetNode, socket: target })) {
                         void area.update('node', context.data.target);
                     }
                 }

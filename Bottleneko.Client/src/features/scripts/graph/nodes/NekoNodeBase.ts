@@ -1,0 +1,24 @@
+import { ClassicPreset, NodeEditor } from 'rete';
+import { NekoSocket } from '../sockets';
+import { Schemes } from '../editor';
+import { NekoNode } from '.';
+
+export interface NodeSocket { node: NekoNode; socket: NekoSocket }
+
+export class NekoNodeBase<Inputs extends Partial<Record<string, NekoSocket>>, Outputs extends Partial<Record<string, NekoSocket>>, Controls extends Partial<Record<string, ClassicPreset.Control>>> extends ClassicPreset.Node<Inputs, Outputs, Controls> {
+    connect(editor: NodeEditor<Schemes>, source: NodeSocket, target: NodeSocket) {
+        void editor;
+        void source;
+        void target;
+
+        return false;
+    }
+
+    disconnect(editor: NodeEditor<Schemes>, source: NodeSocket | null, target: NodeSocket) {
+        void editor;
+        void source;
+        void target;
+
+        return false;
+    }
+}

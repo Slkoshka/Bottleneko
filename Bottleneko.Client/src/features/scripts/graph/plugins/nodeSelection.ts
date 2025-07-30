@@ -1,10 +1,10 @@
 import { GetSchemes, NodeEditor, NodeId } from 'rete';
 import { BaseArea, BaseAreaPlugin } from 'rete-area-plugin';
 import { Selectable } from 'rete-area-plugin/_types/extensions/selectable';
-import { AnyNekoNode } from '../nodes';
+import { NekoNode } from '../nodes';
 import NekoConnection from '../connections/NekoConnection';
 
-type Schemes = GetSchemes<AnyNekoNode & { selected?: boolean }, NekoConnection<AnyNekoNode, AnyNekoNode>>;
+type Schemes = GetSchemes<NekoNode & { selected?: boolean }, NekoConnection>;
 
 export function nodeSelection<T>(base: BaseAreaPlugin<Schemes, T>, core: Selectable) {
     let editor: null | NodeEditor<Schemes> = null;

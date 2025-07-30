@@ -1,10 +1,10 @@
 import { GetSchemes, NodeEditor } from 'rete';
 import { HistoryPlugin } from 'rete-history-plugin';
 import { Action } from 'rete-history-plugin/_types/types';
-import { AnyNekoNode } from '../nodes';
+import { NekoNode } from '../nodes';
 import NekoConnection from '../connections/NekoConnection';
 
-type NekoSchemes = GetSchemes<AnyNekoNode, NekoConnection<AnyNekoNode, AnyNekoNode>>;
+type NekoSchemes = GetSchemes<NekoNode, NekoConnection>;
 
 export function setupShortcuts<Schemes extends NekoSchemes, A extends Action>(element: HTMLElement, editor: NodeEditor<Schemes>, plugin: HistoryPlugin<Schemes, A>) {
     const deleteSelection = async () => {

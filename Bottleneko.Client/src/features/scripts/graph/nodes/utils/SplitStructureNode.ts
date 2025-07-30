@@ -1,8 +1,9 @@
-import { ClassicPreset } from 'rete';
+import { ClassicPreset, NodeEditor } from 'rete';
 import { NekoSocket, SplittableInputSocket, SplittableObjectSocket } from '../../sockets';
-import { NekoNode } from '../NekoNode';
+import { NekoNodeBase, NodeSocket } from '../NekoNodeBase';
+import { Schemes } from '../../editor';
 
-export class SplitStructureNode extends NekoNode<
+export class SplitStructureNode extends NekoNodeBase<
     {
         in: SplittableInputSocket;
     },
@@ -23,19 +24,23 @@ export class SplitStructureNode extends NekoNode<
         // Controls
     }
 
-    connect(source: NekoSocket, target: NekoSocket) {
-        if (target === this.inputs.in?.socket && source.type !== this.type) {
+    connect(editor: NodeEditor<Schemes>, source: NodeSocket, target: NodeSocket) {
+        if (target.node === this && source.socket.type !== this.type) {
+            for (const connection of editor.getConnections().filter(connection => connection.source === this.id)) {
+                void editor.removeConnection(connection.id);
+            }
+
             for (const output of Object.keys(this.outputs)) {
                 this.removeOutput(output as never);
             }
 
-            if (source instanceof SplittableObjectSocket) {
-                for (const { id, name, constructor, singleConnection } of source.parts()) {
+            if (source.socket instanceof SplittableObjectSocket) {
+                for (const { id, name, constructor, singleConnection } of source.socket.parts()) {
                     this.addOutput(id, new ClassicPreset.Output(constructor(), name, !singleConnection));
                 }
             }
 
-            this.type = source.type;
+            this.type = source.socket.type;
 
             return true;
         }
@@ -44,9 +49,13 @@ export class SplitStructureNode extends NekoNode<
         }
     }
 
-    disconnect(source: NekoSocket | null, target: NekoSocket) {
+    disconnect(editor: NodeEditor<Schemes>, source: NodeSocket | null, target: NodeSocket) {
         void source;
         void target;
+
+        for (const connection of editor.getConnections().filter(connection => connection.source === this.id)) {
+            void editor.removeConnection(connection.id);
+        }
 
         for (const output of Object.keys(this.outputs)) {
             this.removeOutput(output as never);

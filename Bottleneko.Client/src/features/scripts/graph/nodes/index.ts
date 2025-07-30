@@ -5,10 +5,10 @@ import { SplitStructureNode } from './utils/SplitStructureNode';
 import { SwitchNode } from './control/SwitchNode';
 import { IfValidNode } from './control/IfValidNode';
 
-export type AnyNekoNode = TestNode | MessageReceivedNode | IfNode | IfValidNode | SwitchNode | SplitStructureNode;
+export type NekoNode = TestNode | MessageReceivedNode | IfNode | IfValidNode | SwitchNode | SplitStructureNode;
 
 export interface NekoNodeConstructor {
-    default: () => AnyNekoNode;
+    default: () => NekoNode;
     name: () => string;
 };
 

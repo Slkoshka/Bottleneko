@@ -1,6 +1,6 @@
-import { BaseSchemes } from 'rete';
 import { RenderPreset } from 'rete-react-plugin/_types/presets/types';
 import { RenderSignal } from 'rete-react-plugin';
+import { Schemes } from '../../editor';
 import { ContextMenu } from './ContextMenu';
 import { SocketData } from './ContextMenuPlugin';
 
@@ -18,7 +18,7 @@ export type ContextMenuRender = RenderSignal<'contextmenu', {
     autoConnectTo?: SocketData;
 }>;
 
-export function setupContextMenu<Schemes extends BaseSchemes, K extends ContextMenuRender>(): RenderPreset<Schemes, K> {
+export function setupContextMenu<K extends ContextMenuRender>(): RenderPreset<Schemes, K> {
     return {
         render(context) {
             if (context.data.type as string === 'contextmenu') {

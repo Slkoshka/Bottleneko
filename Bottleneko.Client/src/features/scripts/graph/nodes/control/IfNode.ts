@@ -1,8 +1,8 @@
 import { ClassicPreset } from 'rete';
 import { BooleanSocket, ExecSocket } from '../../sockets';
-import { NekoNode } from '../NekoNode';
+import { NekoNodeBase } from '../NekoNodeBase';
 
-export class IfNode extends NekoNode<
+export class IfNode extends NekoNodeBase<
     {
         exec: ExecSocket;
         in: BooleanSocket;
