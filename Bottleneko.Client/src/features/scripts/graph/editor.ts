@@ -4,19 +4,19 @@ import { NodeEditor, GetSchemes, ClassicPreset } from 'rete';
 import { ReactPlugin, Presets, ReactArea2D } from 'rete-react-plugin';
 import { Area2D, AreaExtensions, AreaPlugin } from 'rete-area-plugin';
 import { ClassicFlow, ConnectionPlugin, getSourceTarget } from 'rete-connection-plugin';
-import { ContextMenuExtra, ContextMenuPlugin, Presets as ContextMenuPresets } from 'rete-context-menu-plugin';
 import { ReroutePlugin, RerouteExtensions, RerouteExtra } from 'rete-connection-reroute-plugin';
 import { HistoryExtensions, HistoryPlugin, Presets as HistoryPresets } from 'rete-history-plugin';
 import { ScriptCode } from '../../api/dtos.gen';
-import { AnyNekoNode, NekoNodeConstructor, nodes } from './nodes';
+import { AnyNekoNode } from './nodes';
 import NekoConnection from './connections/NekoConnection';
 import { NodeRenderer } from './renderers/NodeRenderer';
 import { SocketRenderer } from './renderers/SocketRenderer';
 import { NekoSocket } from './sockets';
 import { ConnectionRenderer } from './renderers/ConnectionRenderer';
-import { ContextMenuCommonRenderer, ContextMenuItemRenderer, ContextMenuRenderer, ContextMenuSearchRenderer, ContextMenuSubItemsRenderer } from './renderers/ContextMenuRenderer';
 import { NekoNode } from './nodes/NekoNode';
 import { ControlRenderer } from './renderers/ControlRenderer';
+import { setupContextMenu } from './context-menu';
+import { ContextMenuExtra, ContextMenuPlugin } from './context-menu/ContextMenuPlugin';
 
 type Schemes = GetSchemes<
     AnyNekoNode,
@@ -58,15 +58,7 @@ export async function createEditor(container: HTMLElement, onChange: (code: Scri
     HistoryExtensions.keyboard(history);
     history.addPreset(HistoryPresets.classic.setup());
 
-    const extractNodes = (nodes: NekoNodeConstructor[]): [string, () => AnyNekoNode][] => nodes.map(node => [node.name(), () => node.default()]);
-    const extractCategory = ([name, nodes]: [string, NekoNodeConstructor[]]): [string, [string, () => AnyNekoNode][]] => [name, extractNodes(nodes)];
-
-    const contextMenu = new ContextMenuPlugin<Schemes>({
-        items: ContextMenuPresets.classic.setup([
-            ...extractNodes(nodes['']),
-            ...Object.entries(nodes).filter(([name]) => name !== '').map(extractCategory),
-        ]),
-    });
+    const contextMenu = new ContextMenuPlugin<Schemes>();
 
     const selector = AreaExtensions.selector();
     const selectorAccumulating = AreaExtensions.accumulateOnCtrl();
@@ -118,26 +110,7 @@ export async function createEditor(container: HTMLElement, onChange: (code: Scri
         },
     }));
 
-    render.addPreset(Presets.contextMenu.setup({
-        customize: {
-            main() {
-                return ContextMenuRenderer;
-            },
-            common() {
-                return ContextMenuCommonRenderer;
-            },
-            search() {
-                return ContextMenuSearchRenderer;
-            },
-            item() {
-                return ContextMenuItemRenderer;
-            },
-            subitems() {
-                return ContextMenuSubItemsRenderer;
-            },
-        },
-        delay: 100,
-    }));
+    render.addPreset(setupContextMenu());
 
     connection.addPreset(() => new ClassicFlow({
         canMakeConnection(from, to) {

@@ -12,18 +12,22 @@ export interface NekoNodeConstructor {
     name: () => string;
 };
 
-export const nodes: Record<string, NekoNodeConstructor[]> = {
-    '': [],
-    'Events': [
-        MessageReceivedNode,
-    ],
-    'Control': [
-        IfNode,
-        IfValidNode,
-        SwitchNode,
-    ],
-    'Utilities': [
-        SplitStructureNode,
-        TestNode,
-    ],
-};
+export type NodeCollectionItem = [string, NekoNodeConstructor | NodeCollectionItem[]];
+export type NodeCollection = NodeCollectionItem[];
+
+const node = (type: NekoNodeConstructor): [string, NekoNodeConstructor] => [type.name(), type];
+
+export const nodes: NodeCollection = [
+    ['Events', [
+        node(MessageReceivedNode),
+    ]],
+    ['Control', [
+        node(IfNode),
+        node(IfValidNode),
+        node(SwitchNode),
+    ]],
+    ['Utilities', [
+        node(SplitStructureNode),
+        node(TestNode),
+    ]],
+];

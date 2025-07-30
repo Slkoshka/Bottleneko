@@ -9,7 +9,6 @@ $background-grid-color: #333;
 $context-menu-width: 300px;
 $context-menu-border-width: 2px;
 $context-menu-border-radius: 10px;
-$context-menu-safe-zone: 100px;
 $context-submenu-border-width: 2px;
 $context-submenu-border-radius: 5px;
 
@@ -223,10 +222,7 @@ $context-submenu-border-radius: 5px;
   }
 
   .graph-context-menu {
-    padding: $context-menu-safe-zone;
-    padding: $context-menu-safe-zone;
-    margin: -$context-menu-safe-zone;
-    width: $context-menu-width + $context-menu-safe-zone * 2;
+    width: $context-menu-width;
     position: absolute;
     z-index: 100;
 

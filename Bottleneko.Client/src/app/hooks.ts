@@ -150,3 +150,29 @@ export function useEntityEditor<T extends Entity, TUpdate = never>(id: string | 
 
     return [entity, fetchEntity, notFound, save, isSaving];
 }
+
+export function useDebounce(callback: () => void, timeout: number): [execute: () => void, cancel: () => void] {
+    const timerRef = useRef<ReturnType<typeof setTimeout>>();
+
+    const cancel = () => {
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
+        }
+    };
+
+    const execute = () => {
+        cancel();
+        timerRef.current = setTimeout(callback, timeout);
+    };
+
+    useEffect(() => {
+        return () => {
+            cancel();
+        };
+    }, []);
+
+    return [
+        execute,
+        cancel,
+    ];
+}
