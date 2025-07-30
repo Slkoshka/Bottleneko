@@ -4,7 +4,6 @@ import { NodeEditor, GetSchemes, ClassicPreset } from 'rete';
 import { ReactPlugin, Presets, ReactArea2D } from 'rete-react-plugin';
 import { Area2D, AreaExtensions, AreaPlugin } from 'rete-area-plugin';
 import { ClassicFlow, ConnectionPlugin, getSourceTarget } from 'rete-connection-plugin';
-import { ReroutePlugin, RerouteExtensions, RerouteExtra } from 'rete-connection-reroute-plugin';
 import { HistoryExtensions, HistoryPlugin, Presets as HistoryPresets } from 'rete-history-plugin';
 import { ScriptCode } from '../../api/dtos.gen';
 import { AnyNekoNode } from './nodes';
@@ -23,7 +22,7 @@ type Schemes = GetSchemes<
     NekoConnection<AnyNekoNode, AnyNekoNode>
 >;
 
-type AreaExtra = Area2D<Schemes> | ReactArea2D<Schemes> | ContextMenuExtra | RerouteExtra;
+type AreaExtra = Area2D<Schemes> | ReactArea2D<Schemes> | ContextMenuExtra;
 
 export function getConnectionSockets(
     editor: NodeEditor<Schemes>,
@@ -52,7 +51,6 @@ export async function createEditor(container: HTMLElement, onChange: (code: Scri
     const render = new ReactPlugin<Schemes, AreaExtra>({ createRoot });
     const area = new AreaPlugin<Schemes, AreaExtra>(container);
     const connection = new ConnectionPlugin<Schemes, AreaExtra>();
-    const reroute = new ReroutePlugin<Schemes>();
     const history = new HistoryPlugin<Schemes>();
 
     HistoryExtensions.keyboard(history);
@@ -67,27 +65,6 @@ export async function createEditor(container: HTMLElement, onChange: (code: Scri
         accumulating: selectorAccumulating,
     });
     AreaExtensions.simpleNodesOrder(area);
-
-    RerouteExtensions.selectablePins(
-        reroute,
-        selector,
-        selectorAccumulating,
-    );
-
-    render.addPreset(
-        Presets.reroute.setup({
-            pointerdown(id) {
-                void reroute.unselect(id);
-                void reroute.select(id);
-            },
-            contextMenu(id) {
-                void reroute.remove(id);
-            },
-            translate(id, dx, dy) {
-                void reroute.translate(id, dx, dy);
-            },
-        }),
-    );
 
     render.addPreset(Presets.classic.setup<Schemes, ReactArea2D<Schemes>>({
         customize: {
