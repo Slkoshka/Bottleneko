@@ -49,23 +49,6 @@ export class SplitStructureNode extends NekoNodeBase<
         }
     }
 
-    disconnect(editor: NodeEditor<Schemes>, source: NodeSocket | null, target: NodeSocket) {
-        void source;
-        void target;
-
-        for (const connection of editor.getConnections().filter(connection => connection.source === this.id)) {
-            void editor.removeConnection(connection.id);
-        }
-
-        for (const output of Object.keys(this.outputs)) {
-            this.removeOutput(output as never);
-        }
-
-        this.type = null;
-
-        return true;
-    }
-
     clone() {
         return new SplitStructureNode();
     }

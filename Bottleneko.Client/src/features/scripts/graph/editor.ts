@@ -1,6 +1,6 @@
 import './graph.scss';
 import { createRoot } from 'react-dom/client';
-import { NodeEditor, GetSchemes, ClassicPreset, Root } from 'rete';
+import { NodeEditor, GetSchemes, Root } from 'rete';
 import { ReactPlugin, Presets, ReactArea2D } from 'rete-react-plugin';
 import { Area2D, AreaExtensions, AreaPlugin } from 'rete-area-plugin';
 import { ConnectionPlugin, getSourceTarget } from 'rete-connection-plugin';
@@ -26,22 +26,6 @@ export type Schemes = GetSchemes<
 >;
 
 type AreaExtra = Root<Schemes> | Area2D<Schemes> | ReactArea2D<Schemes> | ContextMenuExtra;
-
-export function getConnectionSockets(
-    editor: NodeEditor<Schemes>,
-    connection: Schemes['Connection'],
-) {
-    const source = editor.getNode(connection.source);
-    const target = editor.getNode(connection.target);
-
-    const output = source && (source.outputs as Record<string, ClassicPreset.Input<NekoSocket>>)[connection.sourceOutput];
-    const input = target && (target.inputs as Record<string, ClassicPreset.Output<NekoSocket>>)[connection.targetInput];
-
-    return {
-        source: output?.socket,
-        target: input?.socket,
-    };
-}
 
 export interface Editor {
     destroy: () => void;
@@ -97,27 +81,14 @@ export async function createEditor(container: HTMLElement, onChange: (code: Scri
                 return false;
             }
 
-            const sourceNode = editor.getNode(source.nodeId);
-            const targetNode = editor.getNode(target.nodeId);
-            if (!sourceNode || !targetNode) {
+            const sourcePort = editor.getNode(source.nodeId)?.getOutput(source.key);
+            const targetPort = editor.getNode(target.nodeId)?.getInput(target.key);
+
+            if (!sourcePort || !targetPort) {
                 return false;
             }
 
-            const sockets = getConnectionSockets(
-                editor,
-                new NekoConnection(
-                    sourceNode,
-                    source.key as never,
-                    targetNode,
-                    target.key as never,
-                ),
-            );
-
-            if (!sockets.source || !sockets.target) {
-                return false;
-            }
-
-            if (!sockets.source.isCompatibleWith(sockets.target)) {
+            if (!sourcePort.socket.isCompatibleWith(targetPort.socket)) {
                 connection.drop();
                 return false;
             }
@@ -185,9 +156,10 @@ export async function createEditor(container: HTMLElement, onChange: (code: Scri
             const sourceNode = editor.getNode(context.data.source);
             const targetNode = editor.getNode(context.data.target);
             if (sourceNode && targetNode && targetNode instanceof NekoNodeBase) {
-                const { source, target } = getConnectionSockets(editor, new NekoConnection(sourceNode, context.data.sourceOutput, targetNode, context.data.targetInput));
+                const source = sourceNode.getOutput(context.data.sourceOutput);
+                const target = targetNode.getInput(context.data.targetInput);
                 if (source && target) {
-                    if (targetNode.connect(editor, { node: sourceNode, socket: source }, { node: targetNode, socket: target })) {
+                    if (targetNode.connect(editor, { node: sourceNode, socket: source.socket }, { node: targetNode, socket: target.socket })) {
                         void area.update('node', context.data.target);
                     }
                 }
@@ -197,9 +169,10 @@ export async function createEditor(container: HTMLElement, onChange: (code: Scri
             const sourceNode = editor.getNode(context.data.source);
             const targetNode = editor.getNode(context.data.target);
             if (sourceNode && targetNode) {
-                const { source, target } = getConnectionSockets(editor, new NekoConnection(sourceNode, context.data.sourceOutput, targetNode, context.data.targetInput));
+                const source = sourceNode.getOutput(context.data.sourceOutput);
+                const target = targetNode.getInput(context.data.targetInput);
                 if (target) {
-                    if (targetNode.disconnect(editor, !source ? null : { node: sourceNode, socket: source }, { node: targetNode, socket: target })) {
+                    if (targetNode.disconnect(editor, !source ? null : { node: sourceNode, socket: source.socket }, { node: targetNode, socket: target.socket })) {
                         void area.update('node', context.data.target);
                     }
                 }

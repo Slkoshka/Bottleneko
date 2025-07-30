@@ -21,4 +21,12 @@ export class NekoNodeBase<Inputs extends Partial<Record<string, NekoSocket>>, Ou
 
         return false;
     }
+
+    getInput(id: string) {
+        return (this.inputs as Record<string, ClassicPreset.Input<NekoSocket> | undefined>)[id];
+    }
+
+    getOutput(id: string) {
+        return (this.outputs as Record<string, ClassicPreset.Output<NekoSocket> | undefined>)[id];
+    }
 }
