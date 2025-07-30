@@ -168,6 +168,14 @@ $context-submenu-border-radius: 5px;
       }
     }
 
+    .input .graph-socket-optional {
+        border-right-width: 0px;
+    }
+
+    .output .graph-socket-optional {
+        border-left-width: 0px;
+    }
+
     .inputs-outputs {
       display: grid;
       grid-template-areas: "inner-div";

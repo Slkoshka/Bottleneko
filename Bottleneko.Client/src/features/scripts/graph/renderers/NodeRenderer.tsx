@@ -1,9 +1,11 @@
 import { CSSProperties } from 'react';
+import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { ClassicScheme, RenderEmit, Presets } from 'rete-react-plugin';
+import Icon from '../../../../components/Icon';
 
 const { RefSocket, RefControl } = Presets.classic;
 
-interface NodeExtraData { width?: number; height?: number }
+interface NodeExtraData { width?: number; height?: number; isEvent: boolean }
 
 function sortByIndex(entries: [string, undefined | { index?: number }][]) {
     entries.sort((a, b) => {
@@ -41,12 +43,24 @@ export function NodeRenderer<Scheme extends ClassicScheme>({ data, styles, emit 
             style={{ width: width ? `${width.toString()}px` : undefined, height: height ? `${height.toString()}px` : undefined, ...styles?.() }}
             data-testid="node"
         >
-            <div
-                className="title"
-                data-testid="title"
-            >
-                {label}
-            </div>
+            {
+                data.isEvent
+                    ? (
+                            <div
+                                className="title"
+                                data-testid="title"
+                                style={{ display: 'grid', gap: '0.3em', gridTemplateColumns: '0fr 1fr' }}
+                            >
+                                <OverlayTrigger placement="bottom" overlay={(props: object) => <Tooltip {...props}>Event</Tooltip>}>
+                                    <div style={{ width: '1em', height: '1em', alignSelf: 'center', marginLeft: '-5px' }}>
+                                        <Icon icon="lightning-fill" />
+                                    </div>
+                                </OverlayTrigger>
+                                <div className="flex-grow-1">{label}</div>
+                            </div>
+                        )
+                    : <div className="title" data-testid="title">{label}</div>
+            }
 
             <div>
                 {/* Controls */}

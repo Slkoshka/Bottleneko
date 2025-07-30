@@ -29,7 +29,7 @@ export class MessageReceivedNode extends NekoNode<
     }
 
     static name() {
-        return 'Event: Message Received';
+        return 'Message Received';
     }
 
     static default() {
