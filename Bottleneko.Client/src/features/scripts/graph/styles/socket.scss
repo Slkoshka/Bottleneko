@@ -1,0 +1,106 @@
+.graph-editor .graph-node .graph-node-sockets {
+  display: grid;
+  grid-template-areas: "inner-div";
+
+  & > div {
+    grid-area: inner-div;
+  }
+
+  .graph-node-socket-wrapper {
+    width: $socket-size + $socket-border-width * 3;
+    height: $socket-size + $socket-border-width * 3;
+    display: inline-block;
+  }
+
+  .graph-node-socket-label {
+    vertical-align: middle;
+    color: white;
+    display: inline-block;
+    font-size: 18px;
+    margin: $socket-margin;
+    line-height: $socket-size;
+  }
+
+  .graph-node-inputs {
+    margin-right: 100px;
+
+    .graph-node-input {
+      text-align: left;
+
+      .graph-node-socket-wrapper {
+        margin-left: -$socket-size + $socket-border-width;
+
+        .graph-node-socket {
+          text-align: left;
+          border-right-width: 0px;
+          border-top-left-radius: $socket-border-width;
+          border-bottom-left-radius: $socket-border-width;
+
+          &.graph-socket-optional {
+            border-right-width: 0px;
+          }
+        }
+      }
+    }
+  }
+
+  .graph-node-outputs {
+    margin-left: 100px;
+
+    .graph-node-output {
+      text-align: right;
+
+      .graph-node-socket-wrapper {
+        margin-right: -$socket-size + $socket-border-width;
+
+        .graph-node-socket {
+          text-align: right;
+          border-left-width: 0px;
+          border-top-right-radius: $socket-border-width;
+          border-bottom-right-radius: $socket-border-width;
+
+          &.graph-socket-optional {
+            border-left-width: 0px;
+          }
+        }
+      }
+    }
+  }
+
+  .graph-node-socket {
+    display: inline-block;
+    cursor: pointer;
+    border: solid;
+    border-color: var(--graph-type-color);
+    width: $socket-size * 1.5;
+    height: $socket-size;
+    vertical-align: middle;
+    background: #fff;
+    z-index: 2;
+    box-sizing: border-box;
+
+    &:hover {
+      background: #bbb;
+    }
+
+    &.graph-node-socket-optional {
+      border: dashed;
+      border-color: var(--graph-type-color);
+    }
+
+    &.graph-type-exec {
+      border-color: $primary;
+      width: $socket-size * 1.5;
+      height: $socket-size * 1.5;
+      border-width: $socket-border-width !important;
+      border-radius: $socket-size !important;
+    }
+  }
+
+  .graph-node-control {
+    z-index: 1;
+    width: calc(100% - ($socket-size + 2 * $socket-margin));
+    vertical-align: middle;
+    display: inline-block;
+  }
+}

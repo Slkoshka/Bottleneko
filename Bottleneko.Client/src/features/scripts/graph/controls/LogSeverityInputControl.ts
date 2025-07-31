@@ -5,7 +5,7 @@ export type LogSeverityInputControlProps = Omit<OptionListInputControlProps<LogS
 
 export class LogSeverityInputControl extends OptionListInputControl<LogSeverity> {
     constructor(props?: LogSeverityInputControlProps) {
-        super({ initial: 'info', ...props });
+        super({ initial: 'info', label: 'Severity', ...props });
     }
 
     options(): { name: string; value: LogSeverity }[] {

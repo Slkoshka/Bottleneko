@@ -1,4 +1,4 @@
-import './graph.scss';
+import './styles/graph.scss';
 import { createRoot } from 'react-dom/client';
 import { NodeEditor, GetSchemes, Root } from 'rete';
 import { ReactPlugin, Presets, ReactArea2D } from 'rete-react-plugin';
@@ -55,10 +55,10 @@ export function createEditor(container: HTMLElement, onChange: (code: ScriptCode
     render.addPreset(Presets.classic.setup<Schemes, ReactArea2D<Schemes>>({
         customize: {
             connection() {
-                return ConnectionRenderer<Schemes>;
+                return ConnectionRenderer;
             },
             node() {
-                return NodeRenderer<Schemes>;
+                return NodeRenderer;
             },
             socket(data) {
                 if (data.payload instanceof NekoSocket) {

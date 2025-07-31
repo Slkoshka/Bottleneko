@@ -1,0 +1,39 @@
+$socket-border-width: 5px;
+
+.graph-editor .graph-node {
+  background: #111;
+  border: 2px solid black;
+  cursor: pointer;
+  border-radius: $node-border-radius;
+  box-sizing: border-box;
+  padding-bottom: 6px;
+  position: relative;
+  user-select: none;
+  box-shadow: rgba(0, 0, 0, 0.8) 0 0 20px;
+
+  &.selected {
+    border-color: $primary;
+  }
+
+  .graph-node-title {
+    color: white;
+    background: linear-gradient($primary, color.adjust($primary, $red: -20, $green: -20, $blue: -20));
+    font-size: 18px;
+    font-weight: bold;
+    padding: 4px;
+    padding-left: 16px;
+    padding-right: 16px;
+    border-top-left-radius: $node-border-radius / 1.25;
+    border-top-right-radius: $node-border-radius / 1.25;
+  }
+
+  .graph-node-control-label {
+    color: white;
+    padding-bottom: 0.5em;
+  }
+
+  .graph-node-control {
+    display: block;
+    padding: $socket-margin ($socket-size / 2 + $socket-margin);
+  }
+}

@@ -1,6 +1,7 @@
 import { ClassicPreset } from 'rete';
 import { NekoSocket, StringSocket } from '../../sockets';
 import { NekoNodeBase, NodeProps } from '../NekoNodeBase';
+import { TextInputControl } from '../../controls/TextInputControl';
 
 export class FormatTextNode extends NekoNodeBase<
     Record<string, NekoSocket>,
@@ -8,7 +9,7 @@ export class FormatTextNode extends NekoNodeBase<
         out: StringSocket;
     },
     {
-        format: ClassicPreset.InputControl<'text'>;
+        format: TextInputControl;
     }
 > {
     width = 350;
@@ -23,7 +24,7 @@ export class FormatTextNode extends NekoNodeBase<
         this.addOutput('out', new ClassicPreset.Output(new StringSocket(), 'Out', true));
 
         // Controls
-        this.addControl('format', new ClassicPreset.InputControl('text', { initial, change: (value) => {
+        this.addControl('format', new TextInputControl({ initial, label: 'Format', change: (value) => {
             this.onChanged(value);
         } }));
 
@@ -52,7 +53,7 @@ export class FormatTextNode extends NekoNodeBase<
     }
 
     clone() {
-        return new FormatTextNode(this.controls.format.value ?? '', this.props);
+        return new FormatTextNode(this.controls.format.value, this.props);
     }
 
     static name() {

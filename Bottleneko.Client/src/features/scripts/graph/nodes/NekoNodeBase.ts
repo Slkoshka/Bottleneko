@@ -11,6 +11,9 @@ export interface NodeProps {
 }
 
 export abstract class NekoNodeBase<Inputs extends Partial<Record<string, NekoSocket>>, Outputs extends Partial<Record<string, NekoSocket>>, Controls extends Partial<Record<string, ClassicPreset.Control>>> extends ClassicPreset.Node<Inputs, Outputs, Controls> {
+    width?: number;
+    height?: number;
+
     constructor(name: string, readonly props: NodeProps) {
         super(name);
     }

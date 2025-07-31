@@ -1,23 +1,10 @@
-import { ClassicPreset } from 'rete';
+import { NekoInputControl, NekoInputControlProps } from './NekoInputControl';
 
-export interface OptionListInputControlProps<T> {
-    initial: T;
-    change?: (value: T) => void;
-}
+export type OptionListInputControlProps<T> = NekoInputControlProps<T>;
 
-export abstract class OptionListInputControl<T> extends ClassicPreset.Control {
-    value: T;
-    readonly initial: T;
-
+export abstract class OptionListInputControl<T> extends NekoInputControl<T> {
     constructor(readonly props: OptionListInputControlProps<T>) {
-        super();
-
-        this.value = this.initial = props.initial;
-    }
-
-    setValue(value?: T) {
-        this.value = value ?? this.initial;
-        this.props.change?.(this.value);
+        super(props);
     }
 
     abstract options(): { name: string; value: T }[];

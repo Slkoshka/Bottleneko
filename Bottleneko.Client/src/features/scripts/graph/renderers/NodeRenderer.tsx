@@ -41,14 +41,12 @@ export function NodeRenderer<Scheme extends ClassicScheme>({ data, styles, emit 
         <div
             className={`graph-node ${selected ? 'selected' : ''}`}
             style={{ width: width ? `${width.toString()}px` : undefined, height: height ? `${height.toString()}px` : undefined, ...styles?.() }}
-            data-testid="node"
         >
             {
                 data.isEvent
                     ? (
                             <div
-                                className="title"
-                                data-testid="title"
+                                className="graph-node-title"
                                 style={{ display: 'grid', gap: '0.3em', gridTemplateColumns: '0fr 1fr' }}
                             >
                                 <OverlayTrigger placement="bottom" overlay={(props: object) => <Tooltip {...props}>Event</Tooltip>}>
@@ -59,36 +57,38 @@ export function NodeRenderer<Scheme extends ClassicScheme>({ data, styles, emit 
                                 <div className="flex-grow-1">{label}</div>
                             </div>
                         )
-                    : <div className="title" data-testid="title">{label}</div>
+                    : <div className="graph-node-title">{label}</div>
             }
 
             <div>
                 {/* Controls */}
-                {
-                    controls.map(([key, control]) => (
-                        control
-                            ? (
-                                    <RefControl
-                                        key={key}
-                                        name="control"
-                                        emit={emit}
-                                        payload={control}
-                                    />
-                                )
-                            : null
-                    ))
-                }
+                <div className="graph-node-controls">
+                    {
+                        controls.map(([key, control]) => (
+                            control
+                                ? (
+                                        <RefControl
+                                            key={key}
+                                            name="graph-node-control"
+                                            emit={emit}
+                                            payload={control}
+                                        />
+                                    )
+                                : null
+                        ))
+                    }
+                </div>
 
-                <div className="inputs-outputs">
-                    <div className="inputs">
+                <div className="graph-node-sockets">
+                    <div className="graph-node-inputs">
                         {/* Inputs */}
                         {
                             inputs.map(([key, input]) => (
                                 input
                                     ? (
-                                            <div className="input" key={key} data-testid={`input-${key}`}>
+                                            <div className="graph-node-input" key={key}>
                                                 <RefSocket
-                                                    name="input-socket"
+                                                    name="graph-node-socket-wrapper"
                                                     emit={emit}
                                                     side="input"
                                                     socketKey={key}
@@ -96,19 +96,17 @@ export function NodeRenderer<Scheme extends ClassicScheme>({ data, styles, emit 
                                                     payload={input.socket}
                                                 />
                                                 {(!input.control || !input.showControl) && (
-                                                    <div className="input-title font-monospace" data-testid="input-title">
+                                                    <div className="graph-node-socket-label font-monospace">
                                                         {input.label}
                                                     </div>
                                                 )}
                                                 {input.control && input.showControl && (
-                                                    <span className="input-control">
-                                                        <RefControl
-                                                            key={key}
-                                                            name="input-control"
-                                                            emit={emit}
-                                                            payload={input.control}
-                                                        />
-                                                    </span>
+                                                    <RefControl
+                                                        key={key}
+                                                        name="graph-node-control"
+                                                        emit={emit}
+                                                        payload={input.control}
+                                                    />
                                                 )}
                                             </div>
                                         )
@@ -117,19 +115,19 @@ export function NodeRenderer<Scheme extends ClassicScheme>({ data, styles, emit 
                         }
                     </div>
 
-                    <div className="outputs">
+                    <div className="graph-node-outputs">
                         {/* Outputs */}
                         {
                             outputs.map(([key, output]) => (
                                 output
                                     ? (
-                                            <div className="output" key={key} data-testid={`output-${key}`}>
-                                                <div className="output-title font-monospace" data-testid="output-title">
+                                            <div className="graph-node-output" key={key}>
+                                                <div className="graph-node-socket-label font-monospace">
                                                     {output.label}
                                                 </div>
 
                                                 <RefSocket
-                                                    name="output-socket"
+                                                    name="graph-node-socket-wrapper"
                                                     side="output"
                                                     emit={emit}
                                                     socketKey={key}
