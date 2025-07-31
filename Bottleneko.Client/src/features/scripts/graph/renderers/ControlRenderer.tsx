@@ -27,12 +27,19 @@ export function ControlRenderer({ data, styles }: { data: Control; styles?: () =
                     value={value}
                     type={data instanceof TextInputControl ? 'text' : 'number'}
                     ref={ref}
+                    min={data instanceof NumberInputControl ? data.min : undefined}
+                    max={data instanceof NumberInputControl ? data.max : undefined}
                     onChange={(e) => {
                         const val = data instanceof TextInputControl ? e.target.value : +e.target.value;
                         setValue(val);
+                        if (data.fastUpdate) {
+                            (data.setValue as ((value?: string | number) => void))(val);
+                        }
                     }}
                     onBlur={() => {
-                        (data.setValue as ((value?: string | number) => void))(value);
+                        if (!data.fastUpdate) {
+                            (data.setValue as ((value?: string | number) => void))(value);
+                        }
                     }}
                     onKeyDown={(e) => {
                         if (e.code === 'Enter') {
