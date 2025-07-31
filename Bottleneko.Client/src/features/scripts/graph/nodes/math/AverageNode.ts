@@ -2,12 +2,12 @@ import { NodeProps } from '../NekoNodeBase';
 import { AnyArityMathOpNode } from './AnyArityMathOpNode';
 
 export class AverageNode extends AnyArityMathOpNode {
-    constructor(initial: number, props: NodeProps) {
-        super(AverageNode.name(), initial, props);
+    constructor(props: NodeProps) {
+        super(AverageNode.name(), props);
     }
 
     clone() {
-        return new AverageNode(this.controls.inputs.value, this.props);
+        return new AverageNode(this.props);
     }
 
     static name() {
@@ -15,6 +15,6 @@ export class AverageNode extends AnyArityMathOpNode {
     }
 
     static default(props: NodeProps) {
-        return new AverageNode(2, props);
+        return new AverageNode(props);
     }
 }

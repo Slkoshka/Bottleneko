@@ -2,12 +2,12 @@ import { NodeProps } from '../NekoNodeBase';
 import { AnyArityMathOpNode } from './AnyArityMathOpNode';
 
 export class MaxNode extends AnyArityMathOpNode {
-    constructor(initial: number, props: NodeProps) {
-        super(MaxNode.name(), initial, props);
+    constructor(props: NodeProps) {
+        super(MaxNode.name(), props);
     }
 
     clone() {
-        return new MaxNode(this.controls.inputs.value, this.props);
+        return new MaxNode(this.props);
     }
 
     static name() {
@@ -15,6 +15,6 @@ export class MaxNode extends AnyArityMathOpNode {
     }
 
     static default(props: NodeProps) {
-        return new MaxNode(2, props);
+        return new MaxNode(props);
     }
 }

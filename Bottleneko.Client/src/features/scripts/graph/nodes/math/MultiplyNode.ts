@@ -2,12 +2,12 @@ import { NodeProps } from '../NekoNodeBase';
 import { AnyArityMathOpNode } from './AnyArityMathOpNode';
 
 export class MultiplyNode extends AnyArityMathOpNode {
-    constructor(initial: number, props: NodeProps) {
-        super(MultiplyNode.name(), initial, props);
+    constructor(props: NodeProps) {
+        super(MultiplyNode.name(), props);
     }
 
     clone() {
-        return new MultiplyNode(this.controls.inputs.value, this.props);
+        return new MultiplyNode(this.props);
     }
 
     static name() {
@@ -15,6 +15,6 @@ export class MultiplyNode extends AnyArityMathOpNode {
     }
 
     static default(props: NodeProps) {
-        return new MultiplyNode(2, props);
+        return new MultiplyNode(props);
     }
 }

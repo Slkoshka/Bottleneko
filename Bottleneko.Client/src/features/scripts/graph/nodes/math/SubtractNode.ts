@@ -1,13 +1,13 @@
 import { NodeProps } from '../NekoNodeBase';
-import { AnyArityMathOpNode } from './AnyArityMathOpNode';
+import { BinaryMathOpNode } from './BinaryMathOpNode';
 
-export class SubtractNode extends AnyArityMathOpNode {
-    constructor(initial: number, props: NodeProps) {
-        super(SubtractNode.name(), initial, props);
+export class SubtractNode extends BinaryMathOpNode {
+    constructor(props: NodeProps) {
+        super(SubtractNode.name(), props);
     }
 
     clone() {
-        return new SubtractNode(this.controls.inputs.value, this.props);
+        return new SubtractNode(this.props);
     }
 
     static name() {
@@ -15,6 +15,6 @@ export class SubtractNode extends AnyArityMathOpNode {
     }
 
     static default(props: NodeProps) {
-        return new SubtractNode(2, props);
+        return new SubtractNode(props);
     }
 }

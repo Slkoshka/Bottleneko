@@ -2,12 +2,12 @@ import { NodeProps } from '../NekoNodeBase';
 import { AnyArityMathOpNode } from './AnyArityMathOpNode';
 
 export class MinNode extends AnyArityMathOpNode {
-    constructor(initial: number, props: NodeProps) {
-        super(MinNode.name(), initial, props);
+    constructor(props: NodeProps) {
+        super(MinNode.name(), props);
     }
 
     clone() {
-        return new MinNode(this.controls.inputs.value, this.props);
+        return new MinNode(this.props);
     }
 
     static name() {
@@ -15,6 +15,6 @@ export class MinNode extends AnyArityMathOpNode {
     }
 
     static default(props: NodeProps) {
-        return new MinNode(2, props);
+        return new MinNode(props);
     }
 }
