@@ -11,7 +11,9 @@ export default function GraphScriptEditor({ onChange, props, className }: { init
     }, [onChange]);
 
     const create = useCallback((el: HTMLElement) => {
-        return createEditor(el, change.current);
+        return new Promise<Editor>((resolve) => {
+            resolve(createEditor(el, change.current));
+        });
     }, []);
 
     const [ref, editor] = useRete<Editor>(create);

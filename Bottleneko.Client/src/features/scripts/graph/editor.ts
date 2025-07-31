@@ -32,7 +32,7 @@ export interface Editor {
     showContextMenu: (x: number, y: number) => void;
 }
 
-export async function createEditor(container: HTMLElement, onChange: (code: ScriptCode) => void): Promise<Editor> {
+export function createEditor(container: HTMLElement, onChange: (code: ScriptCode) => void): Editor {
     const editor = new NodeEditor<Schemes>();
 
     const render = new ReactPlugin<Schemes, AreaExtra>({ createRoot });
@@ -48,6 +48,9 @@ export async function createEditor(container: HTMLElement, onChange: (code: Scri
 
     const selection = nodeSelection(area, selector);
     AreaExtensions.simpleNodesOrder(area);
+    AreaExtensions.restrictor(area, {
+        scaling: () => ({ min: 0.175, max: 4 }),
+    });
 
     render.addPreset(Presets.classic.setup<Schemes, ReactArea2D<Schemes>>({
         customize: {
@@ -182,11 +185,14 @@ export async function createEditor(container: HTMLElement, onChange: (code: Scri
         return context;
     });
 
-    await new Promise<null>((f) => {
-        f(null);
-    });
-
-    setTimeout(() => void AreaExtensions.zoomAt(area, editor.getNodes()), 10);
+    setTimeout(() => {
+        if (editor.getNodes().length > 0) {
+            void AreaExtensions.zoomAt(area, editor.getNodes());
+        }
+        else {
+            void area.area.zoom(0.8);
+        }
+    }, 10);
 
     const delayedUpdateTimer = setInterval(() => {
         if (isDirty) {
