@@ -18,11 +18,11 @@ public class NekoLogProvider(INekoLogger? nekoLogger = null) : ILoggerProvider, 
 
     public void Log(LogSourceType sourceType, string sourceId, LogSeverity severity, string category, string message, Exception? exception = null)
     {
-        Logger?.Log(sourceType, sourceId, severity, category, message, exception);
+        Logger?.Log(sourceType, sourceId, severity == LogSeverity.Info ? LogSeverity.Verbose : severity, category, message, exception);
     }
 
     public void Log(LogSeverity severity, string category, string message, Exception? exception = null)
     {
-        Logger?.Log(severity, category, message, exception);
+        Logger?.Log(severity == LogSeverity.Info ? LogSeverity.Verbose : severity, category, message, exception);
     }
 }

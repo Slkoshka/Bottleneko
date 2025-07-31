@@ -73,7 +73,7 @@ class ScriptInstance(IServiceProvider services, INekoLogger logger, ScriptEntity
         };
         if (_status != oldStatus)
         {
-            LocalLog.LogInfo("Bottleneko.Scripting", $"Script status changed: {oldStatus} -> {_status}");
+            LocalLog.LogVerbose("Bottleneko.Scripting", $"Script status changed: [{oldStatus}] -> [{_status}]");
         }
     }
 
@@ -90,7 +90,7 @@ class ScriptInstance(IServiceProvider services, INekoLogger logger, ScriptEntity
                 return true;
 
             case FatalScriptError:
-                LocalLog.LogError("Bottleneko.Scripting", $"Script status changed: {_status} -> {ConnectionStatus.Error}");
+                LocalLog.LogError("Bottleneko.Scripting", $"Script status changed: [{_status}] -> [{ConnectionStatus.Error}]");
                 _status = ScriptStatus.Error;
                 return true;
 

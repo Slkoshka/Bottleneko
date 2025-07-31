@@ -116,7 +116,7 @@ public class NekoDbContext(DbContextOptions options) : DbContext(options)
 
             if (migrations.Length > 0)
             {
-                logger.LogInfo("Bottleneko.Database", $"{(db.Database.GetAppliedMigrations().Any() ? "Database schema changed" : "Database does not exist")}, need to apply {migrations.Length} migration(s)");
+                logger.LogVerbose("Bottleneko.Database", $"{(db.Database.GetAppliedMigrations().Any() ? "Database schema changed" : "Database does not exist")}, need to apply {migrations.Length} migration(s)");
                 foreach (var migration in migrations)
                 {
                     logger.LogInfo("Bottleneko.Database", $"Applying migration '{migration}'");
@@ -126,7 +126,7 @@ public class NekoDbContext(DbContextOptions options) : DbContext(options)
             }
             else
             {
-                logger.LogInfo("Bottleneko.Database", "No pending database migrations");
+                logger.LogVerbose("Bottleneko.Database", "No pending database migrations");
             }
         }
     }

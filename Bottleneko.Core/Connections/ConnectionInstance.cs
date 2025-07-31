@@ -76,7 +76,7 @@ class ConnectionInstance(IServiceProvider services, INekoLogger logger, Protocol
         _statusChangeTime = DateTime.UtcNow + delay;
         if (_status != oldStatus)
         {
-            LocalLog.LogInfo("Bottleneko.Connection", $"Connection status changed: {oldStatus} -> {_status}");
+            LocalLog.LogInfo("Bottleneko.Connection", $"Connection status changed: [{oldStatus}] -> [{_status}]");
         }
     }
 
@@ -111,13 +111,13 @@ class ConnectionInstance(IServiceProvider services, INekoLogger logger, Protocol
                 _reconnectDelay = _defaultReconnectDelay;
                 if (_status is ConnectionStatus.Connecting or ConnectionStatus.Reconnecting or ConnectionStatus.DelayedReconnect)
                 {
-                    LocalLog.LogInfo("Bottleneko.Connection", $"Connection status changed: {_status} -> {ConnectionStatus.Connected}");
+                    LocalLog.LogInfo("Bottleneko.Connection", $"Connection status changed: [{_status}] -> [{ConnectionStatus.Connected}]");
                     _status = ConnectionStatus.Connected;
                 }
                 return true;
 
             case ConnectionActor.ConnectionError:
-                LocalLog.LogError("Bottleneko.Connection", $"Connection status changed: {_status} -> {ConnectionStatus.Error}");
+                LocalLog.LogError("Bottleneko.Connection", $"Connection status changed: [{_status}] -> [{ConnectionStatus.Error}]");
                 _status = ConnectionStatus.Error;
                 return true;
 
