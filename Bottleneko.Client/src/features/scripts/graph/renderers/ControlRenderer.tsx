@@ -4,10 +4,12 @@ import { Drag } from 'rete-react-plugin';
 import { OptionListInputControl } from '../controls/OptionListInputControl';
 import { NumberInputControl } from '../controls/NumberInputControl';
 import { TextInputControl } from '../controls/TextInputControl';
+import { ToggleInputControl } from '../controls/ToggleInputControl';
 
 type Control =
     TextInputControl |
     NumberInputControl |
+    ToggleInputControl |
     OptionListInputControl<never>;
 
 export function ControlRenderer({ data, styles }: { data: Control; styles?: () => CSSProperties }) {
@@ -20,11 +22,16 @@ export function ControlRenderer({ data, styles }: { data: Control; styles?: () =
         setValue(data.value);
     }, [data.value]);
 
-    const renderControl = () => {
-        if (data instanceof TextInputControl || data instanceof NumberInputControl) {
-            return (
+    if (data instanceof TextInputControl || data instanceof NumberInputControl) {
+        return (
+            <>
+                <div className="graph-node-control-label">
+                    {
+                        data.label
+                    }
+                </div>
                 <Form.Control
-                    value={value}
+                    value={value as number | string}
                     type={data instanceof TextInputControl ? 'text' : 'number'}
                     ref={ref}
                     min={data instanceof NumberInputControl ? data.min : undefined}
@@ -38,13 +45,13 @@ export function ControlRenderer({ data, styles }: { data: Control; styles?: () =
                     }}
                     onBlur={() => {
                         if (!data.fastUpdate) {
-                            (data.setValue as ((value?: string | number) => void))(value);
+                            (data.setValue as ((value?: string | number) => void))(value as number | string);
                         }
                     }}
                     onKeyDown={(e) => {
                         if (e.code === 'Enter') {
                             e.preventDefault();
-                            (data.setValue as ((value?: string | number) => void))(value);
+                            (data.setValue as ((value?: string | number) => void))(value as number | string);
                             (e.target as HTMLElement).blur();
                         }
 
@@ -53,13 +60,36 @@ export function ControlRenderer({ data, styles }: { data: Control; styles?: () =
                     onDoubleClick={(e) => { e.stopPropagation(); }}
                     style={styles?.()}
                 />
-            );
-        }
-        else if (data instanceof OptionListInputControl) {
-            const options = data.options();
-            const selectedOption = options.findIndex(option => option.value === value);
+            </>
+        );
+    }
+    else if (data instanceof ToggleInputControl) {
+        return (
+            <Form.Switch
+                ref={ref}
+                label={data.label}
+                checked={data.value}
+                onChange={(e) => {
+                    const value = e.target.checked;
+                    setValue(value);
+                    data.setValue(value);
+                }}
+                onDoubleClick={(e) => { e.stopPropagation(); }}
+                style={styles?.()}
+            />
+        );
+    }
+    else if (data instanceof OptionListInputControl) {
+        const options = data.options();
+        const selectedOption = options.findIndex(option => option.value === value);
 
-            return (
+        return (
+            <>
+                <div className="graph-node-control-label">
+                    {
+                        data.label
+                    }
+                </div>
                 <Form.Select
                     ref={ref}
                     value={selectedOption}
@@ -78,21 +108,10 @@ export function ControlRenderer({ data, styles }: { data: Control; styles?: () =
                         ))
                     }
                 </Form.Select>
-            );
-        }
-        else {
-            return <></>;
-        }
-    };
-
-    return (
-        <>
-            <div className="graph-node-control-label">
-                {
-                    data.label
-                }
-            </div>
-            {renderControl()}
-        </>
-    );
+            </>
+        );
+    }
+    else {
+        return <></>;
+    }
 }

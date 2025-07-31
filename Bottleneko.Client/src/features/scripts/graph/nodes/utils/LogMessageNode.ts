@@ -16,7 +16,6 @@ export class LogMessageNode extends NekoNodeBase<
     }
 > {
     width = 250;
-    readonly isEvent = false;
 
     constructor(public severity: LogSeverity, props: NodeProps) {
         super(LogMessageNode.name(), props);

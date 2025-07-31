@@ -12,7 +12,6 @@ export class SwitchNode extends NekoNodeBase<
     object
 > {
     width = 300;
-    readonly isEvent = false;
     type: string | null = null;
 
     constructor(props: NodeProps) {

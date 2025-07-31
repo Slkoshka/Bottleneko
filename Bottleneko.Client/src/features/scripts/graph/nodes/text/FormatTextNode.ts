@@ -13,7 +13,6 @@ export class FormatTextNode extends NekoNodeBase<
     }
 > {
     width = 350;
-    readonly isEvent = false;
 
     constructor(initial: string, props: NodeProps) {
         super(FormatTextNode.name(), props);

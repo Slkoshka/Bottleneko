@@ -14,7 +14,6 @@ export class IfNode extends NekoNodeBase<
     object
 > {
     width = 250;
-    readonly isEvent = false;
 
     constructor(props: NodeProps) {
         super(IfNode.name(), props);

@@ -10,12 +10,14 @@ export interface NodeProps {
     editor: NodeEditor<Schemes>;
 }
 
-export abstract class NekoNodeBase<Inputs extends Partial<Record<string, NekoSocket>>, Outputs extends Partial<Record<string, NekoSocket>>, Controls extends Partial<Record<string, ClassicPreset.Control>>> extends ClassicPreset.Node<Inputs, Outputs, Controls> {
+export abstract class NekoNodeBase<Inputs extends Partial<Record<string, NekoSocket>>, Outputs extends Partial<Record<string, NekoSocket>>, Controls extends Partial<Record<string, ClassicPreset.Control>>, Props extends NodeProps = NodeProps> extends ClassicPreset.Node<Inputs, Outputs, Controls> {
     width?: number;
     height?: number;
+    readonly isEvent: boolean = false;
 
-    constructor(name: string, readonly props: NodeProps) {
+    constructor(name: string, readonly props: Props) {
         super(name);
+        this.props = props;
     }
 
     connect(editor: NodeEditor<Schemes>, source: NodeSocket, target: NodeSocket) {
@@ -41,4 +43,6 @@ export abstract class NekoNodeBase<Inputs extends Partial<Record<string, NekoSoc
     getOutput(id: string) {
         return (this.outputs as Record<string, ClassicPreset.Output<NekoSocket> | undefined>)[id];
     }
+
+    abstract clone(): NekoNode;
 }

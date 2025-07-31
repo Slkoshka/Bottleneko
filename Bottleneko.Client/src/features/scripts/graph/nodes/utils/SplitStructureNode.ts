@@ -10,7 +10,6 @@ export class SplitStructureNode extends NekoNodeBase<
     Record<string, NekoSocket>,
     object
 > {
-    readonly isEvent = false;
     type: string | null = null;
 
     constructor(props: NodeProps) {

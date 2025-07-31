@@ -14,7 +14,6 @@ export class IfValidNode extends NekoNodeBase<
     object
 > {
     width = 350;
-    readonly isEvent = false;
 
     constructor(props: NodeProps) {
         super(IfValidNode.name(), props);
