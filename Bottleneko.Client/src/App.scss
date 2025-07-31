@@ -1,5 +1,9 @@
 ﻿@import './vars.scss';
 
+hr {
+    z-index: -1;
+}
+
 .branding {
     span {
         display: block;
