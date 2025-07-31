@@ -20,7 +20,7 @@ export default function GraphScriptEditor({ onChange, props, className }: { init
         <Card className={`graph-editor w-100 h-100 ${className ?? ''}`} {...props}>
             <div ref={ref} className="graph-editor-content w-100 h-100" tabIndex={0} style={{ outline: 'none' }} />
 
-            <div style={{ position: 'absolute', zIndex: '0', margin: '10px' }}>
+            <div className="graph-editor-controls" style={{ position: 'absolute', zIndex: '0', margin: '10px' }}>
                 <Button
                     onClick={(e) => {
                         const bounds = (e.target as HTMLElement).getBoundingClientRect();

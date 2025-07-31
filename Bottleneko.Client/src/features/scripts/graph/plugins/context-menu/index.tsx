@@ -25,7 +25,7 @@ export function setupContextMenu<K extends ContextMenuRender>(): RenderPreset<Sc
                 return (
                     <ContextMenu
                         items={context.data.items}
-                        delay={200}
+                        delay={10}
                         searchBar={context.data.searchBar}
                         onHide={() => { context.data.onHide(); }}
                         autoConnectTo={context.data.autoConnectTo}

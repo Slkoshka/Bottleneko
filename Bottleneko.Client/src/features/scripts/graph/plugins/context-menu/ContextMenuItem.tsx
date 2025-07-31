@@ -6,55 +6,71 @@ import { Item } from '.';
 interface ContextMenuItemProps {
     data: Item;
     delay: number;
-    hide: () => void;
+    hideMenu: () => void;
+    setShownSubmenu: (key: string | null) => void;
+    shownSubmenu: string | null;
     children: React.ReactNode;
     autoConnectTo?: SocketData;
 }
 
-export function ContextMenuItem(props: ContextMenuItemProps) {
-    const [visibleSubitems, setVisibleSubitems] = useState(false);
+export function ContextMenuItem({ data, delay, hideMenu, setShownSubmenu, shownSubmenu, children, autoConnectTo }: ContextMenuItemProps) {
     const setInvisible = useCallback(() => {
-        setVisibleSubitems(false);
-    }, [setVisibleSubitems]);
-    const [hide, cancelHide] = useDebounce(setInvisible, props.delay);
+        if (shownSubmenu === data.key) {
+            setShownSubmenu(null);
+        }
+    }, [shownSubmenu, setShownSubmenu, data.key]);
+    const [hide, cancelHide] = useDebounce(setInvisible, delay);
+    const [shownChildSubmenu, setShownChildSubmenu] = useState<string | null>(null);
 
     return (
         <div
             onClick={(e) => {
                 e.stopPropagation();
-                if (props.data.subitems) {
+                if (data.subitems) {
                     e.preventDefault();
                 }
                 else {
-                    void props.data.handler(props.autoConnectTo);
-                    props.hide();
+                    void data.handler(autoConnectTo);
+                    hideMenu();
                 }
             }}
             onPointerDown={(e) => { e.stopPropagation(); }}
             onPointerOver={() => {
                 cancelHide();
-                setVisibleSubitems(true);
+                if (data.subitems) {
+                    setShownSubmenu(data.key);
+                }
             }}
-            onPointerLeave={() => { hide(); }}
-            className={`graph-context-menu-item ${props.data.subitems ? 'graph-context-menu-item-folder' : ''}`}
+            onPointerLeave={() => {
+                hide();
+            }}
+            className={`graph-context-menu-item ${data.subitems ? 'graph-context-menu-item-folder' : ''}`}
             data-testid="context-menu-item"
         >
-            {props.children}
-            {props.data.subitems && visibleSubitems && (
-                <div className="graph-context-menu-subitems">
-                    {props.data.subitems.map(item => (
-                        <ContextMenuItem
-                            key={item.key}
-                            data={item}
-                            delay={props.delay}
-                            hide={props.hide}
-                            autoConnectTo={props.autoConnectTo}
-                        >
-                            {item.label}
-                        </ContextMenuItem>
-                    ))}
-                </div>
-            )}
+            {children}
+            {
+                data.subitems?.sort((a, b) => a.label.localeCompare(b.label)) && shownSubmenu === data.key
+                    ? (
+                            <div className="graph-context-menu-subitems">
+                                {
+                                    data.subitems.map(item => (
+                                        <ContextMenuItem
+                                            key={item.key}
+                                            data={item}
+                                            delay={delay}
+                                            hideMenu={hideMenu}
+                                            autoConnectTo={autoConnectTo}
+                                            setShownSubmenu={setShownChildSubmenu}
+                                            shownSubmenu={shownChildSubmenu}
+                                        >
+                                            {item.label}
+                                        </ContextMenuItem>
+                                    ))
+                                }
+                            </div>
+                        )
+                    : <></>
+            }
         </div>
     );
 }

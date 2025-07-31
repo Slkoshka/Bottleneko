@@ -153,6 +153,7 @@ export function useEntityEditor<T extends Entity, TUpdate = never>(id: string | 
 
 export function useDebounce(callback: () => void, timeout: number): [execute: () => void, cancel: () => void] {
     const timerRef = useRef<ReturnType<typeof setTimeout>>();
+    const callbackRef = useRef(callback);
 
     const cancel = () => {
         if (timerRef.current) {
@@ -162,8 +163,14 @@ export function useDebounce(callback: () => void, timeout: number): [execute: ()
 
     const execute = () => {
         cancel();
-        timerRef.current = setTimeout(callback, timeout);
+        timerRef.current = setTimeout(() => {
+            callbackRef.current();
+        }, timeout);
     };
+
+    useEffect(() => {
+        callbackRef.current = callback;
+    }, [callback]);
 
     useEffect(() => {
         return () => {

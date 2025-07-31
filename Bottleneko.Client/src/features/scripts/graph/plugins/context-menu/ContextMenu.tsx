@@ -22,6 +22,7 @@ export function ContextMenu(props: ContextMenuProps) {
     const filterRegexp = new RegExp(filter, 'i');
     const filteredList = filter === '' ? props.items : flattenItems(props.items).filter(item => item.label.match(filterRegexp));
     const searchRef = useRef<HTMLElement>(null);
+    const [shownSubmenu, setShownSubmenu] = useState<string | null>(null);
 
     const setFocus = () => {
         if (searchRef.current) {
@@ -44,7 +45,11 @@ export function ContextMenu(props: ContextMenuProps) {
             {
                 props.searchBar
                     ? (
-                            <div className="graph-context-menu-common">
+                            <div
+                                className="graph-context-menu-common"
+                                onClick={(e) => { e.stopPropagation(); }}
+                                onDoubleClick={(e) => { e.stopPropagation(); }}
+                            >
                                 <Form.Control
                                     ref={searchRef as never}
                                     className="graph-context-menu-search"
@@ -60,12 +65,14 @@ export function ContextMenu(props: ContextMenuProps) {
                     : <></>
             }
             {
-                filteredList.map(item => (
+                filteredList.sort((a, b) => a.label.localeCompare(b.label)).map(item => (
                     <ContextMenuItem
                         key={item.key}
                         data={item}
                         delay={props.delay}
-                        hide={props.onHide}
+                        hideMenu={props.onHide}
+                        shownSubmenu={shownSubmenu}
+                        setShownSubmenu={setShownSubmenu}
                         autoConnectTo={props.autoConnectTo}
                     >
                         {item.label}
