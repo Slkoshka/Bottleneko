@@ -1,6 +1,6 @@
 import { ClassicPreset, NodeEditor } from 'rete';
 import { ExecSocket, SwitchableInputSocket, SwitchableObjectSocket } from '../../sockets';
-import { NekoNodeBase, NodeSocket } from '../NekoNodeBase';
+import { NekoNodeBase, NodeProps, NodeSocket } from '../NekoNodeBase';
 import { Schemes } from '../../editor';
 
 export class SwitchNode extends NekoNodeBase<
@@ -15,8 +15,8 @@ export class SwitchNode extends NekoNodeBase<
     readonly isEvent = false;
     type: string | null = null;
 
-    constructor() {
-        super(SwitchNode.name());
+    constructor(props: NodeProps) {
+        super(SwitchNode.name(), props);
 
         // Inputs
         this.addInput('exec', new ClassicPreset.Input(new ExecSocket(), 'Exec', true));
@@ -53,14 +53,14 @@ export class SwitchNode extends NekoNodeBase<
     }
 
     clone() {
-        return new SwitchNode();
+        return new SwitchNode(this.props);
     }
 
     static name() {
         return 'Switch';
     }
 
-    static default() {
-        return new SwitchNode();
+    static default(props: NodeProps) {
+        return new SwitchNode(props);
     }
 }

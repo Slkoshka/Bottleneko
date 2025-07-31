@@ -1,6 +1,6 @@
 import { ClassicPreset, NodeEditor } from 'rete';
 import { NekoSocket, SplittableInputSocket, SplittableObjectSocket } from '../../sockets';
-import { NekoNodeBase, NodeSocket } from '../NekoNodeBase';
+import { NekoNodeBase, NodeProps, NodeSocket } from '../NekoNodeBase';
 import { Schemes } from '../../editor';
 
 export class SplitStructureNode extends NekoNodeBase<
@@ -13,8 +13,8 @@ export class SplitStructureNode extends NekoNodeBase<
     readonly isEvent = false;
     type: string | null = null;
 
-    constructor() {
-        super(SplitStructureNode.name());
+    constructor(props: NodeProps) {
+        super(SplitStructureNode.name(), props);
 
         // Inputs
         this.addInput('in', new ClassicPreset.Input(new SplittableInputSocket(), 'In', false));
@@ -50,14 +50,14 @@ export class SplitStructureNode extends NekoNodeBase<
     }
 
     clone() {
-        return new SplitStructureNode();
+        return new SplitStructureNode(this.props);
     }
 
     static name() {
         return 'Split Structure';
     }
 
-    static default() {
-        return new SplitStructureNode();
+    static default(props: NodeProps) {
+        return new SplitStructureNode(props);
     }
 }

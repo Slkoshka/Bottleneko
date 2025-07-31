@@ -5,7 +5,16 @@ import { NekoNode } from '.';
 
 export interface NodeSocket { node: NekoNode; socket: NekoSocket }
 
-export class NekoNodeBase<Inputs extends Partial<Record<string, NekoSocket>>, Outputs extends Partial<Record<string, NekoSocket>>, Controls extends Partial<Record<string, ClassicPreset.Control>>> extends ClassicPreset.Node<Inputs, Outputs, Controls> {
+export interface NodeProps {
+    refresh?: (node: NekoNode) => void;
+    editor: NodeEditor<Schemes>;
+}
+
+export abstract class NekoNodeBase<Inputs extends Partial<Record<string, NekoSocket>>, Outputs extends Partial<Record<string, NekoSocket>>, Controls extends Partial<Record<string, ClassicPreset.Control>>> extends ClassicPreset.Node<Inputs, Outputs, Controls> {
+    constructor(name: string, readonly props: NodeProps) {
+        super(name);
+    }
+
     connect(editor: NodeEditor<Schemes>, source: NodeSocket, target: NodeSocket) {
         void editor;
         void source;

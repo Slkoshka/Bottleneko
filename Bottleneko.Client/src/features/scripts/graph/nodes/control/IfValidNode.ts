@@ -1,6 +1,6 @@
 import { ClassicPreset } from 'rete';
 import { ExecSocket, OptionalInputSocket } from '../../sockets';
-import { NekoNodeBase } from '../NekoNodeBase';
+import { NekoNodeBase, NodeProps } from '../NekoNodeBase';
 
 export class IfValidNode extends NekoNodeBase<
     {
@@ -16,8 +16,8 @@ export class IfValidNode extends NekoNodeBase<
     width = 350;
     readonly isEvent = false;
 
-    constructor() {
-        super(IfValidNode.name());
+    constructor(props: NodeProps) {
+        super(IfValidNode.name(), props);
 
         // Inputs
         this.addInput('exec', new ClassicPreset.Input(new ExecSocket(), 'Exec', true));
@@ -31,14 +31,14 @@ export class IfValidNode extends NekoNodeBase<
     }
 
     clone() {
-        return new IfValidNode();
+        return new IfValidNode(this.props);
     }
 
     static name() {
         return 'If Valid';
     }
 
-    static default() {
-        return new IfValidNode();
+    static default(props: NodeProps) {
+        return new IfValidNode(props);
     }
 }

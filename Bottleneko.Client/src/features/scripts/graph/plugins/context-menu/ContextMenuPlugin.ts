@@ -53,7 +53,12 @@ function getItems(context: 'root' | NekoNode | NekoConnection, plugin: ContextMe
                 label: name,
                 key: idx.toString(),
                 handler: async (autoConnectTo) => {
-                    const node = items.default();
+                    const node = items.default({
+                        editor,
+                        refresh: (node) => {
+                            void area.update('node', node.id);
+                        },
+                    });
                     await editor.addNode(node);
                     void area.translate(node.id, area.area.pointer);
 

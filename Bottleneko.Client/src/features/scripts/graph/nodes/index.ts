@@ -1,14 +1,16 @@
 import { MessageReceivedNode } from './events/MessageReceivedNode';
-import { TestNode } from './TestNode';
 import { IfNode } from './control/IfNode';
 import { SplitStructureNode } from './utils/SplitStructureNode';
 import { SwitchNode } from './control/SwitchNode';
 import { IfValidNode } from './control/IfValidNode';
+import { FormatTextNode } from './text/FormatTextNode';
+import { NodeProps } from './NekoNodeBase';
+import { LogMessageNode } from './utils/LogMessageNode';
 
-export type NekoNode = TestNode | MessageReceivedNode | IfNode | IfValidNode | SwitchNode | SplitStructureNode;
+export type NekoNode = MessageReceivedNode | IfNode | IfValidNode | SwitchNode | FormatTextNode | SplitStructureNode | LogMessageNode;
 
 export interface NekoNodeConstructor {
-    default: () => NekoNode;
+    default: (props: NodeProps) => NekoNode;
     name: () => string;
 };
 
@@ -26,8 +28,11 @@ export const nodes: NodeCollection = [
         node(IfValidNode),
         node(SwitchNode),
     ]],
+    ['Text Operations', [
+        node(FormatTextNode),
+    ]],
     ['Utilities', [
         node(SplitStructureNode),
-        node(TestNode),
+        node(LogMessageNode),
     ]],
 ];

@@ -1,6 +1,6 @@
 import { ClassicPreset } from 'rete';
 import { ChatMessageSocket, ExecSocket } from '../../sockets';
-import { NekoNodeBase } from '../NekoNodeBase';
+import { NekoNodeBase, NodeProps } from '../NekoNodeBase';
 
 export class MessageReceivedNode extends NekoNodeBase<
     object,
@@ -12,8 +12,8 @@ export class MessageReceivedNode extends NekoNodeBase<
 > {
     readonly isEvent = true;
 
-    constructor() {
-        super(MessageReceivedNode.name());
+    constructor(props: NodeProps) {
+        super(MessageReceivedNode.name(), props);
 
         // Inputs
 
@@ -25,14 +25,14 @@ export class MessageReceivedNode extends NekoNodeBase<
     }
 
     clone() {
-        return new MessageReceivedNode();
+        return new MessageReceivedNode(this.props);
     }
 
     static name() {
         return 'Message Received';
     }
 
-    static default() {
-        return new MessageReceivedNode();
+    static default(props: NodeProps) {
+        return new MessageReceivedNode(props);
     }
 }
