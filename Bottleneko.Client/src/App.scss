@@ -1,11 +1,15 @@
-﻿.branding span {
-    display: block;
-    float: left;
-}
+﻿@import './vars.scss';
 
-.branding .branding-highlight {
-    color: #9341ff;
-    transform: translateY(0.1em);
+.branding {
+    span {
+        display: block;
+        float: left;
+    }
+
+    .branding-highlight {
+        color: $primary;
+        transform: translateY(0.1em);
+    }
 }
 
 .main-page {

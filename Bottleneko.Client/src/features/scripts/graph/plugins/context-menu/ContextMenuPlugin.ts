@@ -36,22 +36,19 @@ function getItems(context: 'root' | NekoNode | NekoConnection, plugin: ContextMe
     const area = plugin.parentScope<BaseAreaPlugin<Schemes, unknown>>(BaseAreaPlugin);
     const editor = area.parentScope<NodeEditor<Schemes>>(NodeEditor);
 
-    const extractNodes = (nodes: NodeCollection): Item[] => nodes.map(([name, items], idx) => {
+    const extractNodes = (nodes: NodeCollection, prefix?: string): Item[] => nodes.map(([name, items], idx) => {
         if (Array.isArray(items)) {
             return {
                 label: name,
-                key: idx.toString(),
+                key: `${prefix ?? ''}${idx.toString()}`,
                 handler: () => { /* do nothing */ },
-                subitems: extractNodes(items).map(item => ({
-                    ...item,
-                    key: `${idx.toString()}-${item.key}`,
-                })),
+                subitems: extractNodes(items, `${prefix ?? ''}${idx.toString()}-`),
             };
         }
         else {
             return {
                 label: name,
-                key: idx.toString(),
+                key: `${prefix ?? ''}${idx.toString()}`,
                 handler: async (autoConnectTo) => {
                     const node = items.default({
                         editor,

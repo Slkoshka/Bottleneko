@@ -1,4 +1,4 @@
-import './dashboard-card.css';
+import './dashboard-card.scss';
 import { Card } from 'react-bootstrap';
 import { CSSProperties, PropsWithChildren } from 'react';
 

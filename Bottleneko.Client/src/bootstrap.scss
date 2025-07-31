@@ -4,12 +4,8 @@ $accordion-button-focus-box-shadow: inset 0 calc(-1 * var(--bs-accordion-border-
 $accordion-icon-color: white;
 $accordion-icon-active-color: white;
 
-@import 'vars.scss';
+@import './vars.scss';
 @import '../node_modules/bootstrap/scss/bootstrap';
-
-:root {
-    --primary-color: #{$primary};
-}
 
 // Overriding $accordion-icon-color doesn't seem to work for some reason
 .accordion-button::after {
@@ -19,3 +15,4 @@ $accordion-icon-active-color: white;
 .accordion-button::after:not(.collapsed) {
     background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-linecap='round' stroke-linejoin='round'><path d='m2 5 6 6 6-6'/></svg>") !important;
 }
+

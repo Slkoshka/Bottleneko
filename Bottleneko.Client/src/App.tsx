@@ -1,6 +1,6 @@
 import './bootstrap.scss';
 import 'highlight.js/styles/default.min.css';
-import './App.css';
+import './App.scss';
 
 import { RouterProvider } from 'react-router-dom';
 import router from './app/router';

@@ -1,3 +1,5 @@
+@import '../../../vars.scss';
+
 .dashboard-card table tr {
     width: 100%;
     height: 3em;
@@ -5,7 +7,7 @@
 }
 
 .dashboard-card-header {
-    background-color: var(--primary-color);
+    background-color: $primary;
 }
 
 .dashboard-card-bot td:nth-child(1) {

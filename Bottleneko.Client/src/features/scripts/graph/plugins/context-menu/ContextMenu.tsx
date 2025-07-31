@@ -23,6 +23,16 @@ export function ContextMenu(props: ContextMenuProps) {
     const filteredList = filter === '' ? props.items : flattenItems(props.items).filter(item => item.label.match(filterRegexp));
     const searchRef = useRef<HTMLElement>(null);
     const [shownSubmenu, setShownSubmenu] = useState<string | null>(null);
+    const [submenuPosition, setSubmenuPosition] = useState({ x: 0, y: 0 });
+
+    const changeShownSubmenu = (args: { key: string; element: HTMLElement } | null) => {
+        if (args) {
+            const bounds = args.element.getBoundingClientRect();
+            const parentBounds = (args.element.parentElement ?? args.element).getBoundingClientRect();
+            setSubmenuPosition({ x: parentBounds.right, y: bounds.top });
+        }
+        setShownSubmenu(args?.key ?? null);
+    };
 
     const setFocus = () => {
         if (searchRef.current) {
@@ -64,21 +74,24 @@ export function ContextMenu(props: ContextMenuProps) {
                         )
                     : <></>
             }
-            {
-                filteredList.sort((a, b) => a.label.localeCompare(b.label)).map(item => (
-                    <ContextMenuItem
-                        key={item.key}
-                        data={item}
-                        delay={props.delay}
-                        hideMenu={props.onHide}
-                        shownSubmenu={shownSubmenu}
-                        setShownSubmenu={setShownSubmenu}
-                        autoConnectTo={props.autoConnectTo}
-                    >
-                        {item.label}
-                    </ContextMenuItem>
-                ))
-            }
+            <div className="graph-context-menu-items">
+                {
+                    filteredList.sort((a, b) => a.label.localeCompare(b.label)).map(item => (
+                        <ContextMenuItem
+                            key={item.key}
+                            data={item}
+                            delay={props.delay}
+                            hideMenu={props.onHide}
+                            shownSubmenu={shownSubmenu}
+                            setShownSubmenu={changeShownSubmenu}
+                            submenuPosition={submenuPosition}
+                            autoConnectTo={props.autoConnectTo}
+                        >
+                            {item.label}
+                        </ContextMenuItem>
+                    ))
+                }
+            </div>
         </div>
     );
 }

@@ -1,5 +1,4 @@
-import { useCallback, useState } from 'react';
-import { useDebounce } from '../../../../../app/hooks';
+import { CSSProperties, useRef, useState } from 'react';
 import { SocketData } from './ContextMenuPlugin';
 import { Item } from '.';
 
@@ -7,23 +6,31 @@ interface ContextMenuItemProps {
     data: Item;
     delay: number;
     hideMenu: () => void;
-    setShownSubmenu: (key: string | null) => void;
+    setShownSubmenu: (args: { key: string; element: HTMLElement } | null) => void;
     shownSubmenu: string | null;
+    submenuPosition: { x: number; y: number };
     children: React.ReactNode;
     autoConnectTo?: SocketData;
+    style?: CSSProperties;
 }
 
-export function ContextMenuItem({ data, delay, hideMenu, setShownSubmenu, shownSubmenu, children, autoConnectTo }: ContextMenuItemProps) {
-    const setInvisible = useCallback(() => {
-        if (shownSubmenu === data.key) {
-            setShownSubmenu(null);
-        }
-    }, [shownSubmenu, setShownSubmenu, data.key]);
-    const [hide, cancelHide] = useDebounce(setInvisible, delay);
+export function ContextMenuItem({ data, delay, hideMenu, setShownSubmenu, shownSubmenu, submenuPosition, children, autoConnectTo, style }: ContextMenuItemProps) {
+    const ref = useRef<HTMLDivElement>(null);
     const [shownChildSubmenu, setShownChildSubmenu] = useState<string | null>(null);
+    const [childSubmenuPosition, setChildSubmenuPosition] = useState({ x: 0, y: 0 });
+
+    const changeShownChildSubmenu = (args: { key: string; element: HTMLElement } | null) => {
+        if (args) {
+            const bounds = args.element.getBoundingClientRect();
+            const parentBounds = (args.element.parentElement ?? args.element).getBoundingClientRect();
+            setChildSubmenuPosition({ x: parentBounds.right, y: bounds.top });
+        }
+        setShownChildSubmenu(args?.key ?? null);
+    };
 
     return (
         <div
+            ref={ref}
             onClick={(e) => {
                 e.stopPropagation();
                 if (data.subitems) {
@@ -35,33 +42,35 @@ export function ContextMenuItem({ data, delay, hideMenu, setShownSubmenu, shownS
                 }
             }}
             onPointerDown={(e) => { e.stopPropagation(); }}
-            onPointerOver={() => {
-                cancelHide();
+            onPointerOver={(e) => {
                 if (data.subitems) {
-                    setShownSubmenu(data.key);
+                    setShownSubmenu({ key: data.key, element: ref.current as HTMLElement });
                 }
+                else {
+                    setShownSubmenu(null);
+                }
+                e.preventDefault();
+                e.stopPropagation();
             }}
-            onPointerLeave={() => {
-                hide();
-            }}
-            className={`graph-context-menu-item ${data.subitems ? 'graph-context-menu-item-folder' : ''}`}
-            data-testid="context-menu-item"
+            className={`graph-context-menu-item a-${data.key} ${data.subitems ? 'graph-context-menu-item-folder' : ''}`}
+            style={style}
         >
             {children}
             {
-                data.subitems?.sort((a, b) => a.label.localeCompare(b.label)) && shownSubmenu === data.key
+                data.subitems && shownSubmenu === data.key
                     ? (
-                            <div className="graph-context-menu-subitems">
+                            <div className="graph-context-menu-subitems" style={{ left: submenuPosition.x, top: submenuPosition.y }}>
                                 {
-                                    data.subitems.map(item => (
+                                    data.subitems.sort((a, b) => a.label.localeCompare(b.label)).map(item => (
                                         <ContextMenuItem
                                             key={item.key}
                                             data={item}
                                             delay={delay}
                                             hideMenu={hideMenu}
                                             autoConnectTo={autoConnectTo}
-                                            setShownSubmenu={setShownChildSubmenu}
+                                            setShownSubmenu={changeShownChildSubmenu}
                                             shownSubmenu={shownChildSubmenu}
+                                            submenuPosition={childSubmenuPosition}
                                         >
                                             {item.label}
                                         </ContextMenuItem>
