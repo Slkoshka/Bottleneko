@@ -21,6 +21,14 @@ export function setupShortcuts<Schemes extends NekoSchemes, A extends Action>(el
         }
     };
 
+    const selectAll = async () => {
+        for (const node of editor.getNodes()) {
+            node.selected = true;
+            await area.update('node', node.id);
+        }
+        await area.emit({ type: 'refreshselection' });
+    };
+
     const copySelection = async () => {
         const selectedNodes = editor.getNodes().filter(node => node.selected);
         const selectedNodeIds = new Set(selectedNodes.map(node => node.id));
@@ -72,6 +80,10 @@ export function setupShortcuts<Schemes extends NekoSchemes, A extends Action>(el
         [
             e => e.code === 'KeyX' && (e.ctrlKey || e.metaKey) && !e.shiftKey,
             cutSelection,
+        ],
+        [
+            e => e.code === 'KeyA' && (e.ctrlKey || e.metaKey) && !e.shiftKey,
+            selectAll,
         ],
         [
             e => e.code === 'KeyC' && (e.ctrlKey || e.metaKey) && !e.shiftKey,
