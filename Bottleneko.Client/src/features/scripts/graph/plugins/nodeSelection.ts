@@ -1,14 +1,15 @@
 import { GetSchemes, NodeEditor, NodeId } from 'rete';
-import { BaseArea, BaseAreaPlugin } from 'rete-area-plugin';
 import { Selectable } from 'rete-area-plugin/_types/extensions/selectable';
 import { NekoNode } from '../nodes';
 import NekoConnection from '../connections/NekoConnection';
+import { NekoAreaPlugin } from '../editor';
 
 type Schemes = GetSchemes<NekoNode & { selected?: boolean }, NekoConnection>;
 
-export function nodeSelection<T>(base: BaseAreaPlugin<Schemes, T>, core: Selectable) {
+export interface SelectionExtra { type: 'refreshselection' };
+
+export function nodeSelection(area: NekoAreaPlugin, core: Selectable) {
     let editor: null | NodeEditor<Schemes> = null;
-    const area = base as BaseAreaPlugin<Schemes, BaseArea<Schemes>>;
     const getEditor = () => editor ?? (editor = area.parentScope<NodeEditor<Schemes>>(NodeEditor));
     let holdingModifier = false;
 
@@ -119,6 +120,16 @@ export function nodeSelection<T>(base: BaseAreaPlugin<Schemes, T>, core: Selecta
                     break;
             }
             state = null;
+        }
+        else if (context.type === 'refreshselection') {
+            for (const node of getEditor().getNodes()) {
+                if (node.selected) {
+                    add(node.id, true);
+                }
+                else {
+                    remove(node.id);
+                }
+            }
         }
 
         return context;

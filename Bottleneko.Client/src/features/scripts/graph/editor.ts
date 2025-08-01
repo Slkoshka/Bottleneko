@@ -15,7 +15,7 @@ import { NekoNodeBase } from './nodes/NekoNodeBase';
 import { ControlRenderer } from './renderers/ControlRenderer';
 import { setupContextMenu } from './plugins/context-menu';
 import { ContextMenuExtra, ContextMenuPlugin } from './plugins/context-menu/ContextMenuPlugin';
-import { nodeSelection } from './plugins/nodeSelection';
+import { nodeSelection, SelectionExtra } from './plugins/nodeSelection';
 import { setupShortcuts } from './plugins/keyboard';
 import { ConnectionFlow } from './plugins/connections';
 import { deserializeEditor, serializeEditor } from './serialization';
@@ -25,7 +25,8 @@ export type Schemes = GetSchemes<
     NekoConnection
 >;
 
-type AreaExtra = Root<Schemes> | Area2D<Schemes> | ReactArea2D<Schemes> | ContextMenuExtra | { type: 'nodechanged'; node: NekoNode } | { type: 'noderefresh'; node: NekoNode };
+type AreaExtra = Root<Schemes> | Area2D<Schemes> | ReactArea2D<Schemes> | ContextMenuExtra | SelectionExtra | { type: 'nodechanged'; node: NekoNode } | { type: 'noderefresh'; node: NekoNode };
+export type NekoAreaPlugin = AreaPlugin<Schemes, AreaExtra>;
 
 export interface Editor {
     destroy: () => void;
@@ -135,7 +136,7 @@ export async function createEditor({ container, initial, onChange }: { container
     area.use(render);
     area.use(history);
 
-    const shortcuts = setupShortcuts(container, editor, history);
+    const shortcuts = setupShortcuts(container, editor, area, history);
     contextMenu.useConnections(connection as never);
 
     let isDirty = false;
