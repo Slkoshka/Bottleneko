@@ -1,7 +1,8 @@
 import { ClassicPreset } from 'rete';
 import { ExecSocket, StringSocket } from '../../sockets';
-import { NekoNodeBase, NodeProps, NodeState } from '../NekoNodeBase';
-import { LogSeverityInputControl, LogSeverity } from '../../controls/LogSeverityInputControl';
+import { NekoNodeBase, NodeProps } from '../NekoNodeBase';
+import { LogSeverityInputControl } from '../../controls/LogSeverityInputControl';
+import { GraphLogMessageNodeData, LogSeverity } from '../../../../api/dtos.gen';
 
 export class LogMessageNode extends NekoNodeBase<
     {
@@ -14,9 +15,9 @@ export class LogMessageNode extends NekoNodeBase<
     {
         severity: LogSeverityInputControl;
     },
-    NodeState & { severity: LogSeverity }
+    GraphLogMessageNodeData
 > {
-    type = 'log-message';
+    type = 'log-message' as const;
     category = 'utils' as const;
     width = 250;
 
@@ -47,6 +48,6 @@ export class LogMessageNode extends NekoNodeBase<
     }
 
     static default(props: NodeProps) {
-        return new LogMessageNode({ severity: 'info' }, props);
+        return new LogMessageNode({ severity: LogSeverity.Info }, props);
     }
 }

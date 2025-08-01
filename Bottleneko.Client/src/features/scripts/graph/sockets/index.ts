@@ -1,11 +1,10 @@
 import deepEqual from 'deep-equal';
 import { ClassicPreset } from 'rete';
-
-export interface NekoSocketType { id: string }
+import { GraphAnyEnumInputSocketType, GraphAnyOptionalInputSocketType, GraphAnyStructureInputSocketType, GraphBooleanSocketType, GraphChatMessageSocketType, GraphChatSocketType, GraphChatterSocketType, GraphExecSocketType, GraphIdSocketType, GraphInvalidSocketType, GraphNumberSocketType, GraphOptionalSocketType, GraphProtocolSocketType, GraphSocketType, GraphStringSocketType, GraphTimestampSocketType, Protocol } from '../../../api/dtos.gen';
 
 type TrivialSocket = new () => NekoSocket;
 
-export abstract class NekoSocket<T extends NekoSocketType = NekoSocketType> extends ClassicPreset.Socket {
+export abstract class NekoSocket<T extends GraphSocketType = GraphSocketType> extends ClassicPreset.Socket {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     constructor(readonly type: T, name: string, private readonly compatibleSockets?: any[]) {
         super(name);
@@ -25,10 +24,9 @@ export abstract class NekoSocket<T extends NekoSocketType = NekoSocketType> exte
         return false;
     }
 
-    static fromType(type: NekoSocketType): NekoSocket {
-        if (type.id === 'optional') {
-            const optionalType = type as OptionalSocket['type'];
-            return new OptionalSocket(() => this.fromType(optionalType.inner));
+    static fromType(type: GraphSocketType): NekoSocket {
+        if (type.$type === 'optional') {
+            return new OptionalSocket(() => this.fromType(type.innerType));
         }
         else {
             return socketTypes.map(socket => new (socket === OptionalSocket ? InvalidSocket : socket as TrivialSocket)()).find(socket => deepEqual(socket.type, type)) ?? new InvalidSocket();
@@ -36,13 +34,13 @@ export abstract class NekoSocket<T extends NekoSocketType = NekoSocketType> exte
     }
 }
 
-export class InvalidSocket extends NekoSocket {
-    constructor() { super({ id: 'invalid' }, 'Error', []); }
+export class InvalidSocket extends NekoSocket<GraphInvalidSocketType> {
+    constructor() { super({ $type: 'invalid' }, 'Error', []); }
 }
 
-export abstract class SplittableObjectSocket<T extends NekoSocketType = NekoSocketType> extends NekoSocket<T> {
+export abstract class SplittableObjectSocket<T extends GraphSocketType> extends NekoSocket<T> {
     constructor(type: T, name: string, compatibleSockets?: unknown[]) {
-        super(type, `[Structure] ${name}`, [...(compatibleSockets ?? []), SplittableInputSocket]);
+        super(type, `[Structure] ${name}`, [...(compatibleSockets ?? []), AnyStructureInputSocket]);
     }
 
     parts(): { id: string; name: string; constructor: () => NekoSocket; singleConnection?: boolean }[] {
@@ -50,22 +48,22 @@ export abstract class SplittableObjectSocket<T extends NekoSocketType = NekoSock
     }
 }
 
-export abstract class SwitchableObjectSocket<T extends NekoSocketType = NekoSocketType> extends NekoSocket<T> {
+export abstract class SwitchableObjectSocket<T extends GraphSocketType, Option extends string> extends NekoSocket<T> {
     constructor(type: T, name: string, compatibleSockets?: unknown[]) {
-        super(type, `[Enum] ${name}`, [...(compatibleSockets ?? []), SwitchableInputSocket]);
+        super(type, `[Enum] ${name}`, [...(compatibleSockets ?? []), AnyEnumInputSocket]);
     }
 
-    options(): { id: string; name: string }[] {
+    options(): { id: Option; name: string }[] {
         return [];
     }
 }
 
-export class ExecSocket extends NekoSocket {
-    constructor() { super({ id: 'exec' }, 'Execution Flow', [ExecSocket]); }
+export class ExecSocket extends NekoSocket<GraphExecSocketType> {
+    constructor() { super({ $type: 'exec' }, 'Execution Flow', [ExecSocket]); }
 }
 
-export class BooleanSocket extends SwitchableObjectSocket {
-    constructor() { super({ id: 'boolean' }, 'Boolean (true or false)', [BooleanSocket, StringSocket, NumberSocket]); }
+export class BooleanSocket extends SwitchableObjectSocket<GraphBooleanSocketType, string> {
+    constructor() { super({ $type: 'boolean' }, 'Boolean (true or false)', [BooleanSocket, StringSocket, NumberSocket]); }
 
     options() {
         return [
@@ -75,40 +73,40 @@ export class BooleanSocket extends SwitchableObjectSocket {
     }
 }
 
-export class NumberSocket extends NekoSocket {
-    constructor() { super({ id: 'number' }, 'Number', [NumberSocket, StringSocket]); }
+export class NumberSocket extends NekoSocket<GraphNumberSocketType> {
+    constructor() { super({ $type: 'number' }, 'Number', [NumberSocket, StringSocket]); }
 }
 
-export class StringSocket extends NekoSocket {
-    constructor() { super({ id: 'string' }, 'Text', [StringSocket]); }
+export class StringSocket extends NekoSocket<GraphStringSocketType> {
+    constructor() { super({ $type: 'string' }, 'Text', [StringSocket]); }
 }
 
-export class IdSocket extends NekoSocket {
-    constructor() { super({ id: 'id' }, 'ID', [IdSocket, StringSocket]); }
+export class IdSocket extends NekoSocket<GraphIdSocketType> {
+    constructor() { super({ $type: 'id' }, 'ID', [IdSocket, StringSocket]); }
 }
 
-export class ProtocolSocket extends SwitchableObjectSocket {
-    constructor() { super({ id: 'protocol' }, 'Protocol', [ProtocolSocket, StringSocket]); }
+export class ProtocolSocket extends SwitchableObjectSocket<GraphProtocolSocketType, Protocol> {
+    constructor() { super({ $type: 'protocol' }, 'Protocol', [ProtocolSocket, StringSocket]); }
 
     options() {
         return [
-            { id: 'discord', name: 'Discord' },
-            { id: 'telegram', name: 'Telegram' },
-            { id: 'twitch', name: 'Twitch' },
+            { id: Protocol.Discord, name: 'Discord' },
+            { id: Protocol.Telegram, name: 'Telegram' },
+            { id: Protocol.Twitch, name: 'Twitch' },
         ];
     }
 }
 
-export class TimestampSocket extends NekoSocket {
-    constructor() { super({ id: 'timestamp' }, 'Timestamp', [TimestampSocket, StringSocket]); }
+export class TimestampSocket extends NekoSocket<GraphTimestampSocketType> {
+    constructor() { super({ $type: 'timestamp' }, 'Timestamp', [TimestampSocket, StringSocket]); }
 }
 
-export class ChatSocket extends NekoSocket {
-    constructor() { super({ id: 'chat' }, 'Chat', [ChatSocket]); }
+export class ChatSocket extends NekoSocket<GraphChatSocketType> {
+    constructor() { super({ $type: 'chat' }, 'Chat', [ChatSocket]); }
 }
 
-export class ChatMessageSocket extends SplittableObjectSocket {
-    constructor() { super({ id: 'chat-message' }, 'Chat Message', [ChatMessageSocket]); }
+export class ChatMessageSocket extends SplittableObjectSocket<GraphChatMessageSocketType> {
+    constructor() { super({ $type: 'chat-message' }, 'Chat Message', [ChatMessageSocket]); }
 
     parts() {
         return [
@@ -124,25 +122,25 @@ export class ChatMessageSocket extends SplittableObjectSocket {
     }
 }
 
-export class ChatterSocket extends NekoSocket {
-    constructor() { super({ id: 'chatter' }, 'Chat User', [ChatterSocket]); }
+export class ChatterSocket extends NekoSocket<GraphChatterSocketType> {
+    constructor() { super({ $type: 'chatter' }, 'Chat User', [ChatterSocket]); }
 }
 
-export class OptionalInputSocket extends NekoSocket {
-    constructor() { super({ id: 'any-optional' }, 'Any Optional Value'); }
+export class OptionalInputSocket extends NekoSocket<GraphAnyOptionalInputSocketType> {
+    constructor() { super({ $type: 'any-optional' }, 'Any Optional Value'); }
 }
 
-export class SplittableInputSocket extends NekoSocket {
-    constructor() { super({ id: 'any-splittable' }, 'Any Structure'); }
+export class AnyStructureInputSocket extends NekoSocket<GraphAnyStructureInputSocketType> {
+    constructor() { super({ $type: 'any-structure' }, 'Any Structure'); }
 }
 
-export class SwitchableInputSocket extends NekoSocket {
-    constructor() { super({ id: 'any-switchable' }, 'Any Enum'); }
+export class AnyEnumInputSocket extends NekoSocket<GraphAnyEnumInputSocketType> {
+    constructor() { super({ $type: 'any-enum' }, 'Any Enum'); }
 }
 
-export class OptionalSocket extends NekoSocket<NekoSocketType & { inner: NekoSocketType }> {
+export class OptionalSocket extends NekoSocket<GraphOptionalSocketType> {
     constructor(readonly innerType: () => NekoSocket) {
-        super({ id: 'optional', inner: innerType().type }, `${innerType().name} (Optional)`);
+        super({ $type: 'optional', innerType: innerType().type }, `${innerType().name} (Optional)`);
     }
 
     isCompatibleWith(socket: ClassicPreset.Socket) {
@@ -164,7 +162,7 @@ export const socketTypes = [
     ChatMessageSocket,
     ChatterSocket,
     OptionalInputSocket,
-    SplittableInputSocket,
-    SwitchableInputSocket,
+    AnyStructureInputSocket,
+    AnyEnumInputSocket,
     OptionalSocket,
 ];

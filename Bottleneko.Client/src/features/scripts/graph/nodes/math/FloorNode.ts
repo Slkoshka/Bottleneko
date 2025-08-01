@@ -1,11 +1,12 @@
+import { GraphFloorNodeData } from '../../../../api/dtos.gen';
 import { NodeProps } from '../NekoNodeBase';
 import { UnaryMathOpNode } from './UnaryMathOpNode';
 
-export class FloorNode extends UnaryMathOpNode {
-    type = 'floor';
+export class FloorNode extends UnaryMathOpNode<GraphFloorNodeData> {
+    type = 'floor' as const;
 
     constructor(props: NodeProps) {
-        super(FloorNode.name(), props);
+        super(FloorNode.name(), { }, props);
     }
 
     static name() {

@@ -1,7 +1,8 @@
 import { ClassicPreset } from 'rete';
 import { NekoSocket, StringSocket } from '../../sockets';
-import { NekoNodeBase, NodeProps, NodeState } from '../NekoNodeBase';
+import { NekoNodeBase, NodeProps } from '../NekoNodeBase';
 import { NumberInputControl } from '../../controls/NumberInputControl';
+import { GraphConcatNodeData } from '../../../../api/dtos.gen';
 
 export class ConcatNode extends NekoNodeBase<
     Record<string, NekoSocket>,
@@ -11,9 +12,9 @@ export class ConcatNode extends NekoNodeBase<
     {
         inputs: NumberInputControl;
     },
-    NodeState & { inputs: number }
+    GraphConcatNodeData
 > {
-    type = 'concat';
+    type = 'concat' as const;
     category = 'text-ops' as const;
 
     constructor(initial: ConcatNode['state'], props: NodeProps) {

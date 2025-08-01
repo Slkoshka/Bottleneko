@@ -66,6 +66,7 @@ export default function ScriptEditor({ id, script, onSaved }: { id?: string; scr
             case 'Graph':
                 return (
                     <GraphScriptEditor
+                        initial={code}
                         onChange={(code) => {
                             setFieldValue('code', code);
                         }}

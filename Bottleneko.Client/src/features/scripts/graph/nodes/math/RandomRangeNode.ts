@@ -1,7 +1,8 @@
 import { ClassicPreset } from 'rete';
 import { ExecSocket, NumberSocket } from '../../sockets';
-import { NekoNodeBase, NodeProps, NodeState } from '../NekoNodeBase';
+import { NekoNodeBase, NodeProps } from '../NekoNodeBase';
 import { ToggleInputControl } from '../../controls/ToggleInputControl';
+import { GraphRandomRangeNodeData } from '../../../../api/dtos.gen';
 
 export class RandomRangeNode extends NekoNodeBase<
     {
@@ -16,9 +17,9 @@ export class RandomRangeNode extends NekoNodeBase<
     {
         integers: ToggleInputControl;
     },
-    NodeState & { integers: boolean }
+    GraphRandomRangeNodeData
 > {
-    type = 'random-range';
+    type = 'random-range' as const;
     category = 'math' as const;
 
     constructor(initial: RandomRangeNode['initial'], props: NodeProps) {

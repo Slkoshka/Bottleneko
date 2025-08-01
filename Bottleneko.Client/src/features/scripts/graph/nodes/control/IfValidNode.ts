@@ -1,6 +1,7 @@
 import { ClassicPreset } from 'rete';
 import { ExecSocket, OptionalInputSocket } from '../../sockets';
 import { NekoNodeBase, NodeProps } from '../NekoNodeBase';
+import { GraphIfValidNodeData } from '../../../../api/dtos.gen';
 
 export class IfValidNode extends NekoNodeBase<
     {
@@ -11,9 +12,10 @@ export class IfValidNode extends NekoNodeBase<
         valid: ExecSocket;
         invalid: ExecSocket;
     },
-    object
+    object,
+    GraphIfValidNodeData
 > {
-    type = 'if-valid';
+    type = 'if-valid' as const;
     category = 'control' as const;
     width = 350;
 

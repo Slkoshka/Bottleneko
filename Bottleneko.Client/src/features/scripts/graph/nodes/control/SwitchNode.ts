@@ -1,18 +1,19 @@
 import { ClassicPreset } from 'rete';
 import deepEqual from 'deep-equal';
-import { ExecSocket, NekoSocket, SwitchableInputSocket, SwitchableObjectSocket } from '../../sockets';
-import { NekoNodeBase, NodeProps, NodeSocket, NodeState } from '../NekoNodeBase';
+import { ExecSocket, NekoSocket, AnyEnumInputSocket, SwitchableObjectSocket } from '../../sockets';
+import { NekoNodeBase, NodeProps, NodeSocket } from '../NekoNodeBase';
+import { GraphSwitchNodeData } from '../../../../api/dtos.gen';
 
 export class SwitchNode extends NekoNodeBase<
     {
         exec: ExecSocket;
-        in: SwitchableInputSocket;
+        in: AnyEnumInputSocket;
     },
     Record<string, ExecSocket>,
     object,
-    NodeState & { inputType: NekoSocket['type'] | null }
+    GraphSwitchNodeData
 > {
-    type = 'switch';
+    type = 'switch' as const;
     category = 'control' as const;
     width = 300;
 
@@ -21,7 +22,7 @@ export class SwitchNode extends NekoNodeBase<
 
         // Inputs
         this.addInput('exec', new ClassicPreset.Input(new ExecSocket(), 'Exec', true));
-        this.addInput('in', new ClassicPreset.Input(new SwitchableInputSocket(), 'Value', false));
+        this.addInput('in', new ClassicPreset.Input(new AnyEnumInputSocket(), 'Value', false));
 
         // Outputs
 

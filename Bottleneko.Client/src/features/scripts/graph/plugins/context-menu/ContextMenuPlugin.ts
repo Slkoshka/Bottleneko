@@ -147,7 +147,7 @@ function getItems(context: 'root' | NekoNode | NekoConnection, plugin: ContextMe
                 key: 'clone',
                 async handler() {
                     const serialized = context.serialize();
-                    const node = await deserializeNode(serialized);
+                    const node = await deserializeNode(editor, area, serialized);
                     if (node) {
                         await editor.addNode(node);
                         void area.translate(node.id, area.area.pointer);

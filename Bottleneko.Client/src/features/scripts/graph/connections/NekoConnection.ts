@@ -1,10 +1,11 @@
 import { ClassicPreset } from 'rete';
 import { NekoNode } from '../nodes';
-import { NekoSocket, NekoSocketType } from '../sockets';
+import { NekoSocket } from '../sockets';
+import { GraphSocketType } from '../../../api/dtos.gen';
 
 export default class NekoConnection<A extends NekoNode = NekoNode, B extends NekoNode = NekoNode> extends ClassicPreset.Connection<A, B> {
-    sourceType: NekoSocketType;
-    targetType: NekoSocketType;
+    sourceType: GraphSocketType;
+    targetType: GraphSocketType;
     readonly isPseudo = false;
     isLoop? = false;
 

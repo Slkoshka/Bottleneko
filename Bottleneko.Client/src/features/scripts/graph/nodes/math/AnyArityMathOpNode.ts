@@ -1,7 +1,8 @@
 import { ClassicPreset } from 'rete';
 import { NumberSocket } from '../../sockets';
-import { NekoNodeBase, NodeProps, NodeState } from '../NekoNodeBase';
+import { NekoNodeBase, NodeProps } from '../NekoNodeBase';
 import { NumberInputControl } from '../../controls/NumberInputControl';
+import { GraphNodeData } from '../../../../api/dtos.gen';
 
 export interface AnyArityMathOpNodeCustomization {
     name?: (idx: number) => string;
@@ -9,7 +10,7 @@ export interface AnyArityMathOpNodeCustomization {
     outName?: string;
 }
 
-export abstract class AnyArityMathOpNode<Props extends NodeProps = NodeProps> extends NekoNodeBase<
+export abstract class AnyArityMathOpNode<Data extends GraphNodeData, Props extends NodeProps = NodeProps> extends NekoNodeBase<
     {
         in: NumberSocket;
     },
@@ -19,13 +20,13 @@ export abstract class AnyArityMathOpNode<Props extends NodeProps = NodeProps> ex
     {
         inputs: NumberInputControl;
     },
-    NodeState,
+    Data,
     Props
 > {
     category = 'math' as const;
 
-    constructor(name: string, props: Props, readonly customization?: AnyArityMathOpNodeCustomization) {
-        super(name, { }, props);
+    constructor(name: string, initial: AnyArityMathOpNode<Data, Props>['initial'], props: Props, readonly customization?: AnyArityMathOpNodeCustomization) {
+        super(name, initial, props);
 
         // Inputs
         this.addInput('in', new ClassicPreset.Input(new NumberSocket(), customization?.inName ?? 'Inputs', true));

@@ -1,7 +1,8 @@
 import { ClassicPreset } from 'rete';
 import { NekoSocket, StringSocket } from '../../sockets';
-import { NekoNodeBase, NodeProps, NodeState } from '../NekoNodeBase';
+import { NekoNodeBase, NodeProps } from '../NekoNodeBase';
 import { TextInputControl } from '../../controls/TextInputControl';
+import { GraphFormatTextNodeData } from '../../../../api/dtos.gen';
 
 export class FormatTextNode extends NekoNodeBase<
     Record<string, NekoSocket>,
@@ -11,9 +12,9 @@ export class FormatTextNode extends NekoNodeBase<
     {
         format: TextInputControl;
     },
-    NodeState & { format: string }
+    GraphFormatTextNodeData
 > {
-    type = 'format-text';
+    type = 'format-text' as const;
     category = 'text-ops' as const;
     width = 350;
 

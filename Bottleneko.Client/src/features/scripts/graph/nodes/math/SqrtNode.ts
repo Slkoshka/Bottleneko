@@ -1,11 +1,12 @@
+import { GraphSqrtNodeData } from '../../../../api/dtos.gen';
 import { NodeProps } from '../NekoNodeBase';
 import { UnaryMathOpNode } from './UnaryMathOpNode';
 
-export class SqrtNode extends UnaryMathOpNode {
-    type = 'sqrt';
+export class SqrtNode extends UnaryMathOpNode<GraphSqrtNodeData> {
+    type = 'sqrt' as const;
 
     constructor(props: NodeProps) {
-        super(SqrtNode.name(), props);
+        super(SqrtNode.name(), { }, props);
     }
 
     static name() {

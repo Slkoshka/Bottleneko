@@ -1,6 +1,7 @@
 import { ClassicPreset } from 'rete';
 import { ChatMessageSocket, ExecSocket } from '../../sockets';
 import { NekoNodeBase, NodeProps } from '../NekoNodeBase';
+import { GraphMessageReceivedNodeData } from '../../../../api/dtos.gen';
 
 export class MessageReceivedNode extends NekoNodeBase<
     object,
@@ -8,9 +9,10 @@ export class MessageReceivedNode extends NekoNodeBase<
         exec: ExecSocket;
         msg: ChatMessageSocket;
     },
-    object
+    object,
+    GraphMessageReceivedNodeData
 > {
-    type = 'message-received-event';
+    type = 'message-received-event' as const;
     category = 'events' as const;
     readonly isEvent = true;
 

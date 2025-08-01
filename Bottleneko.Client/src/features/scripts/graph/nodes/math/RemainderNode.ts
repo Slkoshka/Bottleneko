@@ -1,11 +1,12 @@
+import { GraphRemainderNodeData } from '../../../../api/dtos.gen';
 import { NodeProps } from '../NekoNodeBase';
 import { BinaryMathOpNode } from './BinaryMathOpNode';
 
-export class RemainderNode extends BinaryMathOpNode {
-    type = 'remainder';
+export class RemainderNode extends BinaryMathOpNode<GraphRemainderNodeData> {
+    type = 'remainder' as const;
 
     constructor(props: NodeProps) {
-        super(RemainderNode.name(), props);
+        super(RemainderNode.name(), { }, props);
     }
 
     static name() {

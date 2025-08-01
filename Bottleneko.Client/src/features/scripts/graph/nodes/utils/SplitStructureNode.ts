@@ -1,24 +1,25 @@
 import { ClassicPreset } from 'rete';
 import deepEqual from 'deep-equal';
-import { NekoSocket, NekoSocketType, SplittableInputSocket, SplittableObjectSocket } from '../../sockets';
-import { NekoNodeBase, NodeProps, NodeSocket, NodeState } from '../NekoNodeBase';
+import { NekoSocket, AnyStructureInputSocket, SplittableObjectSocket } from '../../sockets';
+import { NekoNodeBase, NodeProps, NodeSocket } from '../NekoNodeBase';
+import { GraphSplitStructureNodeData } from '../../../../api/dtos.gen';
 
 export class SplitStructureNode extends NekoNodeBase<
     {
-        in: SplittableInputSocket;
+        in: AnyStructureInputSocket;
     },
     Record<string, NekoSocket>,
     object,
-    NodeState & { inputType: NekoSocketType | null }
+    GraphSplitStructureNodeData
 > {
-    type = 'split-structure';
+    type = 'split-structure' as const;
     category = 'utils' as const;
 
     constructor(initial: SplitStructureNode['state'], props: NodeProps) {
         super(SplitStructureNode.name(), initial, props);
 
         // Inputs
-        this.addInput('in', new ClassicPreset.Input(new SplittableInputSocket(), 'In', false));
+        this.addInput('in', new ClassicPreset.Input(new AnyStructureInputSocket(), 'In', false));
 
         // Outputs
 

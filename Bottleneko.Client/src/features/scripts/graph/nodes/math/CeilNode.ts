@@ -1,11 +1,12 @@
+import { GraphCeilNodeData } from '../../../../api/dtos.gen';
 import { NodeProps } from '../NekoNodeBase';
 import { UnaryMathOpNode } from './UnaryMathOpNode';
 
-export class CeilNode extends UnaryMathOpNode {
-    type = 'ceil';
+export class CeilNode extends UnaryMathOpNode<GraphCeilNodeData> {
+    type = 'ceil' as const;
 
     constructor(props: NodeProps) {
-        super(CeilNode.name(), props);
+        super(CeilNode.name(), { }, props);
     }
 
     static name() {

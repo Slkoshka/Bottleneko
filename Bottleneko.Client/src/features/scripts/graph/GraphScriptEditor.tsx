@@ -1,20 +1,18 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useRete } from 'rete-react-plugin';
 import { Button, Card } from 'react-bootstrap';
-import { ScriptCode } from '../../api/dtos.gen';
+import { GraphScriptCode, ScriptCode } from '../../api/dtos.gen';
 import { createEditor, Editor } from './editor';
 
-export default function GraphScriptEditor({ onChange, props, className }: { initialCode?: string; onChange: (code: ScriptCode) => void; props?: object; className?: string }) {
+export default function GraphScriptEditor({ initial, onChange, props, className }: { initial?: GraphScriptCode; onChange: (code: ScriptCode) => void; props?: object; className?: string }) {
     const change = useRef(onChange);
     useEffect(() => {
         change.current = onChange;
     }, [onChange]);
 
-    const create = useCallback((el: HTMLElement) => {
-        return new Promise<Editor>((resolve) => {
-            resolve(createEditor(el, change.current));
-        });
-    }, []);
+    const initialRef = useRef(initial);
+
+    const create = useCallback((el: HTMLElement) => createEditor({ container: el, initial: initialRef.current, onChange: change.current }), []);
 
     const [ref, editor] = useRete<Editor>(create);
 

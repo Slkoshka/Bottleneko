@@ -1,11 +1,12 @@
+import { GraphRoundNodeData } from '../../../../api/dtos.gen';
 import { NodeProps } from '../NekoNodeBase';
 import { UnaryMathOpNode } from './UnaryMathOpNode';
 
-export class RoundNode extends UnaryMathOpNode {
-    type = 'round';
+export class RoundNode extends UnaryMathOpNode<GraphRoundNodeData> {
+    type = 'round' as const;
 
     constructor(props: NodeProps) {
-        super(RoundNode.name(), props);
+        super(RoundNode.name(), { }, props);
     }
 
     static name() {

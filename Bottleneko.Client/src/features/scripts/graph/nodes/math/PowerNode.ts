@@ -1,11 +1,12 @@
+import { GraphPowerNodeData } from '../../../../api/dtos.gen';
 import { NodeProps } from '../NekoNodeBase';
 import { BinaryMathOpNode } from './BinaryMathOpNode';
 
-export class PowerNode extends BinaryMathOpNode {
-    type = 'power';
+export class PowerNode extends BinaryMathOpNode<GraphPowerNodeData> {
+    type = 'power' as const;
 
     constructor(props: NodeProps) {
-        super(PowerNode.name(), props, { leftName: 'Base', rightName: 'Power' });
+        super(PowerNode.name(), { }, props, { leftName: 'Base', rightName: 'Power' });
     }
 
     static name() {

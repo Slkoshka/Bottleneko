@@ -1,6 +1,7 @@
 import { ClassicPreset } from 'rete';
 import { ExecSocket, NumberSocket } from '../../sockets';
 import { NekoNodeBase, NodeProps } from '../NekoNodeBase';
+import { GraphRandomNumberNodeData } from '../../../../api/dtos.gen';
 
 export class RandomNumberNode extends NekoNodeBase<
     {
@@ -10,9 +11,10 @@ export class RandomNumberNode extends NekoNodeBase<
         exec: ExecSocket;
         out: NumberSocket;
     },
-    object
+    object,
+    GraphRandomNumberNodeData
 > {
-    type = 'random-number';
+    type = 'random-number' as const;
     category = 'math' as const;
 
     constructor(props: NodeProps) {

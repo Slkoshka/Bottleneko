@@ -18,7 +18,7 @@ export class CheckNumberNode extends NekoNodeBase<
     },
     object
 > {
-    type = 'check-number';
+    type = 'check-number' as const;
     category = 'math' as const;
 
     constructor(props: NodeProps) {

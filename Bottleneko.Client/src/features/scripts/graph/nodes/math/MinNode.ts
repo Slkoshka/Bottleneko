@@ -1,11 +1,12 @@
+import { GraphMinNodeData } from '../../../../api/dtos.gen';
 import { NodeProps } from '../NekoNodeBase';
 import { AnyArityMathOpNode } from './AnyArityMathOpNode';
 
-export class MinNode extends AnyArityMathOpNode {
-    type = 'min';
+export class MinNode extends AnyArityMathOpNode<GraphMinNodeData> {
+    type = 'min' as const;
 
     constructor(props: NodeProps) {
-        super(MinNode.name(), props);
+        super(MinNode.name(), { }, props);
     }
 
     static name() {

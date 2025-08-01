@@ -1,11 +1,12 @@
+import { GraphLogNodeData } from '../../../../api/dtos.gen';
 import { NodeProps } from '../NekoNodeBase';
 import { UnaryMathOpNode } from './UnaryMathOpNode';
 
-export class LogNode extends UnaryMathOpNode {
-    type = 'log';
+export class LogNode extends UnaryMathOpNode<GraphLogNodeData> {
+    type = 'log' as const;
 
     constructor(props: NodeProps) {
-        super(LogNode.name(), props);
+        super(LogNode.name(), { }, props);
     }
 
     static name() {

@@ -20,7 +20,7 @@ const makeJsScript = (name: string, description: ReactNode, source: string): { n
 };
 
 const graph = {
-    empty: { name: 'Empty Graph', description: <>Empty control graph.</>, code: { $type: 'Graph' as const, data: '' } },
+    empty: { name: 'Empty Graph', description: <>Empty control graph.</>, code: { $type: 'Graph' as const, nodes: [], connections: [] } },
 };
 
 const javaScript = {

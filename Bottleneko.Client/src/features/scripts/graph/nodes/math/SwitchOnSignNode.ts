@@ -1,6 +1,7 @@
 import { ClassicPreset } from 'rete';
 import { ExecSocket, NumberSocket } from '../../sockets';
 import { NekoNodeBase, NodeProps } from '../NekoNodeBase';
+import { GraphSwitchOnSignNodeData } from '../../../../api/dtos.gen';
 
 export class SwitchOnSignNode extends NekoNodeBase<
     {
@@ -12,9 +13,10 @@ export class SwitchOnSignNode extends NekoNodeBase<
         zero: ExecSocket;
         positive: ExecSocket;
     },
-    object
+    object,
+    GraphSwitchOnSignNodeData
 > {
-    type = 'switch-on-sign';
+    type = 'switch-on-sign' as const;
     category = 'math' as const;
 
     constructor(props: NodeProps) {

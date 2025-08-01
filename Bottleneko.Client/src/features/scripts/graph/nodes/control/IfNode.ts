@@ -1,6 +1,7 @@
 import { ClassicPreset } from 'rete';
 import { BooleanSocket, ExecSocket } from '../../sockets';
 import { NekoNodeBase, NodeProps } from '../NekoNodeBase';
+import { GraphIfNodeData } from '../../../../api/dtos.gen';
 
 export class IfNode extends NekoNodeBase<
     {
@@ -11,9 +12,10 @@ export class IfNode extends NekoNodeBase<
         true: ExecSocket;
         false: ExecSocket;
     },
-    object
+    object,
+    GraphIfNodeData
 > {
-    type = 'if';
+    type = 'if' as const;
     category = 'control' as const;
     width = 250;
 

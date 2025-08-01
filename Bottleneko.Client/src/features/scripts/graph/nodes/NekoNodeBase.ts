@@ -2,33 +2,29 @@ import { ClassicPreset, NodeEditor } from 'rete';
 import { BaseAreaPlugin } from 'rete-area-plugin';
 import { NekoSocket } from '../sockets';
 import { Schemes } from '../editor';
+import { GraphNodeData } from '../../../api/dtos.gen';
 import { NekoNode } from '.';
 
 export interface NodeSocket { node: NekoNode; socket: NekoSocket }
 
 export type NodeState = object;
 
-export interface NodeSerializationData {
-    type: string;
-    state: unknown;
-}
-
 export interface NodeProps {
     editor?: NodeEditor<Schemes>;
     area?: BaseAreaPlugin<Schemes, unknown>;
 }
 
-export abstract class NekoNodeBase<Inputs extends Partial<Record<string, NekoSocket>>, Outputs extends Partial<Record<string, NekoSocket>>, Controls extends Partial<Record<string, ClassicPreset.Control>>, State extends NodeState = NodeState, Props extends NodeProps = NodeProps> extends ClassicPreset.Node<Inputs, Outputs, Controls> {
-    abstract type: string;
+export abstract class NekoNodeBase<Inputs extends Partial<Record<string, NekoSocket>>, Outputs extends Partial<Record<string, NekoSocket>>, Controls extends Partial<Record<string, ClassicPreset.Control>>, State extends NodeState = NodeState, Props extends NodeProps = NodeProps, UntypedState = Omit<State, '$type'>> extends ClassicPreset.Node<Inputs, Outputs, Controls> {
+    abstract type: GraphNodeData['$type'];
     abstract category: null | 'control' | 'events' | 'math' | 'text-ops' | 'utils';
-    state: State;
-    initial: State;
+    state: UntypedState;
+    initial: UntypedState;
 
     width?: number;
     height?: number;
     readonly isEvent: boolean = false;
 
-    constructor(name: string, initial: State, readonly props: Props) {
+    constructor(name: string, initial: UntypedState, readonly props: Props) {
         super(name);
         this.state = this.initial = initial;
         this.props = props;
@@ -58,15 +54,15 @@ export abstract class NekoNodeBase<Inputs extends Partial<Record<string, NekoSoc
         return (this.outputs as Record<string, ClassicPreset.Output<NekoSocket> | undefined>)[id];
     }
 
-    serialize(): NodeSerializationData {
-        return { type: this.type, state: this.state };
+    serialize(): GraphNodeData {
+        return { $type: this.type, ...this.state } as GraphNodeData;
     }
 
     async stateUpdated() {
         await this.dirty();
     }
 
-    async deserialize(data: State) {
+    async deserialize(data: UntypedState) {
         this.state = data;
         await this.stateUpdated();
     }

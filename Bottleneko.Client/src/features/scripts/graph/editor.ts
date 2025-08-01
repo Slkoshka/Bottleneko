@@ -5,7 +5,7 @@ import { ReactPlugin, Presets, ReactArea2D } from 'rete-react-plugin';
 import { Area2D, AreaExtensions, AreaPlugin } from 'rete-area-plugin';
 import { ConnectionPlugin, getSourceTarget } from 'rete-connection-plugin';
 import { HistoryPlugin, Presets as HistoryPresets } from 'rete-history-plugin';
-import { ScriptCode } from '../../api/dtos.gen';
+import { GraphScriptCode, ScriptCode } from '../../api/dtos.gen';
 import { NekoNode } from './nodes';
 import NekoConnection from './connections/NekoConnection';
 import { NodeRenderer } from './renderers/NodeRenderer';
@@ -18,6 +18,7 @@ import { ContextMenuExtra, ContextMenuPlugin } from './plugins/context-menu/Cont
 import { nodeSelection } from './plugins/nodeSelection';
 import { setupShortcuts } from './plugins/keyboard';
 import { ConnectionFlow } from './plugins/connections';
+import { deserializeEditor, serializeEditor } from './serialization';
 
 export type Schemes = GetSchemes<
     NekoNode,
@@ -31,13 +32,7 @@ export interface Editor {
     showContextMenu: (x: number, y: number) => void;
 }
 
-// function serialize(editor: NodeEditor<Schemes>) {
-//     // editor.getNodes().map(node => {
-//     //     node.
-//     // });
-// }
-
-export function createEditor(container: HTMLElement, onChange: (code: ScriptCode) => void): Editor {
+export async function createEditor({ container, initial, onChange }: { container: HTMLElement; initial?: GraphScriptCode; onChange: (code: ScriptCode) => void }): Promise<Editor> {
     const editor = new NodeEditor<Schemes>();
 
     const render = new ReactPlugin<Schemes, AreaExtra>({ createRoot });
@@ -212,10 +207,14 @@ export function createEditor(container: HTMLElement, onChange: (code: ScriptCode
 
     const delayedUpdateTimer = setInterval(() => {
         if (isDirty) {
-            onChange({ $type: 'Graph', data: '' });
+            onChange(serializeEditor(editor, area));
             isDirty = false;
         }
     }, 1000);
+
+    if (initial) {
+        await deserializeEditor(editor, area, initial);
+    }
 
     return {
         showContextMenu: (x: number, y: number) => {
@@ -232,7 +231,7 @@ export function createEditor(container: HTMLElement, onChange: (code: ScriptCode
         },
         destroy: () => {
             if (isDirty) {
-                onChange({ $type: 'Graph', data: '' });
+                onChange(serializeEditor(editor, area));
                 isDirty = false;
             }
             clearInterval(delayedUpdateTimer);

@@ -249,6 +249,270 @@ export interface UnsubscribePacket {
     id: string;
 }
 
+export interface GraphNodePortRef {
+    nodeId: string;
+    portId: string;
+}
+
+export interface GraphNodePosition {
+    x: number;
+    y: number;
+}
+
+export interface GraphNode {
+    id: string;
+    position: GraphNodePosition;
+    data: GraphNodeData;
+}
+
+export interface GraphConnection {
+    id: string;
+    source: GraphNodePortRef;
+    target: GraphNodePortRef;
+}
+
+export interface GraphScriptCode {
+    $type: 'Graph';
+    nodes: GraphNode[];
+    connections: GraphConnection[];
+}
+
+export interface GraphIfNodeData {
+    $type: 'if';
+}
+
+export interface GraphIfValidNodeData {
+    $type: 'if-valid';
+}
+
+export interface GraphSwitchNodeData {
+    $type: 'switch';
+    inputType: GraphSocketType | null;
+}
+
+export interface GraphMessageReceivedNodeData {
+    $type: 'message-received-event';
+}
+
+export interface GraphAddNodeData {
+    $type: 'add';
+}
+
+export interface GraphAverageNodeData {
+    $type: 'average';
+}
+
+export interface GraphCeilNodeData {
+    $type: 'ceil';
+}
+
+export interface GraphCheckNumberNodeData {
+    $type: 'check-number';
+}
+
+export interface GraphDivideNodeData {
+    $type: 'divide';
+}
+
+export interface GraphFloorNodeData {
+    $type: 'floor';
+}
+
+export interface GraphLog2NodeData {
+    $type: 'log2';
+}
+
+export interface GraphLog10NodeData {
+    $type: 'log10';
+}
+
+export interface GraphLogNodeData {
+    $type: 'log';
+}
+
+export interface GraphMaxNodeData {
+    $type: 'max';
+}
+
+export interface GraphMinNodeData {
+    $type: 'min';
+}
+
+export interface GraphMultiplyNodeData {
+    $type: 'multiply';
+}
+
+export interface GraphNegateNodeData {
+    $type: 'negate';
+}
+
+export interface GraphPowerNodeData {
+    $type: 'power';
+}
+
+export interface GraphRandomNumberNodeData {
+    $type: 'random-number';
+}
+
+export interface GraphRandomRangeNodeData {
+    $type: 'random-range';
+    integers: boolean;
+}
+
+export interface GraphRemainderNodeData {
+    $type: 'remainder';
+}
+
+export interface GraphRoundNodeData {
+    $type: 'round';
+}
+
+export interface GraphSignNodeData {
+    $type: 'sign';
+}
+
+export interface GraphSqrtNodeData {
+    $type: 'sqrt';
+}
+
+export interface GraphSubtractNodeData {
+    $type: 'subtract';
+}
+
+export interface GraphSwitchOnSignNodeData {
+    $type: 'switch-on-sign';
+}
+
+export interface GraphConcatNodeData {
+    $type: 'concat';
+    inputs: number;
+}
+
+export interface GraphFormatTextNodeData {
+    $type: 'format-text';
+    format: string;
+}
+
+export interface GraphLogMessageNodeData {
+    $type: 'log-message';
+    severity: LogSeverity;
+}
+
+export interface GraphSplitStructureNodeData {
+    $type: 'split-structure';
+    inputType: GraphSocketType | null;
+}
+
+export type GraphNodeData =
+    GraphIfNodeData |
+    GraphIfValidNodeData |
+    GraphSwitchNodeData |
+    GraphMessageReceivedNodeData |
+    GraphAddNodeData |
+    GraphAverageNodeData |
+    GraphCeilNodeData |
+    GraphCheckNumberNodeData |
+    GraphDivideNodeData |
+    GraphFloorNodeData |
+    GraphLog2NodeData |
+    GraphLog10NodeData |
+    GraphLogNodeData |
+    GraphMaxNodeData |
+    GraphMinNodeData |
+    GraphMultiplyNodeData |
+    GraphNegateNodeData |
+    GraphPowerNodeData |
+    GraphRandomNumberNodeData |
+    GraphRandomRangeNodeData |
+    GraphRemainderNodeData |
+    GraphRoundNodeData |
+    GraphSignNodeData |
+    GraphSqrtNodeData |
+    GraphSubtractNodeData |
+    GraphSwitchOnSignNodeData |
+    GraphConcatNodeData |
+    GraphFormatTextNodeData |
+    GraphLogMessageNodeData |
+    GraphSplitStructureNodeData;
+
+export interface GraphInvalidSocketType {
+    $type: 'invalid';
+}
+
+export interface GraphExecSocketType {
+    $type: 'exec';
+}
+
+export interface GraphBooleanSocketType {
+    $type: 'boolean';
+}
+
+export interface GraphNumberSocketType {
+    $type: 'number';
+}
+
+export interface GraphStringSocketType {
+    $type: 'string';
+}
+
+export interface GraphIdSocketType {
+    $type: 'id';
+}
+
+export interface GraphProtocolSocketType {
+    $type: 'protocol';
+}
+
+export interface GraphTimestampSocketType {
+    $type: 'timestamp';
+}
+
+export interface GraphChatSocketType {
+    $type: 'chat';
+}
+
+export interface GraphChatMessageSocketType {
+    $type: 'chat-message';
+}
+
+export interface GraphChatterSocketType {
+    $type: 'chatter';
+}
+
+export interface GraphAnyStructureInputSocketType {
+    $type: 'any-structure';
+}
+
+export interface GraphAnyEnumInputSocketType {
+    $type: 'any-enum';
+}
+
+export interface GraphAnyOptionalInputSocketType {
+    $type: 'any-optional';
+}
+
+export interface GraphOptionalSocketType {
+    $type: 'optional';
+    innerType: GraphSocketType;
+}
+
+export type GraphSocketType =
+    GraphInvalidSocketType |
+    GraphExecSocketType |
+    GraphBooleanSocketType |
+    GraphNumberSocketType |
+    GraphStringSocketType |
+    GraphIdSocketType |
+    GraphProtocolSocketType |
+    GraphTimestampSocketType |
+    GraphChatSocketType |
+    GraphChatMessageSocketType |
+    GraphChatterSocketType |
+    GraphAnyStructureInputSocketType |
+    GraphAnyEnumInputSocketType |
+    GraphAnyOptionalInputSocketType |
+    GraphOptionalSocketType;
+
 export interface AttachmentDto {
     id: string;
     name: string | null;
@@ -372,11 +636,6 @@ export type ScriptCode =
 export interface JsScriptCode {
     $type: 'JavaScript';
     source: string;
-}
-
-export interface GraphScriptCode {
-    $type: 'Graph';
-    data: string;
 }
 
 export interface ScriptDto {

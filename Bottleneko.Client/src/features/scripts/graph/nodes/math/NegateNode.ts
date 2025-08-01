@@ -1,11 +1,12 @@
+import { GraphNegateNodeData } from '../../../../api/dtos.gen';
 import { NodeProps } from '../NekoNodeBase';
 import { UnaryMathOpNode } from './UnaryMathOpNode';
 
-export class NegateNode extends UnaryMathOpNode {
-    type = 'negate';
+export class NegateNode extends UnaryMathOpNode<GraphNegateNodeData> {
+    type = 'negate' as const;
 
     constructor(props: NodeProps) {
-        super(NegateNode.name(), props);
+        super(NegateNode.name(), { }, props);
     }
 
     static name() {

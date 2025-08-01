@@ -1,11 +1,12 @@
+import { GraphSignNodeData } from '../../../../api/dtos.gen';
 import { NodeProps } from '../NekoNodeBase';
 import { UnaryMathOpNode } from './UnaryMathOpNode';
 
-export class SignNode extends UnaryMathOpNode {
-    type = 'sign';
+export class SignNode extends UnaryMathOpNode<GraphSignNodeData> {
+    type = 'sign' as const;
 
     constructor(props: NodeProps) {
-        super(SignNode.name(), props);
+        super(SignNode.name(), { }, props);
     }
 
     static name() {

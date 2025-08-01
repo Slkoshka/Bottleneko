@@ -1,11 +1,12 @@
+import { GraphAverageNodeData } from '../../../../api/dtos.gen';
 import { NodeProps } from '../NekoNodeBase';
 import { AnyArityMathOpNode } from './AnyArityMathOpNode';
 
-export class AverageNode extends AnyArityMathOpNode {
-    type = 'average';
+export class AverageNode extends AnyArityMathOpNode<GraphAverageNodeData> {
+    type = 'average' as const;
 
     constructor(props: NodeProps) {
-        super(AverageNode.name(), props);
+        super(AverageNode.name(), { }, props);
     }
 
     static name() {
