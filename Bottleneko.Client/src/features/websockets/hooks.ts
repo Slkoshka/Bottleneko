@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import deepEqual from 'deep-equal';
 import { useEventListener } from '../events/context';
-import { ChatMessageFilter, LogFilter, MailPacket, Packet } from '../api/dtos.gen';
+import { ChatMessageFilter, LogFilter, Packet } from '../api/dtos.gen';
 import { useWebSocketDispatch } from './context';
 
 export interface LogSubscription {
@@ -78,11 +78,11 @@ export function useSubscription<EventType>({ subscription, maxEvents }: { subscr
     }, [subscriptionId, subscription]);
 
     useEventListener('websocket/packet', (packet: Packet) => {
-        if (packet.$type !== 'Mail' || (packet as MailPacket).subscriptionId !== subscriptionId.current) {
+        if (packet.$type !== 'Mail' || packet.subscriptionId !== subscriptionId.current) {
             return;
         }
 
-        const newItems = (packet as MailPacket).letters as EventType[];
+        const newItems = packet.letters as EventType[];
         eventsRef.current = [...newItems, ...eventsRef.current];
         if (maxEvents && eventsRef.current.length > maxEvents) {
             eventsRef.current = eventsRef.current.slice(0, maxEvents);
