@@ -14,9 +14,9 @@ namespace Bottleneko.Server.Controllers;
 [Authorize]
 public class SystemController(IHostApplicationLifetime appLifetime, NekoDbContext db) : NekoController
 {
-    private static readonly long _startTime;
+    private static long _startTime = 0;
 
-    static SystemController()
+    public static void Startup()
     {
         _startTime = Environment.TickCount64;
     }

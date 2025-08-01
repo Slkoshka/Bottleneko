@@ -197,6 +197,7 @@ public class BottlenekoServer : IAsyncDisposable
 
     public async Task<int> StartAsync(string dbFile, string[] bindAddresses, CancellationToken cancellationToken = default)
     {
+        SystemController.Startup();
         _app = SetupApplication(dbFile, bindAddresses);
         await _app.RunAsync();
         return ExitCode;
