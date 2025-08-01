@@ -5,15 +5,10 @@ import { OptionListInputControl } from '../controls/OptionListInputControl';
 import { NumberInputControl } from '../controls/NumberInputControl';
 import { TextInputControl } from '../controls/TextInputControl';
 import { ToggleInputControl } from '../controls/ToggleInputControl';
+import { NekoControl } from '../controls/NekoControl';
 
-type Control =
-    TextInputControl |
-    NumberInputControl |
-    ToggleInputControl |
-    OptionListInputControl<never>;
-
-export function ControlRenderer({ data, styles }: { data: Control; styles?: () => CSSProperties }) {
-    const [value, setValue] = useState(data.value);
+export function ControlRenderer({ data, styles }: { data: NekoControl; styles?: () => CSSProperties }) {
+    const [value, setValue] = useState<unknown>(data.value);
     const ref = useRef(null);
 
     Drag.useNoDrag(ref);
@@ -94,7 +89,7 @@ export function ControlRenderer({ data, styles }: { data: Control; styles?: () =
                     ref={ref}
                     value={selectedOption}
                     onChange={(e) => {
-                        const value = options[Number.parseInt(e.target.value)].value;
+                        const value = options[Number.parseInt(e.target.value)].value as unknown;
                         setValue(value);
                         data.setValue(value);
                     }}

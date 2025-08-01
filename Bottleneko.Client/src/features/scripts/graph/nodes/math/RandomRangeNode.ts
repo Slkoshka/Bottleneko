@@ -1,6 +1,6 @@
 import { ClassicPreset } from 'rete';
 import { ExecSocket, NumberSocket } from '../../sockets';
-import { NekoNodeBase, NodeProps } from '../NekoNodeBase';
+import { NekoNodeBase, NodeProps, NodeState } from '../NekoNodeBase';
 import { ToggleInputControl } from '../../controls/ToggleInputControl';
 
 export class RandomRangeNode extends NekoNodeBase<
@@ -15,10 +15,14 @@ export class RandomRangeNode extends NekoNodeBase<
     },
     {
         integers: ToggleInputControl;
-    }
+    },
+    NodeState & { integers: boolean }
 > {
-    constructor(public integers: boolean, props: NodeProps) {
-        super(RandomRangeNode.name(), props);
+    type = 'random-range';
+    category = 'math' as const;
+
+    constructor(initial: RandomRangeNode['initial'], props: NodeProps) {
+        super(RandomRangeNode.name(), initial, props);
 
         // Inputs
         this.addInput('exec', new ClassicPreset.Input(new ExecSocket(), 'Exec', true));
@@ -30,13 +34,15 @@ export class RandomRangeNode extends NekoNodeBase<
         this.addOutput('out', new ClassicPreset.Output(new NumberSocket(), 'Out', true));
 
         // Controls
-        this.addControl('integers', new ToggleInputControl({ initial: integers, label: 'Only Integers', change: (value) => {
-            this.integers = value;
+        this.addControl('integers', new ToggleInputControl({ initial: initial.integers, label: 'Only Integers', change: (value) => {
+            this.state.integers = value;
+            void this.dirty();
         } }));
     }
 
-    clone() {
-        return new RandomRangeNode(this.integers, this.props);
+    async stateUpdated() {
+        this.controls.integers.setValue(this.state.integers);
+        await super.stateUpdated();
     }
 
     static name() {
@@ -44,6 +50,6 @@ export class RandomRangeNode extends NekoNodeBase<
     }
 
     static default(props: NodeProps) {
-        return new RandomRangeNode(false, props);
+        return new RandomRangeNode({ integers: false }, props);
     }
 }

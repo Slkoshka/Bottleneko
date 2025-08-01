@@ -13,10 +13,12 @@ export class IfValidNode extends NekoNodeBase<
     },
     object
 > {
+    type = 'if-valid';
+    category = 'control' as const;
     width = 350;
 
     constructor(props: NodeProps) {
-        super(IfValidNode.name(), props);
+        super(IfValidNode.name(), { }, props);
 
         // Inputs
         this.addInput('exec', new ClassicPreset.Input(new ExecSocket(), 'Exec', true));
@@ -27,10 +29,6 @@ export class IfValidNode extends NekoNodeBase<
         this.addOutput('invalid', new ClassicPreset.Output(new ExecSocket(), 'Not Valid', false));
 
         // Controls
-    }
-
-    clone() {
-        return new IfValidNode(this.props);
     }
 
     static name() {

@@ -12,6 +12,7 @@ export interface Item {
 }
 
 export type ContextMenuRender = RenderSignal<'contextmenu', {
+    itemsByCategory: Item[];
     items: Item[];
     onHide(): void;
     searchBar?: boolean;
@@ -24,6 +25,7 @@ export function setupContextMenu<K extends ContextMenuRender>(): RenderPreset<Sc
             if (context.data.type as string === 'contextmenu') {
                 return (
                     <ContextMenu
+                        itemsByCategory={context.data.itemsByCategory}
                         items={context.data.items}
                         delay={10}
                         searchBar={context.data.searchBar}

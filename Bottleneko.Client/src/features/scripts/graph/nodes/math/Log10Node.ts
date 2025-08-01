@@ -2,12 +2,10 @@ import { NodeProps } from '../NekoNodeBase';
 import { UnaryMathOpNode } from './UnaryMathOpNode';
 
 export class Log10Node extends UnaryMathOpNode {
+    type = 'log10';
+
     constructor(props: NodeProps) {
         super(Log10Node.name(), props);
-    }
-
-    clone() {
-        return new Log10Node(this.props);
     }
 
     static name() {

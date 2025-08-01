@@ -18,8 +18,11 @@ export class CheckNumberNode extends NekoNodeBase<
     },
     object
 > {
+    type = 'check-number';
+    category = 'math' as const;
+
     constructor(props: NodeProps) {
-        super(CheckNumberNode.name(), props);
+        super(CheckNumberNode.name(), { }, props);
 
         // Inputs
         this.addInput('in', new ClassicPreset.Input(new NumberSocket(), 'In', false));
@@ -30,10 +33,6 @@ export class CheckNumberNode extends NekoNodeBase<
         this.addOutput('isNaN', new ClassicPreset.Output(new BooleanSocket(), 'Is NaN', true));
 
         // Controls
-    }
-
-    clone() {
-        return new CheckNumberNode(this.props);
     }
 
     static name() {

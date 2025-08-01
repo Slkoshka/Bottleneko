@@ -1,6 +1,6 @@
 import { ClassicPreset } from 'rete';
 import { NekoSocket, StringSocket } from '../../sockets';
-import { NekoNodeBase, NodeProps } from '../NekoNodeBase';
+import { NekoNodeBase, NodeProps, NodeState } from '../NekoNodeBase';
 import { TextInputControl } from '../../controls/TextInputControl';
 
 export class FormatTextNode extends NekoNodeBase<
@@ -10,12 +10,15 @@ export class FormatTextNode extends NekoNodeBase<
     },
     {
         format: TextInputControl;
-    }
+    },
+    NodeState & { format: string }
 > {
+    type = 'format-text';
+    category = 'text-ops' as const;
     width = 350;
 
-    constructor(initial: string, props: NodeProps) {
-        super(FormatTextNode.name(), props);
+    constructor(initial: FormatTextNode['state'], props: NodeProps) {
+        super(FormatTextNode.name(), initial, props);
 
         // Inputs
 
@@ -23,14 +26,14 @@ export class FormatTextNode extends NekoNodeBase<
         this.addOutput('out', new ClassicPreset.Output(new StringSocket(), 'Out', true));
 
         // Controls
-        this.addControl('format', new TextInputControl({ initial, label: 'Format', change: (value) => {
-            this.onChanged(value);
+        this.addControl('format', new TextInputControl({ initial: initial.format, label: 'Format', change: (value) => {
+            void this.onChanged(value);
         } }));
 
-        this.onChanged(initial);
+        void this.onChanged(initial.format);
     }
 
-    onChanged(value: string) {
+    async onChanged(value: string) {
         const matches = [...value.matchAll(/\{(.+?)\}/g)];
         const inputs = Object.values(this.inputs) as ClassicPreset.Input<StringSocket>[];
         for (let i = 0; i < Math.max(matches.length, inputs.length); i++) {
@@ -40,19 +43,24 @@ export class FormatTextNode extends NekoNodeBase<
             }
             else if (i >= matches.length) {
                 this.removeInput(key);
-                for (const connection of this.props.editor.getConnections().filter(connection => connection.target === this.id && connection.targetInput === key)) {
-                    void this.props.editor.removeConnection(connection.id);
+                if (this.props.editor) {
+                    for (const connection of this.props.editor.getConnections().filter(connection => connection.target === this.id && connection.targetInput === key)) {
+                        await this.props.editor.removeConnection(connection.id);
+                    }
                 }
             }
             else {
                 inputs[i].label = matches[i][1];
             }
         }
-        this.props.refresh?.(this);
+        this.state.format = value;
+        void this.dirty();
+        await this.refreshEditorView();
     }
 
-    clone() {
-        return new FormatTextNode(this.controls.format.value, this.props);
+    async stateUpdated() {
+        this.controls.format.setValue(this.state.format);
+        await super.stateUpdated();
     }
 
     static name() {
@@ -60,6 +68,6 @@ export class FormatTextNode extends NekoNodeBase<
     }
 
     static default(props: NodeProps) {
-        return new FormatTextNode('', props);
+        return new FormatTextNode({ format: '' }, props);
     }
 }

@@ -14,8 +14,11 @@ export class SwitchOnSignNode extends NekoNodeBase<
     },
     object
 > {
+    type = 'switch-on-sign';
+    category = 'math' as const;
+
     constructor(props: NodeProps) {
-        super(SwitchOnSignNode.name(), props);
+        super(SwitchOnSignNode.name(), { }, props);
 
         // Inputs
         this.addInput('exec', new ClassicPreset.Input(new ExecSocket(), 'Exec', true));
@@ -27,10 +30,6 @@ export class SwitchOnSignNode extends NekoNodeBase<
         this.addOutput('positive', new ClassicPreset.Output(new ExecSocket(), 'Positive', false));
 
         // Controls
-    }
-
-    clone() {
-        return new SwitchOnSignNode(this.props);
     }
 
     static name() {

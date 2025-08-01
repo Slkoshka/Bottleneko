@@ -6,6 +6,7 @@ import { SocketData } from './ContextMenuPlugin';
 import { Item } from '.';
 
 interface ContextMenuProps {
+    itemsByCategory: Item[];
     items: Item[];
     delay: number;
     searchBar?: boolean;
@@ -13,14 +14,10 @@ interface ContextMenuProps {
     autoConnectTo?: SocketData;
 }
 
-const flattenItems = (items: Item[]): Item[] => {
-    return [...items.filter(item => !item.subitems || item.subitems.length === 0), ...items.map(item => item.subitems ? flattenItems(item.subitems) : []).reduce((prev, current) => [...prev, ...current])];
-};
-
 export function ContextMenu(props: ContextMenuProps) {
     const [filter, setFilter] = useState('');
     const filterRegexp = new RegExp(filter, 'i');
-    const filteredList = filter === '' ? props.items : flattenItems(props.items).filter(item => item.label.match(filterRegexp));
+    const filteredList = filter === '' ? props.itemsByCategory : props.items.filter(item => item.label.match(filterRegexp));
     const searchRef = useRef<HTMLElement>(null);
     const [shownSubmenu, setShownSubmenu] = useState<string | null>(null);
     const [submenuPosition, setSubmenuPosition] = useState({ x: 0, y: 0 });
@@ -76,7 +73,7 @@ export function ContextMenu(props: ContextMenuProps) {
             }
             <div className="graph-context-menu-items">
                 {
-                    filteredList.sort((a, b) => a.label.localeCompare(b.label)).map(item => (
+                    filteredList.map(item => (
                         <ContextMenuItem
                             key={item.key}
                             data={item}

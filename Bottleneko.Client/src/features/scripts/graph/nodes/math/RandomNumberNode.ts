@@ -12,8 +12,11 @@ export class RandomNumberNode extends NekoNodeBase<
     },
     object
 > {
+    type = 'random-number';
+    category = 'math' as const;
+
     constructor(props: NodeProps) {
-        super(RandomNumberNode.name(), props);
+        super(RandomNumberNode.name(), { }, props);
 
         // Inputs
         this.addInput('exec', new ClassicPreset.Input(new ExecSocket(), 'Exec', true));
@@ -23,10 +26,6 @@ export class RandomNumberNode extends NekoNodeBase<
         this.addOutput('out', new ClassicPreset.Output(new NumberSocket(), 'Out', true));
 
         // Controls
-    }
-
-    clone() {
-        return new RandomNumberNode(this.props);
     }
 
     static name() {

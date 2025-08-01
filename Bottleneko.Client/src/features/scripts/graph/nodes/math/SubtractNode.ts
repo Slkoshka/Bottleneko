@@ -2,12 +2,10 @@ import { NodeProps } from '../NekoNodeBase';
 import { BinaryMathOpNode } from './BinaryMathOpNode';
 
 export class SubtractNode extends BinaryMathOpNode {
+    type = 'subtract';
+
     constructor(props: NodeProps) {
         super(SubtractNode.name(), props);
-    }
-
-    clone() {
-        return new SubtractNode(this.props);
     }
 
     static name() {

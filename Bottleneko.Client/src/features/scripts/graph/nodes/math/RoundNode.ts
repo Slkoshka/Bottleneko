@@ -2,12 +2,10 @@ import { NodeProps } from '../NekoNodeBase';
 import { UnaryMathOpNode } from './UnaryMathOpNode';
 
 export class RoundNode extends UnaryMathOpNode {
+    type = 'round';
+
     constructor(props: NodeProps) {
         super(RoundNode.name(), props);
-    }
-
-    clone() {
-        return new RoundNode(this.props);
     }
 
     static name() {

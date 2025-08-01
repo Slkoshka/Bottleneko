@@ -2,12 +2,10 @@ import { NodeProps } from '../NekoNodeBase';
 import { UnaryMathOpNode } from './UnaryMathOpNode';
 
 export class CeilNode extends UnaryMathOpNode {
+    type = 'ceil';
+
     constructor(props: NodeProps) {
         super(CeilNode.name(), props);
-    }
-
-    clone() {
-        return new CeilNode(this.props);
     }
 
     static name() {

@@ -2,12 +2,10 @@ import { NodeProps } from '../NekoNodeBase';
 import { UnaryMathOpNode } from './UnaryMathOpNode';
 
 export class SqrtNode extends UnaryMathOpNode {
+    type = 'sqrt';
+
     constructor(props: NodeProps) {
         super(SqrtNode.name(), props);
-    }
-
-    clone() {
-        return new SqrtNode(this.props);
     }
 
     static name() {

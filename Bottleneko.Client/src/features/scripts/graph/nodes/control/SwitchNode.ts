@@ -1,7 +1,7 @@
-import { ClassicPreset, NodeEditor } from 'rete';
-import { ExecSocket, SwitchableInputSocket, SwitchableObjectSocket } from '../../sockets';
-import { NekoNodeBase, NodeProps, NodeSocket } from '../NekoNodeBase';
-import { Schemes } from '../../editor';
+import { ClassicPreset } from 'rete';
+import deepEqual from 'deep-equal';
+import { ExecSocket, NekoSocket, SwitchableInputSocket, SwitchableObjectSocket } from '../../sockets';
+import { NekoNodeBase, NodeProps, NodeSocket, NodeState } from '../NekoNodeBase';
 
 export class SwitchNode extends NekoNodeBase<
     {
@@ -9,13 +9,15 @@ export class SwitchNode extends NekoNodeBase<
         in: SwitchableInputSocket;
     },
     Record<string, ExecSocket>,
-    object
+    object,
+    NodeState & { inputType: NekoSocket['type'] | null }
 > {
+    type = 'switch';
+    category = 'control' as const;
     width = 300;
-    type: string | null = null;
 
     constructor(props: NodeProps) {
-        super(SwitchNode.name(), props);
+        super(SwitchNode.name(), { inputType: null }, props);
 
         // Inputs
         this.addInput('exec', new ClassicPreset.Input(new ExecSocket(), 'Exec', true));
@@ -26,23 +28,10 @@ export class SwitchNode extends NekoNodeBase<
         // Controls
     }
 
-    connect(editor: NodeEditor<Schemes>, source: NodeSocket, target: NodeSocket) {
-        if (target.socket === this.inputs.in?.socket && source.socket.type !== this.type) {
-            for (const connection of editor.getConnections().filter(connection => connection.source === this.id)) {
-                void editor.removeConnection(connection.id);
-            }
-
-            for (const output of Object.keys(this.outputs)) {
-                this.removeOutput(output as never);
-            }
-
-            if (source.socket instanceof SwitchableObjectSocket) {
-                for (const { id, name } of source.socket.options()) {
-                    this.addOutput(id, new ClassicPreset.Output(new ExecSocket(), name, false));
-                }
-            }
-
-            this.type = source.socket.type;
+    async connect(source: NodeSocket, target: NodeSocket) {
+        if (target.socket === this.inputs.in?.socket && !deepEqual(source.socket.type, this.state.inputType)) {
+            this.state.inputType = source.socket.type;
+            await this.stateUpdated();
 
             return true;
         }
@@ -51,8 +40,28 @@ export class SwitchNode extends NekoNodeBase<
         }
     }
 
-    clone() {
-        return new SwitchNode(this.props);
+    async stateUpdated() {
+        if (this.props.editor) {
+            for (const connection of this.props.editor.getConnections().filter(connection => connection.source === this.id)) {
+                await this.props.editor.removeConnection(connection.id);
+            }
+        }
+
+        for (const output of Object.keys(this.outputs)) {
+            this.removeOutput(output as never);
+        }
+
+        if (this.state.inputType) {
+            const socket = NekoSocket.fromType(this.state.inputType);
+
+            if (socket instanceof SwitchableObjectSocket) {
+                for (const { id, name } of socket.options()) {
+                    this.addOutput(id, new ClassicPreset.Output(new ExecSocket(), name, false));
+                }
+            }
+        }
+
+        await super.stateUpdated();
     }
 
     static name() {

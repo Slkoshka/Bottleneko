@@ -1,6 +1,6 @@
 import { ClassicPreset } from 'rete';
 import { ExecSocket, StringSocket } from '../../sockets';
-import { NekoNodeBase, NodeProps } from '../NekoNodeBase';
+import { NekoNodeBase, NodeProps, NodeState } from '../NekoNodeBase';
 import { LogSeverityInputControl, LogSeverity } from '../../controls/LogSeverityInputControl';
 
 export class LogMessageNode extends NekoNodeBase<
@@ -13,12 +13,15 @@ export class LogMessageNode extends NekoNodeBase<
     },
     {
         severity: LogSeverityInputControl;
-    }
+    },
+    NodeState & { severity: LogSeverity }
 > {
+    type = 'log-message';
+    category = 'utils' as const;
     width = 250;
 
-    constructor(public severity: LogSeverity, props: NodeProps) {
-        super(LogMessageNode.name(), props);
+    constructor(initial: LogMessageNode['state'], props: NodeProps) {
+        super(LogMessageNode.name(), initial, props);
 
         // Inputs
         this.addInput('exec', new ClassicPreset.Input(new ExecSocket(), 'Exec', true));
@@ -28,13 +31,15 @@ export class LogMessageNode extends NekoNodeBase<
         this.addOutput('exec', new ClassicPreset.Output(new ExecSocket(), 'Exec', false));
 
         // Controls
-        this.addControl('severity', new LogSeverityInputControl({ initial: severity, change: (value) => {
-            this.severity = value;
+        this.addControl('severity', new LogSeverityInputControl({ initial: initial.severity, change: (value) => {
+            this.state.severity = value;
+            void this.dirty();
         } }));
     }
 
-    clone() {
-        return new LogMessageNode(this.severity, this.props);
+    async stateUpdated() {
+        this.controls.severity.setValue(this.state.severity);
+        await super.stateUpdated();
     }
 
     static name() {
@@ -42,6 +47,6 @@ export class LogMessageNode extends NekoNodeBase<
     }
 
     static default(props: NodeProps) {
-        return new LogMessageNode('info', props);
+        return new LogMessageNode({ severity: 'info' }, props);
     }
 }

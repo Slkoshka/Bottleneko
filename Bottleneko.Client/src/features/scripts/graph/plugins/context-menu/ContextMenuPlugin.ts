@@ -2,20 +2,24 @@ import { ClassicPreset, NodeEditor, Scope } from 'rete';
 import { Position, RenderSignal } from 'rete-react-plugin';
 import { BaseArea, BaseAreaPlugin } from 'rete-area-plugin';
 import { Connection } from 'rete-connection-plugin';
-import { NekoNode, NodeCollection, nodes } from '../../nodes';
+import { NekoNode, NekoNodeConstructor, NodeCollection, nodeList, nodes } from '../../nodes';
 import { NekoSocket } from '../../sockets';
 import NekoConnection from '../../connections/NekoConnection';
 import { Schemes } from '../../editor';
+import { NekoNodeBase } from '../../nodes/NekoNodeBase';
+import { deserializeNode } from '../../serialization';
 import { Item } from '.';
 
 export type ContextMenuExtra =
     RenderSignal<'contextmenu', {
         items: Item[];
+        itemsByCategory: Item[];
         onHide(): void;
         searchBar?: boolean;
     }> |
     { type: 'hidecontextmenu' };
 
+export type Produces = { type: 'nodechanged'; node: NekoNode } | { type: 'noderefresh'; node: NekoNode };
 export interface SocketData {
     nodeId: string;
     key: string;
@@ -32,79 +36,86 @@ type Requires =
     { type: 'connectioncreated'; data: NekoConnection } |
     { type: 'connectionremoved'; data: NekoConnection };
 
+const makeNode = (editor: NodeEditor<Schemes>, area: BaseAreaPlugin<Schemes, unknown>, node: NekoNodeConstructor) => {
+    return node.default({
+        editor,
+        area,
+    });
+};
+
+const extractNode = (editor: NodeEditor<Schemes>, area: BaseAreaPlugin<Schemes, unknown>, item: NekoNodeConstructor, key: string, label: string): Item => {
+    return {
+        label,
+        key,
+        handler: async (autoConnectTo) => {
+            const node = makeNode(editor, area, item);
+            await editor.addNode(node);
+            void area.translate(node.id, area.area.pointer);
+
+            type NamedPort = [name: string, port: ClassicPreset.Port<NekoSocket>];
+            const findMatch = (node: NekoNode, nodeSide: 'input' | 'output', connectTo: NamedPort) => {
+                const pins = nodeSide === 'input' ? node.inputs : node.outputs;
+                const sockets = Object.entries(pins) as NamedPort[];
+
+                const isCompatible = (mySocket: NekoSocket) => nodeSide === 'input' ? connectTo[1].socket.isCompatibleWith(mySocket) : mySocket.isCompatibleWith(connectTo[1].socket);
+                const strategies = [
+                    ([key, pin]: NamedPort) => {
+                        return key === connectTo[0] && isCompatible(pin.socket);
+                    },
+                    ([, pin]: NamedPort) => isCompatible(pin.socket),
+                ];
+
+                for (const strategy of strategies) {
+                    const match = sockets.find(strategy);
+                    if (match) {
+                        return match[0];
+                    }
+                }
+                return undefined;
+            };
+
+            const autoConnectNode = autoConnectTo ? editor.getNode(autoConnectTo.nodeId) : undefined;
+            if (autoConnectTo && autoConnectNode) {
+                const socket = ((autoConnectTo.side === 'input' ? autoConnectNode.inputs : autoConnectNode.outputs) as Record<string, ClassicPreset.Port<NekoSocket> | undefined>)[autoConnectTo.key];
+                if (socket) {
+                    const matchingSocket = findMatch(node, autoConnectTo.side === 'input' ? 'output' : 'input', [autoConnectTo.key, socket]);
+                    if (matchingSocket) {
+                        if (autoConnectTo.side === 'input') {
+                            await editor.addConnection(new NekoConnection(node, matchingSocket as never, autoConnectNode, autoConnectTo.key as never));
+                        }
+                        else {
+                            await editor.addConnection(new NekoConnection(autoConnectNode, autoConnectTo.key as never, node, matchingSocket as never));
+                        }
+                    }
+                }
+            }
+        },
+    };
+};
+
+const extractNodes = (editor: NodeEditor<Schemes>, area: BaseAreaPlugin<Schemes, unknown>, nodes: NodeCollection, prefix?: string): Item[] => nodes.map(([name, items], idx) => {
+    if (Array.isArray(items)) {
+        return {
+            label: name,
+            key: `${prefix ?? ''}${idx.toString()}`,
+            handler: () => { /* do nothing */ },
+            subitems: extractNodes(editor, area, items, `${prefix ?? ''}${idx.toString()}-`),
+        };
+    }
+    else {
+        return extractNode(editor, area, items, `${prefix ?? ''}${idx.toString()}`, name);
+    }
+});
+
 function getItems(context: 'root' | NekoNode | NekoConnection, plugin: ContextMenuPlugin) {
     const area = plugin.parentScope<BaseAreaPlugin<Schemes, unknown>>(BaseAreaPlugin);
     const editor = area.parentScope<NodeEditor<Schemes>>(NodeEditor);
 
-    const extractNodes = (nodes: NodeCollection, prefix?: string): Item[] => nodes.map(([name, items], idx) => {
-        if (Array.isArray(items)) {
-            return {
-                label: name,
-                key: `${prefix ?? ''}${idx.toString()}`,
-                handler: () => { /* do nothing */ },
-                subitems: extractNodes(items, `${prefix ?? ''}${idx.toString()}-`),
-            };
-        }
-        else {
-            return {
-                label: name,
-                key: `${prefix ?? ''}${idx.toString()}`,
-                handler: async (autoConnectTo) => {
-                    const node = items.default({
-                        editor,
-                        refresh: (node) => {
-                            void area.update('node', node.id);
-                        },
-                    });
-                    await editor.addNode(node);
-                    void area.translate(node.id, area.area.pointer);
-
-                    type NamedPort = [name: string, port: ClassicPreset.Port<NekoSocket>];
-                    const findMatch = (node: NekoNode, nodeSide: 'input' | 'output', connectTo: NamedPort) => {
-                        const pins = nodeSide === 'input' ? node.inputs : node.outputs;
-                        const sockets = Object.entries(pins) as NamedPort[];
-
-                        const isCompatible = (mySocket: NekoSocket) => nodeSide === 'input' ? connectTo[1].socket.isCompatibleWith(mySocket) : mySocket.isCompatibleWith(connectTo[1].socket);
-                        const strategies = [
-                            ([key, pin]: NamedPort) => {
-                                return key === connectTo[0] && isCompatible(pin.socket);
-                            },
-                            ([, pin]: NamedPort) => isCompatible(pin.socket),
-                        ];
-
-                        for (const strategy of strategies) {
-                            const match = sockets.find(strategy);
-                            if (match) {
-                                return match[0];
-                            }
-                        }
-                        return undefined;
-                    };
-
-                    const autoConnectNode = autoConnectTo ? editor.getNode(autoConnectTo.nodeId) : undefined;
-                    if (autoConnectTo && autoConnectNode) {
-                        const socket = ((autoConnectTo.side === 'input' ? autoConnectNode.inputs : autoConnectNode.outputs) as Record<string, ClassicPreset.Port<NekoSocket> | undefined>)[autoConnectTo.key];
-                        if (socket) {
-                            const matchingSocket = findMatch(node, autoConnectTo.side === 'input' ? 'output' : 'input', [autoConnectTo.key, socket]);
-                            if (matchingSocket) {
-                                if (autoConnectTo.side === 'input') {
-                                    await editor.addConnection(new NekoConnection(node, matchingSocket as never, autoConnectNode, autoConnectTo.key as never));
-                                }
-                                else {
-                                    await editor.addConnection(new NekoConnection(autoConnectNode, autoConnectTo.key as never, node, matchingSocket as never));
-                                }
-                            }
-                        }
-                    }
-                },
-            };
-        }
-    });
-
     if (context === 'root') {
         return {
             searchBar: true,
-            list: extractNodes(nodes),
+            list: nodeList.map((node, idx) => extractNode(editor, area, node, `node-${idx.toString()}`, node.name())),
+            listByCategory: extractNodes(editor, area, nodes),
         };
     }
 
@@ -130,29 +141,34 @@ function getItems(context: 'root' | NekoNode | NekoConnection, plugin: ContextMe
         },
     };
 
-    const clone = context instanceof ClassicPreset.Connection ? undefined : context.clone.bind(context);
-    const cloneItem: undefined | Item = clone
+    const cloneItem: undefined | Item = context instanceof NekoNodeBase
         ? {
                 label: 'Clone',
                 key: 'clone',
                 async handler() {
-                    const node = clone();
-                    await editor.addNode(node);
-                    void area.translate(node.id, area.area.pointer);
+                    const serialized = context.serialize();
+                    const node = await deserializeNode(serialized);
+                    if (node) {
+                        await editor.addNode(node);
+                        void area.translate(node.id, area.area.pointer);
+                    }
                 },
             }
         : undefined;
 
+    const itemList = [
+        deleteItem,
+        ...(cloneItem ? [cloneItem] : []),
+    ];
+
     return {
         searchBar: false,
-        list: [
-            deleteItem,
-            ...(cloneItem ? [cloneItem] : []),
-        ],
+        list: itemList,
+        listByCategory: itemList,
     };
 }
 
-export class ContextMenuPlugin extends Scope<never, [Requires | ContextMenuExtra]> {
+export class ContextMenuPlugin extends Scope<Produces, [Requires | ContextMenuExtra]> {
     lastPointerEvent?: PointerEvent;
 
     constructor() {
@@ -208,7 +224,7 @@ export class ContextMenuPlugin extends Scope<never, [Requires | ContextMenuExtra
                 context.data.event.preventDefault();
                 context.data.event.stopPropagation();
 
-                const { searchBar, list } = getItems(context.data.context, this);
+                const { searchBar, list, listByCategory } = getItems(context.data.context, this);
 
                 container.appendChild(element);
                 element.style.left = `${context.data.event.clientX.toString()}px`;
@@ -225,6 +241,7 @@ export class ContextMenuPlugin extends Scope<never, [Requires | ContextMenuExtra
                             void parent.emit({ type: 'unmount', data: { element } });
                         },
                         items: list,
+                        itemsByCategory: listByCategory,
                         autoConnectTo: context.data.autoConnectTo,
                     },
                 });

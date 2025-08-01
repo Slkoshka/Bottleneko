@@ -1,9 +1,10 @@
 import { CSSProperties } from 'react';
 import { ClassicScheme, Presets } from 'rete-react-plugin';
+import NekoConnection from '../connections/NekoConnection';
 
 const { useConnection } = Presets.classic;
 
-type ConnectionExtraData = { isPseudo: true } | { isPseudo: false; isLoop?: boolean; sourceType: string; innerSourceType?: string; targetType: string; innerTargetType?: string };
+type ConnectionExtraData = { isPseudo: true } | NekoConnection;
 
 interface Props<Scheme extends ClassicScheme> {
     data: Scheme['Connection'] & ConnectionExtraData;
@@ -26,7 +27,7 @@ export function ConnectionRenderer<Scheme extends ClassicScheme>({ data, styles 
     }
     else {
         return (
-            <svg className={`graph-connection graph-type-${data.innerSourceType ?? data.sourceType}`} data-testid="conneciton">
+            <svg className={`graph-connection graph-type-${data.sourceType.id}`} data-testid="conneciton">
                 <path style={styles?.()} d={path} />
             </svg>
         );

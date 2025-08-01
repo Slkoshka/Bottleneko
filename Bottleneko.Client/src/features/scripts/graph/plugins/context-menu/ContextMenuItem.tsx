@@ -52,7 +52,7 @@ export function ContextMenuItem({ data, delay, hideMenu, setShownSubmenu, shownS
                 e.preventDefault();
                 e.stopPropagation();
             }}
-            className={`graph-context-menu-item a-${data.key} ${data.subitems ? 'graph-context-menu-item-folder' : ''}`}
+            className={`graph-context-menu-item ${data.subitems ? 'graph-context-menu-item-folder' : ''}`}
             style={style}
         >
             {children}
@@ -61,7 +61,7 @@ export function ContextMenuItem({ data, delay, hideMenu, setShownSubmenu, shownS
                     ? (
                             <div className="graph-context-menu-subitems" style={{ left: submenuPosition.x, top: submenuPosition.y }}>
                                 {
-                                    data.subitems.sort((a, b) => a.label.localeCompare(b.label)).map(item => (
+                                    data.subitems.map(item => (
                                         <ContextMenuItem
                                             key={item.key}
                                             data={item}

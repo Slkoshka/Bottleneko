@@ -2,12 +2,10 @@ import { NodeProps } from '../NekoNodeBase';
 import { UnaryMathOpNode } from './UnaryMathOpNode';
 
 export class NegateNode extends UnaryMathOpNode {
+    type = 'negate';
+
     constructor(props: NodeProps) {
         super(NegateNode.name(), props);
-    }
-
-    clone() {
-        return new NegateNode(this.props);
     }
 
     static name() {

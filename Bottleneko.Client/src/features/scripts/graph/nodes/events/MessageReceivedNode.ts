@@ -10,10 +10,12 @@ export class MessageReceivedNode extends NekoNodeBase<
     },
     object
 > {
+    type = 'message-received-event';
+    category = 'events' as const;
     readonly isEvent = true;
 
     constructor(props: NodeProps) {
-        super(MessageReceivedNode.name(), props);
+        super(MessageReceivedNode.name(), { }, props);
 
         // Inputs
 
@@ -22,10 +24,6 @@ export class MessageReceivedNode extends NekoNodeBase<
         this.addOutput('msg', new ClassicPreset.Output(new ChatMessageSocket(), 'Message', true));
 
         // Controls
-    }
-
-    clone() {
-        return new MessageReceivedNode(this.props);
     }
 
     static name() {

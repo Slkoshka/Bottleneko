@@ -1,6 +1,6 @@
 import { ClassicPreset } from 'rete';
 import { NumberSocket } from '../../sockets';
-import { NekoNodeBase, NodeProps } from '../NekoNodeBase';
+import { NekoNodeBase, NodeProps, NodeState } from '../NekoNodeBase';
 import { NumberInputControl } from '../../controls/NumberInputControl';
 
 export interface AnyArityMathOpNodeCustomization {
@@ -19,10 +19,13 @@ export abstract class AnyArityMathOpNode<Props extends NodeProps = NodeProps> ex
     {
         inputs: NumberInputControl;
     },
+    NodeState,
     Props
 > {
+    category = 'math' as const;
+
     constructor(name: string, props: Props, readonly customization?: AnyArityMathOpNodeCustomization) {
-        super(name, props);
+        super(name, { }, props);
 
         // Inputs
         this.addInput('in', new ClassicPreset.Input(new NumberSocket(), customization?.inName ?? 'Inputs', true));

@@ -1,6 +1,6 @@
 import { ClassicPreset } from 'rete';
 import { NumberSocket } from '../../sockets';
-import { NekoNodeBase, NodeProps } from '../NekoNodeBase';
+import { NekoNodeBase, NodeProps, NodeState } from '../NekoNodeBase';
 
 export interface BinaryMathOpNodeCustomization {
     leftName?: string;
@@ -17,10 +17,13 @@ export abstract class BinaryMathOpNode<Props extends NodeProps = NodeProps> exte
         out: NumberSocket;
     },
     object,
+    NodeState,
     Props
 > {
+    category = 'math' as const;
+
     constructor(name: string, props: Props, customization?: BinaryMathOpNodeCustomization) {
-        super(name, props);
+        super(name, { }, props);
 
         // Inputs
         this.addInput('left', new ClassicPreset.Input(new NumberSocket(), customization?.leftName ?? 'Left', false));

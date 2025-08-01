@@ -1,8 +1,13 @@
+import deepEqual from 'deep-equal';
 import { ClassicPreset } from 'rete';
 
-export class NekoSocket extends ClassicPreset.Socket {
+export interface NekoSocketType { id: string }
+
+type TrivialSocket = new () => NekoSocket;
+
+export abstract class NekoSocket<T extends NekoSocketType = NekoSocketType> extends ClassicPreset.Socket {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    constructor(readonly type: string, name: string, private readonly compatibleSockets?: any[]) {
+    constructor(readonly type: T, name: string, private readonly compatibleSockets?: any[]) {
         super(name);
     }
 
@@ -19,10 +24,24 @@ export class NekoSocket extends ClassicPreset.Socket {
 
         return false;
     }
+
+    static fromType(type: NekoSocketType): NekoSocket {
+        if (type.id === 'optional') {
+            const optionalType = type as OptionalSocket['type'];
+            return new OptionalSocket(() => this.fromType(optionalType.inner));
+        }
+        else {
+            return socketTypes.map(socket => new (socket === OptionalSocket ? InvalidSocket : socket as TrivialSocket)()).find(socket => deepEqual(socket.type, type)) ?? new InvalidSocket();
+        }
+    }
 }
 
-export class SplittableObjectSocket extends NekoSocket {
-    constructor(type: string, name: string, compatibleSockets?: unknown[]) {
+export class InvalidSocket extends NekoSocket {
+    constructor() { super({ id: 'invalid' }, 'Error', []); }
+}
+
+export abstract class SplittableObjectSocket<T extends NekoSocketType = NekoSocketType> extends NekoSocket<T> {
+    constructor(type: T, name: string, compatibleSockets?: unknown[]) {
         super(type, `[Structure] ${name}`, [...(compatibleSockets ?? []), SplittableInputSocket]);
     }
 
@@ -31,8 +50,8 @@ export class SplittableObjectSocket extends NekoSocket {
     }
 }
 
-export class SwitchableObjectSocket extends NekoSocket {
-    constructor(type: string, name: string, compatibleSockets?: unknown[]) {
+export abstract class SwitchableObjectSocket<T extends NekoSocketType = NekoSocketType> extends NekoSocket<T> {
+    constructor(type: T, name: string, compatibleSockets?: unknown[]) {
         super(type, `[Enum] ${name}`, [...(compatibleSockets ?? []), SwitchableInputSocket]);
     }
 
@@ -42,11 +61,11 @@ export class SwitchableObjectSocket extends NekoSocket {
 }
 
 export class ExecSocket extends NekoSocket {
-    constructor() { super('exec', 'Execution Flow', [ExecSocket]); }
+    constructor() { super({ id: 'exec' }, 'Execution Flow', [ExecSocket]); }
 }
 
 export class BooleanSocket extends SwitchableObjectSocket {
-    constructor() { super('boolean', 'Boolean (true or false)', [BooleanSocket, StringSocket, NumberSocket]); }
+    constructor() { super({ id: 'boolean' }, 'Boolean (true or false)', [BooleanSocket, StringSocket, NumberSocket]); }
 
     options() {
         return [
@@ -57,19 +76,19 @@ export class BooleanSocket extends SwitchableObjectSocket {
 }
 
 export class NumberSocket extends NekoSocket {
-    constructor() { super('number', 'Number', [NumberSocket, StringSocket]); }
+    constructor() { super({ id: 'number' }, 'Number', [NumberSocket, StringSocket]); }
 }
 
 export class StringSocket extends NekoSocket {
-    constructor() { super('string', 'Text', [StringSocket]); }
+    constructor() { super({ id: 'string' }, 'Text', [StringSocket]); }
 }
 
 export class IdSocket extends NekoSocket {
-    constructor() { super('id', 'ID', [IdSocket, StringSocket]); }
+    constructor() { super({ id: 'id' }, 'ID', [IdSocket, StringSocket]); }
 }
 
 export class ProtocolSocket extends SwitchableObjectSocket {
-    constructor() { super('protocol', 'Protocol', [ProtocolSocket, StringSocket]); }
+    constructor() { super({ id: 'protocol' }, 'Protocol', [ProtocolSocket, StringSocket]); }
 
     options() {
         return [
@@ -81,15 +100,15 @@ export class ProtocolSocket extends SwitchableObjectSocket {
 }
 
 export class TimestampSocket extends NekoSocket {
-    constructor() { super('timestamp', 'Timestamp', [TimestampSocket, StringSocket]); }
+    constructor() { super({ id: 'timestamp' }, 'Timestamp', [TimestampSocket, StringSocket]); }
 }
 
 export class ChatSocket extends NekoSocket {
-    constructor() { super('chat', 'Chat', [ChatSocket]); }
+    constructor() { super({ id: 'chat' }, 'Chat', [ChatSocket]); }
 }
 
 export class ChatMessageSocket extends SplittableObjectSocket {
-    constructor() { super('chat-message', 'Chat Message', [ChatMessageSocket]); }
+    constructor() { super({ id: 'chat-message' }, 'Chat Message', [ChatMessageSocket]); }
 
     parts() {
         return [
@@ -99,33 +118,53 @@ export class ChatMessageSocket extends SplittableObjectSocket {
             { id: 'timestamp', name: 'Timestamp', constructor: () => new TimestampSocket() },
             { id: 'chat', name: 'Chat', constructor: () => new ChatSocket() },
             { id: 'author', name: 'Author', constructor: () => new ChatterSocket() },
-            { id: 'text', name: 'Text', constructor: () => new OptionalSocket(StringSocket) },
-            { id: 'replyTo', name: 'Reply To', constructor: () => new OptionalSocket(IdSocket) },
+            { id: 'text', name: 'Text', constructor: () => new OptionalSocket(() => new StringSocket()) },
+            { id: 'replyTo', name: 'Reply To', constructor: () => new OptionalSocket(() => new IdSocket()) },
         ];
     }
 }
 
 export class ChatterSocket extends NekoSocket {
-    constructor() { super('chatter', 'Chat User', [ChatterSocket]); }
+    constructor() { super({ id: 'chatter' }, 'Chat User', [ChatterSocket]); }
 }
 
 export class OptionalInputSocket extends NekoSocket {
-    constructor() { super('any-optional', 'Any Optional Value'); }
+    constructor() { super({ id: 'any-optional' }, 'Any Optional Value'); }
 }
 
 export class SplittableInputSocket extends NekoSocket {
-    constructor() { super('splittable', 'Any Structure'); }
+    constructor() { super({ id: 'any-splittable' }, 'Any Structure'); }
 }
 
 export class SwitchableInputSocket extends NekoSocket {
-    constructor() { super('switchable', 'Any Enum'); }
+    constructor() { super({ id: 'any-switchable' }, 'Any Enum'); }
 }
 
-export class OptionalSocket<T extends NekoSocket> extends NekoSocket {
-    constructor(readonly innerType: new () => T) { super('optional', `${new innerType().name} (Optional)`); }
+export class OptionalSocket extends NekoSocket<NekoSocketType & { inner: NekoSocketType }> {
+    constructor(readonly innerType: () => NekoSocket) {
+        super({ id: 'optional', inner: innerType().type }, `${innerType().name} (Optional)`);
+    }
 
     isCompatibleWith(socket: ClassicPreset.Socket) {
-        const socketType = socket instanceof OptionalSocket ? new (socket as OptionalSocket<NekoSocket>).innerType() : socket;
-        return socketType instanceof OptionalInputSocket || new this.innerType().isCompatibleWith(socketType);
+        const socketType = socket instanceof OptionalSocket ? socket.innerType() : socket;
+        return socketType instanceof OptionalInputSocket || this.innerType().isCompatibleWith(socketType);
     }
 }
+
+export const socketTypes = [
+    InvalidSocket,
+    ExecSocket,
+    BooleanSocket,
+    NumberSocket,
+    StringSocket,
+    IdSocket,
+    ProtocolSocket,
+    TimestampSocket,
+    ChatSocket,
+    ChatMessageSocket,
+    ChatterSocket,
+    OptionalInputSocket,
+    SplittableInputSocket,
+    SwitchableInputSocket,
+    OptionalSocket,
+];

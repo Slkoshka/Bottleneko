@@ -13,10 +13,12 @@ export class IfNode extends NekoNodeBase<
     },
     object
 > {
+    type = 'if';
+    category = 'control' as const;
     width = 250;
 
     constructor(props: NodeProps) {
-        super(IfNode.name(), props);
+        super(IfNode.name(), { }, props);
 
         // Inputs
         this.addInput('exec', new ClassicPreset.Input(new ExecSocket(), 'Exec', true));
@@ -27,10 +29,6 @@ export class IfNode extends NekoNodeBase<
         this.addOutput('false', new ClassicPreset.Output(new ExecSocket(), 'False', false));
 
         // Controls
-    }
-
-    clone() {
-        return new IfNode(this.props);
     }
 
     static name() {

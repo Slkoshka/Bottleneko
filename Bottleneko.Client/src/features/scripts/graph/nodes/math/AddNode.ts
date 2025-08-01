@@ -2,12 +2,10 @@ import { NodeProps } from '../NekoNodeBase';
 import { AnyArityMathOpNode } from './AnyArityMathOpNode';
 
 export class AddNode extends AnyArityMathOpNode {
+    type = 'add';
+
     constructor(props: NodeProps) {
         super(AddNode.name(), props);
-    }
-
-    clone() {
-        return new AddNode(this.props);
     }
 
     static name() {

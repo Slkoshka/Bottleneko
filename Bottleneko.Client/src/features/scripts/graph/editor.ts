@@ -10,7 +10,6 @@ import { NekoNode } from './nodes';
 import NekoConnection from './connections/NekoConnection';
 import { NodeRenderer } from './renderers/NodeRenderer';
 import { SocketRenderer } from './renderers/SocketRenderer';
-import { NekoSocket } from './sockets';
 import { ConnectionRenderer } from './renderers/ConnectionRenderer';
 import { NekoNodeBase } from './nodes/NekoNodeBase';
 import { ControlRenderer } from './renderers/ControlRenderer';
@@ -25,12 +24,18 @@ export type Schemes = GetSchemes<
     NekoConnection
 >;
 
-type AreaExtra = Root<Schemes> | Area2D<Schemes> | ReactArea2D<Schemes> | ContextMenuExtra;
+type AreaExtra = Root<Schemes> | Area2D<Schemes> | ReactArea2D<Schemes> | ContextMenuExtra | { type: 'nodechanged'; node: NekoNode } | { type: 'noderefresh'; node: NekoNode };
 
 export interface Editor {
     destroy: () => void;
     showContextMenu: (x: number, y: number) => void;
 }
+
+// function serialize(editor: NodeEditor<Schemes>) {
+//     // editor.getNodes().map(node => {
+//     //     node.
+//     // });
+// }
 
 export function createEditor(container: HTMLElement, onChange: (code: ScriptCode) => void): Editor {
     const editor = new NodeEditor<Schemes>();
@@ -60,11 +65,8 @@ export function createEditor(container: HTMLElement, onChange: (code: ScriptCode
             node() {
                 return NodeRenderer;
             },
-            socket(data) {
-                if (data.payload instanceof NekoSocket) {
-                    return SocketRenderer;
-                }
-                return Presets.classic.Socket;
+            socket() {
+                return SocketRenderer;
             },
             control() {
                 return ControlRenderer;
@@ -143,7 +145,21 @@ export function createEditor(container: HTMLElement, onChange: (code: ScriptCode
 
     let isDirty = false;
 
-    area.addPipe((context) => {
+    contextMenu.addPipe(async (context) => {
+        switch (context.type) {
+            case 'nodechanged':
+                isDirty = true;
+                break;
+
+            case 'noderefresh':
+                await area.update('node', context.node.id);
+                break;
+        }
+
+        return context;
+    });
+
+    area.addPipe(async (context) => {
         switch (context.type) {
             case 'nodecreated':
             case 'noderemoved':
@@ -162,8 +178,8 @@ export function createEditor(container: HTMLElement, onChange: (code: ScriptCode
                 const source = sourceNode.getOutput(context.data.sourceOutput);
                 const target = targetNode.getInput(context.data.targetInput);
                 if (source && target) {
-                    if (targetNode.connect(editor, { node: sourceNode, socket: source.socket }, { node: targetNode, socket: target.socket })) {
-                        void area.update('node', context.data.target);
+                    if (await targetNode.connect({ node: sourceNode, socket: source.socket }, { node: targetNode, socket: target.socket })) {
+                        await area.update('node', context.data.target);
                     }
                 }
             }
@@ -175,8 +191,8 @@ export function createEditor(container: HTMLElement, onChange: (code: ScriptCode
                 const source = sourceNode.getOutput(context.data.sourceOutput);
                 const target = targetNode.getInput(context.data.targetInput);
                 if (target) {
-                    if (targetNode.disconnect(editor, !source ? null : { node: sourceNode, socket: source.socket }, { node: targetNode, socket: target.socket })) {
-                        void area.update('node', context.data.target);
+                    if (targetNode.disconnect(!source ? null : { node: sourceNode, socket: source.socket }, { node: targetNode, socket: target.socket })) {
+                        await area.update('node', context.data.target);
                     }
                 }
             }

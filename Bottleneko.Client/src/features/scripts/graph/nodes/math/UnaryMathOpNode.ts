@@ -1,6 +1,6 @@
 import { ClassicPreset } from 'rete';
 import { NumberSocket } from '../../sockets';
-import { NekoNodeBase, NodeProps } from '../NekoNodeBase';
+import { NekoNodeBase, NodeProps, NodeState } from '../NekoNodeBase';
 
 export interface UnaryMathOpNodeCustomization {
     inName?: string;
@@ -15,10 +15,13 @@ export abstract class UnaryMathOpNode<Props extends NodeProps = NodeProps> exten
         out: NumberSocket;
     },
     object,
+    NodeState,
     Props
 > {
+    category = 'math' as const;
+
     constructor(name: string, props: Props, customization?: UnaryMathOpNodeCustomization) {
-        super(name, props);
+        super(name, { }, props);
 
         // Inputs
         this.addInput('in', new ClassicPreset.Input(new NumberSocket(), customization?.inName ?? 'In', false));
