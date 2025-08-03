@@ -41,7 +41,7 @@ export default function ScriptEditor({ id, script, onSaved }: { id?: string; scr
             onSaved?.(response.result);
         }
         else {
-            const response = await api.scripts.add(formData.name, formData.description, formData.code);
+            const response = await api.scripts.add(formData);
             scripts?.actions.added(response.result);
             onSaved?.(response.result);
         }

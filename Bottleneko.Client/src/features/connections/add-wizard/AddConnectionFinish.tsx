@@ -2,7 +2,6 @@ import { Alert } from 'react-bootstrap';
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Highlight from 'react-highlight';
-import api from '../../api';
 import { ConnectionDefinition } from '..';
 import { useAsync, useOnce } from '../../../app/hooks';
 import { useConnections } from '../context';
@@ -11,7 +10,7 @@ import { ErrorMetadata, extractErrorInfo } from '../../../app/utils';
 import { Protocol } from '../../api/dtos.gen';
 import { AddConnectionStage } from './AddConnectionView';
 
-export default function AddConnectionFinish({ protocol, definition, setStage }: { protocol: Protocol; definition: ConnectionDefinition; setStage: (stage: AddConnectionStage) => void }) {
+export default function AddConnectionFinish({ definition, setStage }: { protocol: Protocol; definition: ConnectionDefinition; setStage: (stage: AddConnectionStage) => void }) {
     const [error, setError] = useState<ErrorMetadata | null>();
     const connections = useConnections();
     const navigate = useNavigate();
@@ -21,11 +20,13 @@ export default function AddConnectionFinish({ protocol, definition, setStage }: 
     }, []);
 
     const [addConnection, isLoading] = useAsync(useCallback(async () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const newConnection = (await api.connections.add<any>(protocol, definition.name, definition.config)).result;
-        connections?.actions.added(newConnection);
+        if (!connections) {
+            return;
+        }
+
+        const newConnection = (await connections.actions.add({ name: definition.name, config: definition.config })).result;
         navigate(`/connections/${newConnection.id}`);
-    }, [protocol, definition, connections?.actions, navigate]));
+    }, [definition, connections, navigate]));
 
     useOnce(() => {
         addConnection().catch(onError);

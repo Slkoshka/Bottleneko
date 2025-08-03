@@ -1,8 +1,9 @@
 import bootstrapIcons from 'bootstrap-icons/bootstrap-icons.svg';
+import { CSSProperties } from 'react';
 
-export default function Icon({ icon }: { icon: string }) {
+export default function Icon({ icon, style }: { icon: string; style?: CSSProperties }) {
     return (
-        <svg className="bi d-block w-100 h-100" fill="currentColor">
+        <svg className="bi" fill="currentColor" style={style}>
             <use xlinkHref={`${bootstrapIcons}#${icon}`} />
         </svg>
     );

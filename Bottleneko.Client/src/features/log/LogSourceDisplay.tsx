@@ -20,16 +20,16 @@ export default function LogSourceDisplay({ sourceType, sourceId }: { sourceType:
         case LogSourceType.Connection:
             return (
                 <Link to={`/connections/${sourceId}`} className="btn btn-success btn-sm px-1 py-0">
-                    <ProtocolIcon protocol={connections?.state.list?.find(connection => connection.id === sourceId)?.protocol} />
+                    <ProtocolIcon protocol={connections?.state.list?.find(connection => connection.data.id === sourceId)?.data.protocol} />
                     {' '}
-                    {connections?.state.list?.find(connection => connection.id === sourceId)?.name ?? `Connection #${sourceId}`}
+                    {connections?.state.list?.find(connection => connection.data.id === sourceId)?.data.name ?? `Connection #${sourceId}`}
                 </Link>
             );
 
         case LogSourceType.Script:
             return (
                 <Link to={`/scripts/${sourceId}`} className="btn btn-warning btn-sm px-1 py-0">
-                    {scripts?.state.list?.find(script => script.id === sourceId)?.name ?? `Script #${sourceId}`}
+                    {scripts?.state.list?.find(script => script.data.id === sourceId)?.data.name ?? `Script #${sourceId}`}
                 </Link>
             );
 

@@ -88,7 +88,7 @@ public class ConnectionsController(IServiceProvider services, IOptions<JsonOptio
     {
         if (await akka.AskAsync<bool>(new IConnectionsMessage.Remove(id)))
         {
-            return Ok();
+            return Ok(new Success());
         }
         else
         {

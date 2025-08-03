@@ -1,12 +1,13 @@
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Alert } from 'react-bootstrap';
-import api from '../api';
 import View from '../../components/views/View';
 import { useAsync } from '../../app/hooks';
 import UserEditor, { EditedUser } from './UserEditor';
+import { useUsers } from './context';
 
 export default function AddUserView() {
+    const users = useUsers();
     const [error, setError] = useState<string | undefined>(undefined);
     const navigate = useNavigate();
 
@@ -15,9 +16,12 @@ export default function AddUserView() {
     }, []);
 
     const [addUser, isLoading] = useAsync(useCallback(async (formData: EditedUser) => {
-        const response = await api.users.add(formData.login, formData.password);
-        navigate(`/users/${response.result.id}`);
-    }, [navigate]));
+        if (!users) {
+            return;
+        }
+        await users.actions.add({ login: formData.login, password: formData.password });
+        navigate('/users');
+    }, [navigate, users]));
 
     const onValidated = useCallback((formData: EditedUser) => {
         addUser(formData).catch(onError);

@@ -1,63 +1,27 @@
-import { LinkContainer } from 'react-router-bootstrap';
-import { Button } from 'react-bootstrap';
-import { useCallback, useState } from 'react';
 import View from '../../components/views/View';
-import DeleteConfirmationDialog from '../../components/DeleteConfirmationDialog';
-import InfoCardList from '../../components/info-card/InfoCardList';
-import { useAsync } from '../../app/hooks';
-import api from '../api';
-import ConnectionInfoCard from './ConnectionInfoCard';
-import { useConnections } from './context';
-import { AnyConnectionDto } from '.';
+import { useEntityDeletion } from '../../app/hooks';
+import { ConnectionEntityConfig, useConnections } from './context';
+import ConnectionList from './ConnectionList';
 
 export default function ConnectionsView() {
     const connections = useConnections();
-    const [deletingConnection, setDeletingConnection] = useState<AnyConnectionDto | undefined>(undefined);
-
-    const [deleteConnection] = useAsync(useCallback(async () => {
-        if (deletingConnection) {
-            try {
-                await api.connections.delete(deletingConnection.id);
-                connections?.actions.deleted(deletingConnection.id);
-            }
-            finally {
-                setDeletingConnection(undefined);
-            }
-        }
-    }, [deletingConnection, connections?.actions]));
-
-    const getConnectionInfo = (connection: AnyConnectionDto) => {
-        return {
-            id: {
-                name: 'ID',
-                value: connection.id,
-            },
-            protocol: {
-                name: 'Protocol',
-                value: connection.protocol,
-            },
-            name: {
-                name: 'Name',
-                value: connection.name,
-            },
-        };
-    };
+    const { deleteEntity, dialog } = useEntityDeletion<ConnectionEntityConfig>(connections);
 
     return (
-        <View title="Connections" loading={!connections?.state.list}>
-            <DeleteConfirmationDialog
-                item={deletingConnection}
-                itemTypeName="connection"
-                onDelete={() => { void deleteConnection(); }}
-                onCancel={() => { setDeletingConnection(undefined); }}
-                itemInfoBuilder={getConnectionInfo}
-            />
+        <View
+            title={(
+                <div className="d-flex" style={{ gap: '0.5rem' }}>
+                    <span className="flex-grow-1">
+                        Connections
+                    </span>
+                </div>
+            )}
+            loading={!connections?.state.list}
+            fillScreen
+        >
+            {dialog}
 
-            <InfoCardList>
-                <LinkContainer to="/connections/add"><Button size="lg" variant="primary">Add Connection</Button></LinkContainer>
-
-                {connections?.state.list?.map(c => <ConnectionInfoCard key={c.id} connection={c} onDelete={() => { setDeletingConnection(c); }} />) }
-            </InfoCardList>
+            <ConnectionList onDelete={(connection) => { deleteEntity(connection); }} />
         </View>
     );
 }

@@ -1,5 +1,4 @@
 import * as yup from 'yup';
-import { Connection } from '..';
 import { Protocol } from '../../api/dtos.gen';
 
 export const TelegramConfigSchema = yup.object().noUnknown().shape({
@@ -8,5 +7,3 @@ export const TelegramConfigSchema = yup.object().noUnknown().shape({
     receiveEvents: yup.boolean().default(true),
     proxyId: yup.string().default(''),
 });
-
-export type Telegram = Connection<Protocol.Telegram, yup.InferType<typeof TelegramConfigSchema>>;

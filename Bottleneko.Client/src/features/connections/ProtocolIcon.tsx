@@ -8,8 +8,7 @@ export default function ProtocolIcon({ protocol = null, size, style, className }
         return <></>;
     }
 
-    const icon = protocols[protocol].icon;
     return (
-        <InlineIcon icon={icon ?? 'wifi'} className={className} size={size} style={{ ...style }} />
+        <InlineIcon icon={protocols[protocol].icon ?? 'wifi'} tooltip={() => protocols[protocol].name} className={className} size={size} style={{ ...style }} />
     );
 }

@@ -17,6 +17,7 @@ import ScriptsProvider from './features/scripts/ScriptsProvider';
 import ProxiesProvider from './features/proxies/ProxiesProvider';
 import LoadingPage from './pages/LoadingPage';
 import ErrorPage from './pages/ErrorPage';
+import UsersProvider from './features/users/UsersProvider';
 
 function AppView() {
     const auth = useAuth();
@@ -27,9 +28,11 @@ function AppView() {
                 <ConnectionsProvider>
                     <ScriptsProvider>
                         <ProxiesProvider>
-                            <WebSocketConnection>
-                                <RouterProvider router={router} />
-                            </WebSocketConnection>
+                            <UsersProvider>
+                                <WebSocketConnection>
+                                    <RouterProvider router={router} />
+                                </WebSocketConnection>
+                            </UsersProvider>
                         </ProxiesProvider>
                     </ScriptsProvider>
                 </ConnectionsProvider>

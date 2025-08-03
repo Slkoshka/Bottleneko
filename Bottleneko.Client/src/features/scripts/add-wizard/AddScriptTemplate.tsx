@@ -9,7 +9,7 @@ import { AddScriptStage } from './AddScriptView';
 export default function AddScriptTemplate({ setStage }: { setStage: (stage: AddScriptStage) => void }) {
     const renderTemplate = (id: string, template: { name: string; description: ReactNode; code: ScriptCode }) => {
         return (
-            <InfoCard className="script-template-card" key={id} title={template.name}>
+            <InfoCard key={id} title={template.name} highlightHeader>
                 <InfoCard.HeaderExtra position="end">
                     <IconButton icon="plus-lg" tooltip="Select template" size="sm" variant="dark" onClick={() => { setStage({ stage: 'editor', template: { name: template.name, description: '', code: template.code } }); }} />
                 </InfoCard.HeaderExtra>

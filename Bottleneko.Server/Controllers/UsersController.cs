@@ -15,12 +15,12 @@ namespace Bottleneko.Server.Controllers;
 [Authorize]
 public class UsersController(NekoDbContext db) : CrudController<UsersController.CreateUserRequest, UsersController.UpdateUserRequest>
 {
-    private async Task<ClaimsIdentity?> GetIdentityAsync(string userName, string password)
+    private async Task<ClaimsIdentity?> GetIdentityAsync(string login, string password)
     {
-        userName = userName.Trim();
+        login = login.Trim();
 
 #pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
-        var user = await db.Users.SingleOrDefaultAsync(user => user.Login == userName.ToLowerInvariant() && !user.IsDeleted);
+        var user = await db.Users.SingleOrDefaultAsync(user => user.Login == login.ToLowerInvariant() && !user.IsDeleted);
 #pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
         if (user is null || !user.CheckPassword(password))
         {
@@ -33,13 +33,13 @@ public class UsersController(NekoDbContext db) : CrudController<UsersController.
         ], "Token", ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType);
     }
     
-    public record LoginRequest(string Username, string Password);
+    public record LoginRequest(string Login, string Password);
 
     [HttpPost("login")]
     [AllowAnonymous]
     public async Task<IActionResult> LoginAsync([FromBody] LoginRequest request)
     {
-        var identity = await GetIdentityAsync(request.Username, request.Password);
+        var identity = await GetIdentityAsync(request.Login, request.Password);
         if (identity is null)
         {
             return Error(ErrorCode.Unauthorized, "Invalid username or password");
@@ -71,13 +71,13 @@ public class UsersController(NekoDbContext db) : CrudController<UsersController.
         }
     }
 
-    public record CreateUserRequest(string Username, string Password);
+    public record CreateUserRequest(string Login, string Password);
     
     public override async Task<IActionResult> AddAsync([FromBody] CreateUserRequest request)
     {
         try
         {
-            var user = UserEntity.Create(request.Username, request.Password, UserRole.Administrator);
+            var user = UserEntity.Create(request.Login, request.Password, UserRole.Administrator);
             db.Users.Add(user);
             await db.SaveChangesAsync();
 
@@ -88,7 +88,7 @@ public class UsersController(NekoDbContext db) : CrudController<UsersController.
         }
         catch (Exception e) when (e.IsDuplicateKeyException())
         {
-            throw new DuplicateNameException($"User with the name '{request.Username}' already exists");
+            throw new DuplicateNameException($"User with the name '{request.Login}' already exists");
         }
     }
     
@@ -112,13 +112,16 @@ public class UsersController(NekoDbContext db) : CrudController<UsersController.
         }
     }
 
-    public record UpdateUserRequest(string Username, string? Password);
+    public record UpdateUserRequest(string? Login, string? Password);
     
     public override async Task<IActionResult> UpdateAsync([FromRoute] long id, [FromBody] UpdateUserRequest request)
     {
         if (await db.Users.SingleOrDefaultAsync(u => u.Id == id) is {  } user)
         {
-            user.Rename(request.Username);
+            if (request.Login is not null)
+            {
+                user.Rename(request.Login);
+            }
             if (request.Password is not null)
             {
                 user.ChangePassword(request.Password);
@@ -127,11 +130,14 @@ public class UsersController(NekoDbContext db) : CrudController<UsersController.
             try
             {
                 await db.SaveChangesAsync();
-                return Ok(new Success());
+                return Ok(new
+                {
+                    Result = user.ToDto(),
+                });
             }
             catch (Exception e) when (e.IsDuplicateKeyException())
             {
-                throw new DuplicateNameException($"User with the name '{request.Username}' already exists");
+                throw new DuplicateNameException($"User with the name '{request.Login}' already exists");
             }
         }
         else

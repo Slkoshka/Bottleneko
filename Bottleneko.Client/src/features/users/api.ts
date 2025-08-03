@@ -9,6 +9,10 @@ export interface AddUserResponse {
     result: UserDto;
 }
 
+export interface UpdateUserResponse {
+    result: UserDto;
+}
+
 export interface LoginResponse {
     accessToken: string;
 }
@@ -26,21 +30,15 @@ export default {
         return await request<UserDto>('GET', `users/me`, { signal });
     },
 
-    add: async (username: string, password: string) => {
+    add: async (parameters: Partial<Omit<UserDto, 'id' | 'displayName'> & { password: string }>) => {
         return await request<AddUserResponse>('PUT', `users`, {
-            body: {
-                username,
-                password,
-            },
+            body: parameters,
         });
     },
 
-    update: async (id: string, username: string, password: string | null) => {
-        await request<object>('PATCH', `users/${id}`, {
-            body: {
-                username,
-                password,
-            },
+    update: async (id: string, parameters: Partial<Omit<UserDto, 'id' | 'displayName'> & { password: string }>) => {
+        return await request<UpdateUserResponse>('PATCH', `users/${id}`, {
+            body: parameters,
         });
     },
 
@@ -48,10 +46,10 @@ export default {
         await request<object>('DELETE', `users/${id}`);
     },
 
-    login: async (username: string, password: string) => {
+    login: async (login: string, password: string) => {
         return await request<LoginResponse>('POST', `users/login`, {
             body: {
-                username,
+                login,
                 password,
             },
         });

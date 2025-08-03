@@ -1,0 +1,10 @@
+.fill-screen {
+  & > .content, .tab-content {
+    flex-grow: 1;
+    overflow: hidden;
+  }
+
+  & > .content, .tab-content > * {
+    height: 100%;
+  }
+}

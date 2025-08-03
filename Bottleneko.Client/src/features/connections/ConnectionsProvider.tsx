@@ -1,51 +1,82 @@
-﻿import { ReactNode, useCallback, useEffect, useState } from 'react';
-import { useFetchData } from '../../app/hooks';
+﻿import { ReactNode, useCallback } from 'react';
 import api from '../api';
-import { ConnectionsContext } from './context';
-import { AnyConnectionDto } from '.';
+import { ConnectionDto, ConnectionStatus } from '../api/dtos.gen';
+import { EntityState, useEntityProvider } from '../../app/EntityProvider';
+import { ConnectionEntityConfig, ConnectionsContext } from './context';
+
+export class ConnectionState extends EntityState<ConnectionDto, Parameters<typeof api.connections.update>[1]> {
+    get info() {
+        return {
+            id: {
+                name: 'ID',
+                value: this.data.id,
+            },
+            protocol: {
+                name: 'Protocol',
+                value: this.data.protocol,
+            },
+            name: {
+                name: 'Name',
+                value: this.data.name,
+            },
+        };
+    }
+
+    get canStart() {
+        return !this.isLoading && (this.data.extendedStatus.status === ConnectionStatus.NotConnected || this.data.extendedStatus.status === ConnectionStatus.Error || this.data.extendedStatus.status === ConnectionStatus.DelayedReconnect);
+    }
+
+    get canRestart() {
+        return !this.isLoading && (this.data.extendedStatus.status !== ConnectionStatus.NotConnected && this.data.extendedStatus.status !== ConnectionStatus.Stopping && this.data.extendedStatus.status !== ConnectionStatus.Error && this.data.extendedStatus.status !== ConnectionStatus.DelayedReconnect);
+    }
+
+    get canStop() {
+        return !this.isLoading && (this.data.extendedStatus.status !== ConnectionStatus.NotConnected && this.data.extendedStatus.status !== ConnectionStatus.Stopping && this.data.extendedStatus.status !== ConnectionStatus.Error);
+    }
+
+    async setAutoStart(isEnabled: boolean) {
+        await this.update({ autoStart: isEnabled });
+    }
+
+    async start() {
+        await this.asyncOp(async () => {
+            await api.connections.start(this.data.id);
+        }, 'starting', true);
+    }
+
+    async restart() {
+        await this.asyncOp(async () => {
+            await api.connections.restart(this.data.id);
+        }, 'restarting', true);
+    }
+
+    async stop() {
+        await this.asyncOp(async () => {
+            await api.connections.stop(this.data.id);
+        }, 'stopping', true);
+    }
+}
 
 export default function ConnectionsProvider({ children }: { children?: ReactNode | undefined }) {
-    const [list, setList] = useState<AnyConnectionDto[] | null>(null);
+    const factory = useCallback((entity: ConnectionDto, updated: () => void) => new ConnectionState(api.connections, entity, updated), []);
+    const { data } = useEntityProvider<ConnectionEntityConfig>('connection', api.connections, factory);
 
-    const added = useCallback((connection: AnyConnectionDto) => {
-        if (list !== null) {
-            setList([...list, connection]);
-        }
-    }, [list]);
-
-    const updated = useCallback((connection: AnyConnectionDto) => {
-        if (list !== null) {
-            setList(list.map(c => c.id !== connection.id ? c : connection));
-        }
-    }, [list]);
-
-    const deleted = useCallback((id: string) => {
-        if (list !== null) {
-            setList(list.filter(c => c.id !== id));
-        }
-    }, [list]);
-
-    const value = {
-        state: {
-            list,
-        },
-        actions: {
-            added,
-            updated,
-            deleted,
-        },
-    };
-
-    const [remoteList] = useFetchData(useCallback(() => api.connections.list(), []), true, 3000);
-
-    useEffect(() => {
-        if (remoteList) {
-            setList(remoteList.result);
-        }
-    }, [remoteList]);
+    const add = useCallback(async (parameters: Parameters<typeof api.connections.add>[0]) => {
+        const result = await api.connections.add(parameters);
+        data.actions.added(result.result);
+        return result;
+    }, [data]);
 
     return (
-        <ConnectionsContext.Provider value={value}>
+        <ConnectionsContext.Provider
+            value={{
+                ...data,
+                actions: {
+                    add,
+                    ...data.actions,
+                },
+            }}
+        >
             {children}
         </ConnectionsContext.Provider>
     );

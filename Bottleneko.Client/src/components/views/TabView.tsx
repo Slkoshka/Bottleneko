@@ -12,12 +12,14 @@ export default function TabView(props: TabViewProps) {
     const [tabs, rest] = splitChildren(props.children, [Tab]);
 
     return (
-        <ViewBase {...props} className={`tab-view ${props.className ?? ''}`}>
-            <Tabs defaultActiveKey={props.defaultTab}>
+        <ViewBase {...props} className={`view ${props.className ?? ''}`}>
+            <Tabs defaultActiveKey={props.defaultTab} variant="pills">
                 {
                     (tabs as ReactElement<TabProps>[]).map(tab => (
-                        <BootstrapTab key={tab.props.id} eventKey={tab.props.id} title={tab.props.title} className={`h-100 ${!('margin' in tab.props) || tab.props.margin ? 'm-3' : ''}`}>
-                            {tab.props.children}
+                        <BootstrapTab key={tab.props.id} eventKey={tab.props.id} title={tab.props.title} className="h-100">
+                            <div className="h-100" style={{ padding: '0.5em' }}>
+                                {tab.props.children}
+                            </div>
                         </BootstrapTab>
                     ))
                 }

@@ -1,5 +1,4 @@
-﻿import './add-script.scss';
-import { useNavigate } from 'react-router-dom';
+﻿import { useNavigate } from 'react-router-dom';
 import { useCallback, useState } from 'react';
 import View from '../../../components/views/View';
 import { ScriptDto } from '../../api/dtos.gen';

@@ -9,7 +9,7 @@ import { ErrorMetadata, extractErrorInfo } from '../../../app/utils';
 import { Protocol } from '../../api/dtos.gen';
 import { AddConnectionStage } from './AddConnectionView';
 
-export default function AddConnectionTest({ protocol, definition, setStage }: { protocol: Protocol; definition: ConnectionDefinition; setStage: (stage: AddConnectionStage) => void }) {
+export default function AddConnectionTest({ definition, setStage }: { protocol: Protocol; definition: ConnectionDefinition; setStage: (stage: AddConnectionStage) => void }) {
     const [extra, setExtra] = useState<object | null>();
     const [error, setError] = useState<ErrorMetadata | null>();
 
@@ -18,9 +18,8 @@ export default function AddConnectionTest({ protocol, definition, setStage }: { 
     }, []);
 
     const [testConfig, isLoading] = useAsync(useCallback(async () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setExtra((await api.connections.test<any>(protocol, definition.config)).extra);
-    }, [definition.config, protocol]));
+        setExtra((await api.connections.test(definition.config)).extra);
+    }, [definition.config]));
 
     useOnce(() => {
         void testConfig().catch(onError);

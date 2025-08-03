@@ -1,0 +1,17 @@
+.proxy-list {
+  max-width: 800px;
+  width: 100%;
+  max-height: 600px;
+
+  table {
+    min-width: 500px;
+
+    tr.proxy-list-row {
+      cursor: pointer;
+
+      &:hover td {
+        background-color: #333;
+      }
+    }
+  }
+}

@@ -5,9 +5,8 @@ import { Alert, Button, Card, Form } from 'react-bootstrap';
 import ModalDialog from '../../../components/modal-dialog/ModalDialog';
 import { useAsync, useInterval } from '../../../app/hooks';
 import LoadingBanner from '../../../components/LoadingBanner';
-import { TwitchScope } from '../../api/dtos.gen';
+import { TwitchAuth, TwitchScope } from '../../api/dtos.gen';
 import * as scopes from './scopes';
-import { TwitchAuth } from '.';
 
 const BOTTLENEKO_CLIENT_ID = 'd7nyymm5khoc85v7urm5unjikw9gy2';
 

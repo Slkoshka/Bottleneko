@@ -8,6 +8,7 @@ import { useAuth } from '../features/auth/context';
 import { useConnections } from '../features/connections/context';
 import { branding } from '../props';
 import IconButton from './IconButton';
+import InlineIcon from './InlineIcon';
 
 // Nav links getting stuck active: https://github.com/react-bootstrap/react-router-bootstrap/issues/242
 
@@ -127,13 +128,13 @@ export default function SidePanel({ className = '', style = {}, props }: { class
                     !connections?.state.list
                         ? <Spinner animation="border" className="my-4 mx-auto" />
                         : connections.state.list.map(c => (
-                                <Nav.Item key={`connection-${c.id}`} className="w-100">
-                                    <LinkContainer to={`/connections/${c.id}`}>
+                                <Nav.Item key={`connection-${c.data.id}`} className="w-100">
+                                    <LinkContainer to={`/connections/${c.data.id}`}>
                                         <Nav.Link active={false} className="text-white fs-6">
                                             <div className="d-flex align-items-center" style={{ gap: '1rem' }}>
-                                                <ProtocolIcon protocol={c.protocol} size="2em" className="flex-shrink-0 mt-0" />
-                                                <span className="flex-grow-1 overflow-hidden" style={{ textOverflow: 'ellipsis' }}>{c.name}</span>
-                                                <div className="flex-shrink-0"><ConnectionStatusIcon status={c.extendedStatus} /></div>
+                                                <ProtocolIcon protocol={c.data.protocol} size="2em" className="flex-shrink-0 mt-0" />
+                                                <span className="flex-grow-1 text-collapse">{c.data.name}</span>
+                                                <div className="flex-shrink-0"><ConnectionStatusIcon status={c.data.extendedStatus} /></div>
                                             </div>
                                         </Nav.Link>
                                     </LinkContainer>
@@ -154,8 +155,16 @@ export default function SidePanel({ className = '', style = {}, props }: { class
                 </Dropdown.Toggle>
 
                 <Dropdown.Menu variant="dark" className="shadow">
-                    <LinkContainer to={`/users/${auth?.state.me?.id ?? ''}`}><Dropdown.Item>Profile</Dropdown.Item></LinkContainer>
-                    <Dropdown.Item onClick={() => { auth?.actions.logout(); }}>Sign out</Dropdown.Item>
+                    <LinkContainer to={`/users/${auth?.state.me?.id ?? ''}`}>
+                        <Dropdown.Item>
+                            <InlineIcon icon="person-lines-fill" style={{ marginRight: '0.5em' }} />
+                            Profile
+                        </Dropdown.Item>
+                    </LinkContainer>
+                    <Dropdown.Item onClick={() => { auth?.actions.logout(); }}>
+                        <InlineIcon icon="person" style={{ marginRight: '0.5em' }} />
+                        Sign out
+                    </Dropdown.Item>
                 </Dropdown.Menu>
             </Dropdown>
         </aside>

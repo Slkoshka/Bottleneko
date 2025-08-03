@@ -1,8 +1,8 @@
+import { ConnectionDto, ProtocolConfiguration } from '../api/dtos.gen';
 import { request } from '../api/utils';
-import { AnyConnection, AnyConnectionConfig, AnyConnectionDto, ExtractConfig, ExtractProtocol } from '.';
 
 export interface ListConnectionsResponse {
-    result: AnyConnectionDto[];
+    result: ConnectionDto[];
 }
 
 export interface TestConnectionResponse {
@@ -11,11 +11,11 @@ export interface TestConnectionResponse {
 }
 
 export interface AddConnectionResponse {
-    result: AnyConnectionDto;
+    result: ConnectionDto;
 }
 
 export interface UpdateConnectionResponse {
-    result: AnyConnectionDto;
+    result: ConnectionDto;
 }
 
 export default {
@@ -24,24 +24,24 @@ export default {
     },
 
     get: async (id: string, signal?: AbortSignal) => {
-        return await request<AnyConnectionDto>('GET', `connections/${id}`, { signal });
+        return await request<ConnectionDto>('GET', `connections/${id}`, { signal });
     },
 
-    test: async<Connection extends AnyConnection = never>(protocol: ExtractProtocol<Connection>, config: ExtractConfig<Connection>) => {
+    test: async (config: ProtocolConfiguration) => {
         return await request<TestConnectionResponse>('POST', `connections/test`, {
             body: {
-                protocol,
+                protocol: config.$type,
                 config,
             },
         });
     },
 
-    add: async<Connection extends AnyConnection = never>(protocol: ExtractProtocol<Connection>, name: string, config: ExtractConfig<Connection>) => {
+    add: async (parameters: { name: string; config: ProtocolConfiguration }) => {
         return await request<AddConnectionResponse>('PUT', `connections`, {
             body: {
-                protocol,
-                name,
-                config,
+                protocol: parameters.config.$type,
+                name: parameters.name,
+                config: parameters.config,
             },
         });
     },
@@ -62,7 +62,7 @@ export default {
         await request<object>('POST', `connections/${id}/restart`);
     },
 
-    update: async (id: string, connection: { name?: string; autoStart?: boolean; config?: AnyConnectionConfig }) => {
+    update: async (id: string, connection: Partial<Omit<ConnectionDto, 'id' | 'protocol' | 'extendedStatus'>>) => {
         return await request<UpdateConnectionResponse>('PATCH', `connections/${id}`, {
             body: connection,
         });

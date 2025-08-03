@@ -755,7 +755,7 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
         {
             case IConnectionsMessage.ProxyUpdated proxyUpdated:
                 {
-                    if (data.Configuration.ProxyId is not null && long.Parse(data.Configuration.ProxyId) == proxyUpdated.Id)
+                    if (!string.IsNullOrEmpty(data.Configuration.ProxyId) && long.TryParse(data.Configuration.ProxyId, out var proxyId) && proxyId == proxyUpdated.Id)
                     {
                         RequestRestart(true);
                     }

@@ -12,7 +12,7 @@ import DashboardCard from './DashboardCard';
 export default function ConnectionsDashboardCard() {
     const [showBlinking, setShowBlinking] = useState(false);
     const connections = useConnections();
-    const connectionsWithErrors = connections?.state.list ? connections.state.list.filter(c => c.extendedStatus.status === ConnectionStatus.Error) : [];
+    const connectionsWithErrors = connections?.state.list ? connections.state.list.filter(c => c.data.extendedStatus.status === ConnectionStatus.Error) : [];
 
     useInterval(() => {
         setShowBlinking(blinking => !blinking);
@@ -36,7 +36,7 @@ export default function ConnectionsDashboardCard() {
                                 <tr>
                                     <td className="w-50">Connected</td>
                                     <td className="w-50">
-                                        {connections.state.list.filter(c => c.extendedStatus.status === ConnectionStatus.Connected).length}
+                                        {connections.state.list.filter(c => c.data.extendedStatus.status === ConnectionStatus.Connected).length}
                                         {' '}
                                         of
                                         {' '}
@@ -62,7 +62,7 @@ export default function ConnectionsDashboardCard() {
                                 <tr>
                                     <td className="w-50">Disconnected</td>
                                     <td className="w-50">
-                                        {connections.state.list.filter(c => c.extendedStatus.status === ConnectionStatus.NotConnected).length}
+                                        {connections.state.list.filter(c => c.data.extendedStatus.status === ConnectionStatus.NotConnected).length}
                                         {' '}
                                         of
                                         {' '}

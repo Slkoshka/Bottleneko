@@ -3,7 +3,6 @@ import { FC, ReactNode } from 'react';
 export interface TabProps {
     id: string;
     title: ReactNode;
-    margin?: boolean;
     children: ReactNode;
 };
 

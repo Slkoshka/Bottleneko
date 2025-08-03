@@ -1,91 +1,95 @@
-import { Button, Table } from 'react-bootstrap';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
+import { Dropdown } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import { LinkContainer } from 'react-router-bootstrap';
-import api from '../api';
 import View from '../../components/views/View';
 import { useAuth } from '../auth/context';
-import { useAsync, useFetchData } from '../../app/hooks';
-import { UserDto } from '../api/dtos.gen';
-import DeleteConfirmationDialog from '../../components/DeleteConfirmationDialog';
-
-const fetchUsers = (signal: AbortSignal) => api.users.list(signal).then(response => response.result);
+import { useEntityDeletion } from '../../app/hooks';
+import { TableRow } from '../../components/table';
+import { HamburgerMenu } from '../../components/HamburgerMenu';
+import InlineIcon from '../../components/InlineIcon';
+import ScrollableTable from '../../components/table/ScrollableTable';
+import IconButton from '../../components/IconButton';
+import { UserEntityConfig, useUsers } from './context';
+import { UserState } from './UsersProvider';
 
 export default function UsersView() {
-    const [users, usersLoading, refreshUsers] = useFetchData(fetchUsers);
-    const [deletingUser, setDeletingUser] = useState<UserDto | undefined>(undefined);
+    const navigate = useNavigate();
+    const users = useUsers();
+    const { deleteEntity, dialog } = useEntityDeletion<UserEntityConfig>(users);
     const auth = useAuth();
 
-    const [deleteUser, isUpdating] = useAsync(useCallback(async () => {
-        if (deletingUser) {
-            try {
-                await api.users.delete(deletingUser.id);
-                refreshUsers();
-            }
-            finally {
-                setDeletingUser(undefined);
-            }
-        }
-    }, [deletingUser, refreshUsers]));
+    const columns = [
+        { id: 'id', header: 'ID', style: { width: '5em' } },
+        { id: 'login', header: 'Username' },
+        { id: 'displayName', header: 'Display Name' },
+        { id: 'actions', header: '', style: { width: '5em' } },
+    ];
 
-    const getUserInfo = (user: UserDto) => {
-        return {
+    const renderRow = useCallback((user: UserState): TableRow => ({
+        id: user.data.id,
+        className: 'user-list-row',
+        onClick: () => { navigate(`/users/${user.data.id}`); },
+        columns: {
             id: {
-                name: 'ID',
-                value: user.id,
+                content: user.data.id,
+                className: 'font-monospace',
+                style: { verticalAlign: 'middle' },
             },
-            name: {
-                name: 'Username',
-                value: user.login,
+            login: {
+                content: user.data.login,
+                className: 'font-monospace',
+                style: { verticalAlign: 'middle' },
             },
-            description: {
-                name: 'Display Name',
-                value: user.displayName,
+            displayName: {
+                content: user.data.displayName,
+                className: 'text-collapse',
+                style: { verticalAlign: 'middle' },
             },
-        };
-    };
-
-    const isLoading = usersLoading || isUpdating;
+            actions: {
+                content: (
+                    <div className="w-100 d-flex justify-content-end gap-2">
+                        <Dropdown>
+                            <Dropdown.Toggle as={HamburgerMenu} />
+                            <Dropdown.Menu>
+                                <Dropdown.Item as="button" onClick={() => { navigate(`/users/${user.data.id}`); }}>
+                                    <InlineIcon icon="gear-fill" style={{ marginRight: '0.5em' }} />
+                                    Edit
+                                </Dropdown.Item>
+                                <Dropdown.Divider />
+                                <Dropdown.Item as="button" onClick={() => { deleteEntity(user); }} disabled={user.data.id === auth?.state.me?.id}>
+                                    <InlineIcon icon="trash3-fill" style={{ marginRight: '0.5em' }} />
+                                    Delete
+                                </Dropdown.Item>
+                            </Dropdown.Menu>
+                        </Dropdown>
+                    </div>
+                ),
+                onClick: (e) => { e.stopPropagation(); },
+            },
+        },
+    }), [deleteEntity, navigate, auth]);
 
     return (
-        <View title="Users" loading={isLoading}>
-            <DeleteConfirmationDialog
-                item={deletingUser}
-                itemTypeName="user"
-                onDelete={() => { void deleteUser(); }}
-                onCancel={() => { setDeletingUser(undefined); }}
-                itemInfoBuilder={getUserInfo}
-            />
+        <View title="Users" loading={!users?.state} fillScreen>
+            {dialog}
 
-            <Table striped style={{ tableLayout: 'fixed', minWidth: '40em' }} responsive>
-                <thead>
-                    <tr>
-                        <th style={{ width: '14em' }}>ID</th>
-                        <th style={{ width: 'calc((100% - 14em - 9em) / 2)' }}>Username</th>
-                        <th style={{ width: 'calc((100% - 14em - 9em) / 2)' }}>Display Name</th>
-                        <th style={{ width: '9em' }}>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {
-                        users
-                            ? users.map(user => (
-                                    <tr key={user.id}>
-                                        <td className="font-monospace align-middle">{user.id}</td>
-                                        <td className="font-monospace align-middle text-break">{user.login}</td>
-                                        <td className="align-middle text-break">{user.displayName}</td>
-                                        <td>
-                                            <LinkContainer to={`/users/${user.id}`}><Button size="sm" className="mx-1" as="a">Edit</Button></LinkContainer>
-                                            <Button size="sm" variant="danger" className="mx-1" disabled={user.id === auth?.state.me?.id} onClick={() => { setDeletingUser(user); }}>Delete</Button>
-                                        </td>
-                                    </tr>
-                                ))
-                            : <></>
-                    }
-                </tbody>
-            </Table>
-            <hr />
-            <div className="d-flex justify-content-center w-50 mx-auto" style={{ minWidth: '300px' }}>
-                <LinkContainer to="/users/add"><Button size="lg" className="mx-2" style={{ minWidth: '25%' }}>Add User</Button></LinkContainer>
+            <div className="user-list h-100" style={{ padding: '0.5em' }}>
+                <ScrollableTable<UserState>
+                    columns={columns}
+                    render={renderRow}
+                    data={users?.state.list}
+                    placeholder={() => <em className="text-secondary fst-italic">(no users)</em>}
+                    title="User list"
+                    className="entity-list"
+                    highlightHeader
+                >
+                    <ScrollableTable.HeaderExtra position="end">
+                        <LinkContainer to="/users/add">
+                            <IconButton icon="plus-lg" tooltip="Create user" variant="dark" />
+                        </LinkContainer>
+                    </ScrollableTable.HeaderExtra>
+                </ScrollableTable>
             </div>
         </View>
     );

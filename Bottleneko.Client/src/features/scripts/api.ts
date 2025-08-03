@@ -1,5 +1,5 @@
 ﻿import { request } from '../api/utils';
-import { ScriptCode, ScriptDto } from '../api/dtos.gen';
+import { ScriptDto } from '../api/dtos.gen';
 
 export interface ListScriptsResponse {
     result: ScriptDto[];
@@ -22,13 +22,9 @@ export default {
         return await request<ScriptDto>('GET', `scripts/${id}`, { signal });
     },
 
-    add: async (name: string, description: string, code: ScriptCode) => {
+    add: async (parameters: Partial<Omit<ScriptDto, 'id' | 'status' | 'autoStart'>>) => {
         return await request<AddScriptResponse>('PUT', `scripts`, {
-            body: {
-                name,
-                description,
-                code,
-            },
+            body: parameters,
         });
     },
 
@@ -44,7 +40,7 @@ export default {
         await request<object>('POST', `scripts/${id}/restart`);
     },
 
-    update: async (id: string, script: { name?: string; description?: string; code?: ScriptCode; autoStart?: boolean }) => {
+    update: async (id: string, script: Partial<Omit<ScriptDto, 'id' | 'status'>>) => {
         return await request<UpdateScriptResponse>('PATCH', `scripts/${id}`, {
             body: script,
         });

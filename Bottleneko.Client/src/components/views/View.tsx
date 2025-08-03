@@ -1,4 +1,4 @@
-import './view.css';
+import './view.scss';
 import ViewBase, { ViewBaseProps } from './ViewBase';
 
 export default function View(props: ViewBaseProps) {

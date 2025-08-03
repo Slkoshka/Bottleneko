@@ -32,53 +32,6 @@ import { SwitchOnSignNode } from './math/SwitchOnSignNode';
 import { SignNode } from './math/SignNode';
 import { CheckNumberNode } from './math/CheckNumberNode';
 
-// export type ControlNode =
-//     IfNode |
-//     IfValidNode |
-//     SwitchNode;
-
-// export type EventNode =
-//     MessageReceivedNode;
-
-// export type MathNode =
-//     AddNode |
-//     SubtractNode |
-//     MultiplyNode |
-//     DivideNode |
-//     RemainderNode |
-//     NegateNode |
-//     PowerNode |
-//     SqrtNode |
-//     FloorNode |
-//     CeilNode |
-//     RoundNode |
-//     LogNode |
-//     Log2Node |
-//     Log10Node |
-//     MinNode |
-//     MaxNode |
-//     AverageNode |
-//     RandomRangeNode |
-//     RandomNumberNode |
-//     SwitchOnSignNode |
-//     SignNode |
-//     CheckNumberNode;
-
-// export type TextNode =
-//     ConcatNode |
-//     FormatTextNode;
-
-// export type UtilsNode =
-//     LogMessageNode |
-//     SplitStructureNode;
-
-// export type NekoNode =
-//     ControlNode |
-//     EventNode |
-//     MathNode |
-//     TextNode |
-//     UtilsNode;
-
 export type NekoNode = NekoNodeBase<Record<string, NekoSocket> | object, Record<string, NekoSocket> | object, Record<string, NekoControl> | object>;
 
 export interface NekoNodeConstructor {
@@ -88,51 +41,6 @@ export interface NekoNodeConstructor {
 
 export type NodeCollectionItem = [string, NekoNodeConstructor | NodeCollectionItem[]];
 export type NodeCollection = NodeCollectionItem[];
-
-// const node = (type: NekoNodeConstructor): [string, NekoNodeConstructor] => [type.name(), type];
-
-// export const nodes: NodeCollection = [
-//     ['Events', [
-//         node(MessageReceivedNode),
-//     ]],
-//     ['Control', [
-//         node(IfNode),
-//         node(IfValidNode),
-//         node(SwitchNode),
-//     ]],
-//     ['Math', [
-//         node(AddNode),
-//         node(SubtractNode),
-//         node(MultiplyNode),
-//         node(DivideNode),
-//         node(RemainderNode),
-//         node(NegateNode),
-//         node(PowerNode),
-//         node(SqrtNode),
-//         node(FloorNode),
-//         node(CeilNode),
-//         node(RoundNode),
-//         node(LogNode),
-//         node(Log2Node),
-//         node(Log10Node),
-//         node(MinNode),
-//         node(MaxNode),
-//         node(AverageNode),
-//         node(RandomRangeNode),
-//         node(RandomNumberNode),
-//         node(SwitchOnSignNode),
-//         node(SignNode),
-//         node(CheckNumberNode),
-//     ]],
-//     ['Text Operations', [
-//         node(ConcatNode),
-//         node(FormatTextNode),
-//     ]],
-//     ['Utilities', [
-//         node(SplitStructureNode),
-//         node(LogMessageNode),
-//     ]],
-// ];
 
 export const nodeList = [
     MessageReceivedNode,
@@ -187,7 +95,3 @@ export const nodes: NodeCollection = [
     ['Text Operations', nodesByCategory.get('text-ops') ?? []],
     ['Utilities', nodesByCategory.get('utils') ?? []],
 ];
-
-// type ArrayElement<ArrayType extends readonly unknown[]> = ArrayType extends readonly (infer ElementType)[] ? ElementType : never;
-
-// export type NekoNode = ArrayElement<typeof nodeList & NekoNodeConstructor>;

@@ -1,6 +1,8 @@
-import { EffectCallback, useCallback, useEffect, useRef, useState } from 'react';
+import { EffectCallback, ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { RequestError } from '../features/api/errors';
 import { ErrorCode } from '../features/api/responses';
+import DeleteConfirmationDialog from '../components/DeleteConfirmationDialog';
+import { EntityApi, EntityConfig, EntityContextData } from './EntityProvider';
 
 export function useOnce(effect: EffectCallback) {
     const initialized = useRef(false);
@@ -99,39 +101,27 @@ export function useFetchData<T>(api: (signal: AbortSignal) => Promise<T>, keepSt
     ];
 }
 
-interface Entity {
-    id: string;
-}
-
-interface EntityApi<T extends Entity, TUpdate> {
-    get: (id: string, signal?: AbortSignal) => Promise<T>;
-    update: (id: string, entity: TUpdate) => Promise<{ result: T }>;
-}
-
-interface Context<T extends Entity> {
-    actions: {
-        updated: (entity: T) => void;
-    };
-
-    state: {
-        list: T[] | null;
-    };
-}
-
-export function useEntityEditor<T extends Entity, TUpdate = never>(id: string | undefined, api: EntityApi<T, TUpdate>, context: Context<T> | null): [T | undefined, () => Promise<T>, boolean, (update: TUpdate) => Promise<void>, boolean] {
-    const fetchEntity = useCallback(() => {
+export function useEntityEditor<Type extends EntityConfig>(id: string | undefined, api: EntityApi<Type['Entity'], Type['EntityUpdate']>, context: (EntityContextData<Type>) | null):
+{
+    state: Type['State'] | undefined;
+    fetch: () => Promise<Type['Entity']>;
+    notFound: boolean;
+    save: (update: Type['EntityUpdate']) => Promise<void>;
+    isSaving: boolean;
+} {
+    const fetch = useCallback(() => {
         if (id) {
             return api.get(id);
         }
         else {
-            return new Promise<T>(() => undefined);
+            return new Promise<Type['Entity']>(() => undefined);
         }
     }, [id, api]);
 
-    const [entity, setEntity] = useState<T | undefined>(undefined);
+    const [state, setState] = useState<Type['State'] | undefined>(undefined);
     const [notFound, setNotFound] = useState(false);
 
-    const [save, isSaving] = useAsync(useCallback(async (update: TUpdate) => {
+    const [save, isSaving] = useAsync(useCallback(async (update: Type['EntityUpdate']) => {
         if (!id) {
             return;
         }
@@ -142,13 +132,19 @@ export function useEntityEditor<T extends Entity, TUpdate = never>(id: string | 
 
     useEffect(() => {
         if (context?.state.list) {
-            const newEntity = context.state.list.find(c => c.id === id) ?? null;
-            setEntity(newEntity ?? undefined);
+            const newEntity = context.state.list.find(c => c.data.id === id) ?? null;
+            setState(newEntity ?? undefined);
             setNotFound(!newEntity);
         }
     }, [id, context?.state.list]);
 
-    return [entity, fetchEntity, notFound, save, isSaving];
+    return {
+        state,
+        fetch,
+        notFound,
+        save,
+        isSaving,
+    };
 }
 
 export function useDebounce(callback: () => void, timeout: number): [execute: () => void, cancel: () => void] {
@@ -182,4 +178,33 @@ export function useDebounce(callback: () => void, timeout: number): [execute: ()
         execute,
         cancel,
     ];
+}
+
+export function useEntityDeletion<Type extends EntityConfig>(context: EntityContextData<Type> | null, onDeleted?: () => Promise<void> | void): { deleteEntity: (entity?: Type['State']) => void; dialog: ReactNode } {
+    const [deletingEntity, setDeletingEntity] = useState<Type['State'] | undefined>(undefined);
+
+    const [doDelete] = useAsync(useCallback(async () => {
+        if (deletingEntity) {
+            try {
+                await context?.actions.delete(deletingEntity.data.id);
+                await onDeleted?.();
+            }
+            finally {
+                setDeletingEntity(undefined);
+            }
+        }
+    }, [deletingEntity, context?.actions, onDeleted]));
+
+    return {
+        deleteEntity: setDeletingEntity,
+        dialog: (
+            <DeleteConfirmationDialog
+                item={deletingEntity}
+                itemTypeName={context?.name ?? 'entity'}
+                onDelete={() => { void doDelete(); }}
+                onCancel={() => { setDeletingEntity(undefined); }}
+                itemInfoBuilder={state => state.info}
+            />
+        ),
+    };
 }

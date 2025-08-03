@@ -1,4 +1,4 @@
-import './view.css';
+import './view.scss';
 import { ReactNode } from 'react';
 import LoadingBanner from '../LoadingBanner';
 

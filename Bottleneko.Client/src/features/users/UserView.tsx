@@ -4,36 +4,22 @@ import { Alert } from 'react-bootstrap';
 import api from '../api';
 import View from '../../components/views/View';
 import { useAuth } from '../auth/context';
-import { useAsync, useFetchData } from '../../app/hooks';
-import { useToasterDispatch } from '../toaster/context';
+import { useEntityEditor } from '../../app/hooks';
 import UserEditor, { EditedUser } from './UserEditor';
+import { UserEntityConfig, useUsers } from './context';
 
 export default function UserView() {
+    const users = useUsers();
     const { userId } = useParams();
-    const fetchUser = useCallback((signal: AbortSignal) => api.users.get(userId ?? '', signal), [userId]);
-    const [user, isLoading, refresh, notFound] = useFetchData(fetchUser);
     const auth = useAuth();
-    const toasterDispatch = useToasterDispatch();
+    const { state, notFound, save, isSaving } = useEntityEditor<UserEntityConfig>(userId, api.users, users);
 
-    const onError = useCallback((err: unknown) => {
-        toasterDispatch?.({ action: 'show', toast: { variant: 'danger', title: 'Failed to save', text: err instanceof Error ? err.message : 'Unknown error' } });
-    }, [toasterDispatch]);
-
-    const [save, isSaving] = useAsync(useCallback(async (formData: EditedUser) => {
-        if (!userId) {
-            return;
-        }
-
-        await api.users.update(userId, formData.login, formData.password === '' ? null : formData.password);
+    const onValidated = useCallback(async (formData: EditedUser) => {
+        await save({ login: formData.login, password: formData.password === '' ? undefined : formData.password });
         if (userId === auth?.state.me?.id) {
-            await auth.actions.refreshMe();
+            await auth?.actions.refreshMe();
         }
-        refresh();
-    }, [auth, refresh, userId]));
-
-    const onValidated = useCallback((formData: EditedUser) => {
-        save(formData).catch(onError);
-    }, [save, onError]);
+    }, [save, auth, userId]);
 
     if (notFound) {
         return (
@@ -46,12 +32,8 @@ export default function UserView() {
     }
 
     return (
-        <View title={isLoading ? 'Loading...' : user?.displayName}>
-            {
-                isLoading
-                    ? <></>
-                    : <UserEditor newUser={false} loading={isSaving} user={user ?? undefined} onValidated={(formData) => { onValidated(formData); }} />
-            }
+        <View title={!state ? 'Loading...' : state.data.displayName} loading={state ? state.isLoading : true} fillScreen>
+            <UserEditor newUser={false} loading={isSaving} user={state?.data} onValidated={(formData) => { void onValidated(formData); }} />
         </View>
     );
 }

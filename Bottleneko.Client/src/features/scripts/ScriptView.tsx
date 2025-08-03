@@ -1,32 +1,24 @@
-﻿import { useParams } from 'react-router-dom';
+﻿import { useNavigate, useParams } from 'react-router-dom';
 import { useCallback } from 'react';
 import { Alert } from 'react-bootstrap';
 import View from '../../components/views/View';
-import { LogSourceType, ScriptDto, ScriptStatus } from '../api/dtos.gen';
-import { useAsync, useEntityEditor } from '../../app/hooks';
+import { LogSourceType } from '../api/dtos.gen';
+import { useEntityDeletion, useEntityEditor } from '../../app/hooks';
 import api from '../api';
 import LogViewer from '../log/LogViewer';
 import TabView from '../../components/views/TabView';
 import StateControlButtons from '../../components/StateControlButtons';
 import ScriptEditor from './ScriptEditor';
-import { useScripts } from './context';
+import { ScriptEntityConfig, useScripts } from './context';
 
 export default function ScriptView() {
     const { scriptId: id } = useParams();
     const scripts = useScripts();
-    const [script, fetch, notFound] = useEntityEditor<ScriptDto>(id, api.scripts, scripts);
-
-    const doAction = useCallback((action: (id: string) => Promise<void>) => action(id ?? '').then(fetch).then(script => scripts?.actions.updated(script)), [id, scripts?.actions, fetch]);
-
-    const [start, isStarting] = useAsync(() => doAction(api.scripts.start));
-    const [restart, isRestarting] = useAsync(() => doAction(api.scripts.restart));
-    const [stop, isStopping] = useAsync(() => doAction(api.scripts.stop));
-
-    const canBeStarted = !!script && (script.status === ScriptStatus.Stopped || script.status === ScriptStatus.Error);
-    const canBeRestarted = !!script && (script.status !== ScriptStatus.Stopped && script.status !== ScriptStatus.Stopping && script.status !== ScriptStatus.Error);
-    const canBeStopped = !!script && (script.status !== ScriptStatus.Stopped && script.status !== ScriptStatus.Stopping && script.status !== ScriptStatus.Error);
-
-    const isLoading = !scripts || isStarting || isRestarting || isStopping;
+    const navigate = useNavigate();
+    const { deleteEntity, dialog } = useEntityDeletion<ScriptEntityConfig>(scripts, () => {
+        navigate('/scripts');
+    });
+    const { state, fetch, notFound } = useEntityEditor<ScriptEntityConfig>(id, api.scripts, scripts);
 
     const onSaved = useCallback(() => {
         void fetch().then(script => scripts?.actions.updated(script));
@@ -47,36 +39,41 @@ export default function ScriptView() {
             title={(
                 <div className="d-flex" style={{ gap: '0.5rem' }}>
                     <span className="flex-grow-1">
-                        {script?.name}
+                        {state?.data.name}
                     </span>
 
                     <StateControlButtons
-                        onStart={() => void start()}
-                        canStart={canBeStarted && !isLoading}
+                        onStart={() => void state?.start()}
+                        canStart={state?.canStart ?? false}
                         startTooltip="Start script"
 
-                        onRestart={() => void restart()}
-                        canRestart={canBeRestarted && !isLoading}
+                        onRestart={() => void state?.restart()}
+                        canRestart={state?.canRestart ?? false}
                         restartTooltip="Restart script"
 
-                        onStop={() => void stop()}
-                        canStop={canBeStopped && !isLoading}
+                        onStop={() => void state?.stop()}
+                        canStop={state?.canStop ?? false}
                         stopTooltip="Stop script"
+
+                        onDelete={() => { deleteEntity(state); }}
+                        canDelete={!!state}
                     />
                 </div>
             )}
             defaultTab="logs"
-            loading={!script}
+            loading={!state}
             fillScreen
         >
-            <TabView.Tab id="logs" title="Logs" margin={false}>
-                <LogViewer sourceType={LogSourceType.Script} sourceId={script?.id} />
+            {dialog}
+
+            <TabView.Tab id="logs" title="Logs">
+                <LogViewer sourceType={LogSourceType.Script} sourceId={state?.data.id} />
             </TabView.Tab>
 
-            <TabView.Tab id="settings" title="Edit">
+            <TabView.Tab id="settings" title="Properties">
                 {
-                    script
-                        ? <ScriptEditor id={script.id} script={script} onSaved={onSaved} />
+                    state
+                        ? <ScriptEditor id={state.data.id} script={state.data} onSaved={onSaved} />
                         : <></>
                 }
             </TabView.Tab>

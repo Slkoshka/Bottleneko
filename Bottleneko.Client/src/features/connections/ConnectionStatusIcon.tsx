@@ -61,11 +61,7 @@ export default function ConnectionStatusIcon({ status, showLabel = false, size =
     const styles = {
         width: size,
         height: size,
-        borderRadius: '50%',
-        display: 'inline-block',
-        verticalAlign: 'middle',
         backgroundColor: params.color,
-        marginTop: '-0.25em',
         ...style,
     };
 
@@ -75,14 +71,14 @@ export default function ConnectionStatusIcon({ status, showLabel = false, size =
         showLabel
             ? (
                     <span {...props}>
-                        <span style={styles} />
+                        <span className="status-icon" style={styles} />
                         {' '}
                         {params.displayName}
                     </span>
                 )
             : (
                     <OverlayTrigger placement="bottom" overlay={renderTooltip}>
-                        <span style={styles} />
+                        <span className="status-icon" style={styles} />
                     </OverlayTrigger>
                 )
     );

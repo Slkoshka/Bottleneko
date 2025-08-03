@@ -15,11 +15,7 @@ export default function ScriptStatusIcon({ status, showLabel = false, size = '1e
     const styles = {
         width: size,
         height: size,
-        borderRadius: '50%',
-        display: 'inline-block',
-        verticalAlign: 'middle',
         backgroundColor: parameters[status].color,
-        marginTop: '-0.25em',
         ...style,
     };
 
@@ -29,14 +25,14 @@ export default function ScriptStatusIcon({ status, showLabel = false, size = '1e
         showLabel
             ? (
                     <span {...props}>
-                        <span style={styles} />
+                        <span className="status-icon" style={styles} />
                         {' '}
                         {parameters[status].displayName}
                     </span>
                 )
             : (
                     <OverlayTrigger placement="bottom" overlay={renderTooltip}>
-                        <span style={styles} />
+                        <span className="status-icon" style={styles} />
                     </OverlayTrigger>
                 )
     );

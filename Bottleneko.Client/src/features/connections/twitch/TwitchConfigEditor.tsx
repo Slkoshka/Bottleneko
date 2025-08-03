@@ -235,7 +235,7 @@ const TwitchConfigEditor = forwardRef(({ definition, onValidated, disabled = fal
                                     <option value="">Don&apos;t use a proxy</option>
                                     {
                                         proxies?.state.list?.map(proxy => (
-                                            <option key={proxy.id} value={proxy.id}>{proxy.name}</option>
+                                            <option key={proxy.data.id} value={proxy.data.id}>{proxy.data.name}</option>
                                         ))
                                     }
                                 </Form.Select>

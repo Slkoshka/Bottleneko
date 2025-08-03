@@ -1,49 +1,41 @@
 import { createElement, useCallback, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Alert, Button } from 'react-bootstrap';
 import api from '../api';
 import View from '../../components/views/View';
 import LogViewer from '../log/LogViewer';
-import { ConnectionStatus, LogSourceType } from '../api/dtos.gen';
-import { useAsync, useEntityEditor } from '../../app/hooks';
+import { LogSourceType } from '../api/dtos.gen';
+import { useEntityDeletion, useEntityEditor } from '../../app/hooks';
 import { useToasterDispatch } from '../toaster/context';
 import MessageHistoryViewer from '../messages/MessageHistoryViewer';
 import TabView from '../../components/views/TabView';
 import StateControlButtons from '../../components/StateControlButtons';
 import ConfirmationDialog from '../../components/ConfirmationDialog';
 import ProtocolIcon from './ProtocolIcon';
-import { useConnections } from './context';
-import { AnyConnectionDto, ConnectionDefinition, protocols } from '.';
+import { ConnectionEntityConfig, useConnections } from './context';
+import { ConnectionDefinition, protocols } from '.';
 
 export default function ConnectionView() {
     const { connectionId: id } = useParams();
     const connections = useConnections();
-    const [connection, fetch, notFound, save, isSaving] = useEntityEditor<AnyConnectionDto, ConnectionDefinition>(id, api.connections, connections);
+    const navigate = useNavigate();
+    const { deleteEntity, dialog } = useEntityDeletion<ConnectionEntityConfig>(connections, () => {
+        navigate('/connections');
+    });
+    const { state, notFound, save, isSaving } = useEntityEditor<ConnectionEntityConfig>(id, api.connections, connections);
 
     const [savedDefinition, setSavedDefinition] = useState<ConnectionDefinition>();
     const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
     const editorFormRef = useRef<HTMLFormElement>(null);
     const toasterDispatch = useToasterDispatch();
 
-    const doAction = useCallback((action: (id: string) => Promise<void>) => action(id ?? '').then(fetch).then(connection => connections?.actions.updated(connection)), [id, connections?.actions, fetch]);
-
-    const [start, isStarting] = useAsync(() => doAction(api.connections.start));
-    const [restart, isRestarting] = useAsync(() => doAction(api.connections.restart));
-    const [stop, isStopping] = useAsync(() => doAction(api.connections.stop));
-
-    const canBeStarted = !!connection && (connection.extendedStatus.status === ConnectionStatus.NotConnected || connection.extendedStatus.status === ConnectionStatus.Error || connection.extendedStatus.status === ConnectionStatus.DelayedReconnect);
-    const canBeRestarted = !!connection && connection.extendedStatus.status !== ConnectionStatus.NotConnected && connection.extendedStatus.status !== ConnectionStatus.Stopping && connection.extendedStatus.status !== ConnectionStatus.Error && connection.extendedStatus.status !== ConnectionStatus.DelayedReconnect;
-    const canBeStopped = !!connection && connection.extendedStatus.status !== ConnectionStatus.NotConnected && connection.extendedStatus.status !== ConnectionStatus.Stopping && connection.extendedStatus.status !== ConnectionStatus.Error;
-
-    const isLoading = !connections || isStarting || isRestarting || isStopping;
-
     const onError = useCallback((err: unknown) => {
         toasterDispatch?.({ action: 'show', toast: { variant: 'danger', title: 'Failed to save', text: err instanceof Error ? err.message : 'Unknown error' } });
     }, [toasterDispatch]);
 
     let editor = <></>;
-    if (!isLoading && connection) {
-        editor = createElement(protocols[connection.protocol].configEditor, { definition: connection, disabled: isSaving, onValidated: (definition) => {
+    if (state && !state.isLoading) {
+        editor = createElement(protocols[state.data.protocol].configEditor, { definition: state.data, disabled: isSaving, onValidated: (definition) => {
             setSavedDefinition(definition);
             setShowSaveConfirmation(true);
         }, ref: editorFormRef });
@@ -64,27 +56,30 @@ export default function ConnectionView() {
             title={(
                 <div className="d-flex" style={{ gap: '0.5rem' }}>
                     <span className="flex-grow-1">
-                        <ProtocolIcon protocol={connection?.protocol} />
+                        <ProtocolIcon protocol={state?.data.protocol} />
                         {' '}
-                        {connection?.name}
+                        {state?.data.name}
                     </span>
 
                     <StateControlButtons
-                        onStart={() => void start()}
-                        canStart={canBeStarted && !isLoading}
+                        onStart={() => void state?.start()}
+                        canStart={state?.canStart ?? false}
                         startTooltip="Connect"
 
-                        onRestart={() => void restart()}
-                        canRestart={canBeRestarted && !isLoading}
+                        onRestart={() => void state?.restart()}
+                        canRestart={state?.canRestart ?? false}
                         restartTooltip="Reconnect"
 
-                        onStop={() => void stop()}
-                        canStop={canBeStopped && !isLoading}
+                        onStop={() => void state?.stop()}
+                        canStop={state?.canStop ?? false}
                         stopTooltip="Disconnect"
+
+                        onDelete={() => { deleteEntity(state); }}
+                        canDelete={!!state}
                     />
                 </div>
             )}
-            loading={!connection}
+            loading={!state}
             fillScreen
             defaultTab="messages"
         >
@@ -104,15 +99,17 @@ export default function ConnectionView() {
                 <p>This may cause the connection to be restarted, and it might miss messages or other events that have occured while it was reconnecting.</p>
             </ConfirmationDialog>
 
+            {dialog}
+
             {id
                 ? (
-                        <TabView.Tab id="messages" title="Messages" margin={false}>
+                        <TabView.Tab id="messages" title="Messages">
                             <MessageHistoryViewer className="h-100 fill" connectionId={id} />
                         </TabView.Tab>
                     )
                 : <></>}
 
-            <TabView.Tab id="logs" title="Logs" margin={false}>
+            <TabView.Tab id="logs" title="Logs">
                 <LogViewer sourceType={LogSourceType.Connection} sourceId={id} />
             </TabView.Tab>
 

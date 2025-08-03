@@ -31,7 +31,7 @@ public class ProxiesController(AkkaService akka, NekoDbContext db) : CrudControl
 
         return Ok(new
         {
-            Proxy = proxy.ToDto(),
+            Result = proxy.ToDto(),
         });
     }
 
@@ -45,7 +45,7 @@ public class ProxiesController(AkkaService akka, NekoDbContext db) : CrudControl
 
             akka.Tell(new IConnectionsMessage.ProxyUpdated(id));
 
-            return Ok();
+            return Ok(new Success());
         }
         else
         {
@@ -69,7 +69,7 @@ public class ProxiesController(AkkaService akka, NekoDbContext db) : CrudControl
     {
         return Ok(new
         {
-            Proxies = (await db.Proxies.Where(proxy => !proxy.IsDeleted).ToArrayAsync()).Select(proxy => proxy.ToDto()),
+            Result = (await db.Proxies.Where(proxy => !proxy.IsDeleted).ToArrayAsync()).Select(proxy => proxy.ToDto()),
         });
     }
 
@@ -102,7 +102,7 @@ public class ProxiesController(AkkaService akka, NekoDbContext db) : CrudControl
 
             return Ok(new
             {
-                Proxy = proxy.ToDto(),
+                Result = proxy.ToDto(),
             });
         }
         else

@@ -1,5 +1,4 @@
 import * as yup from 'yup';
-import { Connection } from '..';
 import { Protocol, TwitchScope, TwitchSubscriptionTopic } from '../../api/dtos.gen';
 
 export const TwitchAuthSchema = yup.object().shape({
@@ -22,6 +21,3 @@ export const TwitchConfigSchema = yup.object().noUnknown().shape({
     auth: TwitchAuthSchema.required(),
     proxyId: yup.string().default(''),
 });
-
-export type TwitchAuth = yup.InferType<typeof TwitchAuthSchema>;
-export type Twitch = Connection<Protocol.Twitch, yup.InferType<typeof TwitchConfigSchema>>;

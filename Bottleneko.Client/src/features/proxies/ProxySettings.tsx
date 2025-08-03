@@ -1,129 +1,107 @@
+import './proxy.scss';
 import { useCallback, useState } from 'react';
-import { Button } from 'react-bootstrap';
-import { useAsync } from '../../app/hooks';
-import { ProxyDto, ProxyType } from '../api/dtos.gen';
-import api from '../api';
-import DeleteConfirmationDialog from '../../components/DeleteConfirmationDialog';
-import InfoCardList from '../../components/info-card/InfoCardList';
-import { useProxies } from './context';
+import { Dropdown } from 'react-bootstrap';
+import { ProxyDto } from '../api/dtos.gen';
+import { TableRow } from '../../components/table';
+import ScrollableTable from '../../components/table/ScrollableTable';
+import IconButton from '../../components/IconButton';
+import { HamburgerMenu } from '../../components/HamburgerMenu';
+import InlineIcon from '../../components/InlineIcon';
+import { useEntityDeletion } from '../../app/hooks';
+import { ProxyEntityConfig, useProxies } from './context';
 import ProxyEditor from './ProxyEditor';
-import ProxyInfoCard from './ProxyInfoCard';
+import { ProxyState } from './ProxiesProvider';
 import { proxyTypeMap } from '.';
 
 export default function ProxySettings() {
     const proxies = useProxies();
     const [editorState, setEditorState] = useState({ shown: false, editing: null as (ProxyDto | null) });
-    const [deletingProxy, setDeletingProxy] = useState<ProxyDto | undefined>();
+    const { deleteEntity, dialog } = useEntityDeletion<ProxyEntityConfig>(proxies);
 
-    const [addProxy, isAdding] = useAsync(useCallback(async (proxy: ProxyDto) => {
-        proxies?.actions.added((await api.proxies.add(proxy.name, proxy.type, proxy.hostname, proxy.port, proxy.isAuthRequired
-            ? {
-                    username: proxy.username,
-                    password: proxy.type === ProxyType.Socks4 || proxy.type == ProxyType.Socks4a ? undefined : proxy.password,
-                }
-            : undefined)).proxy);
-    }, [proxies]));
+    const columns = [
+        { id: 'name', header: 'Proxy Name' },
+        { id: 'type', header: 'Type', style: { width: '5em' } },
+        { id: 'address', header: 'Address', style: { width: '15em' } },
+        { id: 'actions', header: '', style: { width: '5em' } },
+    ];
 
-    const [saveProxy, isSaving] = useAsync(useCallback(async (proxy: ProxyDto) => {
-        proxies?.actions.updated((await api.proxies.update(proxy.id, {
-            name: proxy.name,
-            type: proxy.type,
-            hostname: proxy.hostname,
-            port: proxy.port,
-            auth: proxy.isAuthRequired
-                ? {
-                        username: proxy.username,
-                        password: proxy.type === ProxyType.Socks4 || proxy.type == ProxyType.Socks4a ? undefined : proxy.password,
-                    }
-                : undefined,
-        })).proxy);
-    }, [proxies]));
-
-    const [deleteProxy, isDeleting] = useAsync(useCallback(async () => {
-        if (!deletingProxy) {
-            return;
-        }
-
-        try {
-            await api.proxies.delete(deletingProxy.id);
-            proxies?.actions.deleted(deletingProxy.id);
-        }
-        finally {
-            setDeletingProxy(undefined);
-        }
-    }, [deletingProxy, proxies]));
-
-    const getProxyInfo = (proxy: ProxyDto) => {
-        return {
-            id: {
-                name: 'ID',
-                value: proxy.id,
-            },
+    const renderRow = useCallback((proxy: ProxyState): TableRow => ({
+        id: proxy.data.id,
+        className: 'proxy-list-row',
+        onClick: () => { setEditorState({ shown: true, editing: proxy.data }); },
+        columns: {
             name: {
-                name: 'Name',
-                value: proxy.name,
+                content: proxy.data.name,
+                className: 'text-collapse',
+                style: { verticalAlign: 'middle' },
             },
             type: {
-                name: 'Type',
-                value: proxyTypeMap[proxy.type].name,
+                content: proxyTypeMap[proxy.data.type].name,
+                style: { verticalAlign: 'middle' },
             },
             address: {
-                name: 'Address',
-                value: `${proxy.hostname}:${proxy.port.toString()}`,
+                content: `${proxy.data.hostname}:${proxy.data.port.toString()}`,
+                className: 'font-monospace text-collapse',
+                style: { verticalAlign: 'middle' },
             },
-        };
-    };
-
-    const isLoading = isAdding || isSaving || isDeleting;
+            actions: {
+                content: (
+                    <div className="w-100 d-flex justify-content-end gap-2">
+                        <Dropdown>
+                            <Dropdown.Toggle as={HamburgerMenu} />
+                            <Dropdown.Menu>
+                                <Dropdown.Item as="button" onClick={() => { setEditorState({ shown: true, editing: proxy.data }); }}>
+                                    <InlineIcon icon="gear-fill" style={{ marginRight: '0.5em' }} />
+                                    Edit
+                                </Dropdown.Item>
+                                <Dropdown.Divider />
+                                <Dropdown.Item as="button" onClick={() => { deleteEntity(proxy); }}>
+                                    <InlineIcon icon="trash3-fill" style={{ marginRight: '0.5em' }} />
+                                    Delete
+                                </Dropdown.Item>
+                            </Dropdown.Menu>
+                        </Dropdown>
+                    </div>
+                ),
+                onClick: (e) => { e.stopPropagation(); },
+            },
+        },
+    }), [deleteEntity]);
 
     return (
         <>
-            <DeleteConfirmationDialog
-                item={deletingProxy}
-                itemTypeName="proxy"
-                onDelete={() => { void deleteProxy(); }}
-                onCancel={() => { setDeletingProxy(undefined); }}
-                itemInfoBuilder={getProxyInfo}
-            />
+            {dialog}
 
             <ProxyEditor
                 show={editorState.shown}
                 proxy={editorState.editing}
                 onSuccess={(proxy) => {
                     if (editorState.editing) {
-                        void saveProxy(proxy);
+                        void proxies?.state.list?.find(p => p.data.id === proxy.id)?.update(proxy);
                     }
                     else {
-                        void addProxy(proxy);
+                        void proxies?.actions.add(proxy);
                     }
                     setEditorState({ shown: false, editing: proxy });
                 }}
                 onCancel={() => { setEditorState({ shown: false, editing: editorState.editing }); }}
             />
 
-            <h2 className="pb-3">Proxy servers</h2>
-            <InfoCardList>
-                <Button
-                    onClick={() => {
-                        setEditorState({ shown: true, editing: null });
-                    }}
-                    disabled={isLoading}
-                    size="lg"
+            <div className="proxy-list" style={{ height: '500px' }}>
+                <ScrollableTable
+                    columns={columns}
+                    render={renderRow}
+                    data={proxies?.state.list}
+                    style={{ minWidth: '500px' }}
+                    placeholder={() => <em className="text-secondary fst-italic">(no proxies)</em>}
+                    title="Proxy servers"
+                    highlightHeader
                 >
-                    Add Proxy
-                </Button>
-
-                {
-                    proxies?.state.list?.map(proxy => (
-                        <ProxyInfoCard
-                            key={proxy.id}
-                            proxy={proxy}
-                            onEdit={() => { setEditorState({ shown: true, editing: proxy }); }}
-                            onDelete={() => { setDeletingProxy(proxy); }}
-                        />
-                    ))
-                }
-            </InfoCardList>
+                    <ScrollableTable.HeaderExtra position="end">
+                        <IconButton icon="plus-lg" tooltip="Add proxy server" variant="dark" onClick={() => { setEditorState({ shown: true, editing: null }); }} />
+                    </ScrollableTable.HeaderExtra>
+                </ScrollableTable>
+            </div>
         </>
     );
 }

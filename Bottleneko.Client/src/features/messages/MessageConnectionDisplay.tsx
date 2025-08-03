@@ -7,9 +7,9 @@ export default function MessageConnectionDisplay({ connectionId }: { connectionI
 
     return (
         <Link to={`/connections/${connectionId}`} className="btn btn-primary btn-sm px-1 py-0">
-            <ProtocolIcon protocol={connections?.state.list?.find(connection => connection.id === connectionId)?.protocol} />
+            <ProtocolIcon protocol={connections?.state.list?.find(connection => connection.data.id === connectionId)?.data.protocol} />
             {' '}
-            {connections?.state.list?.find(connection => connection.id === connectionId)?.name ?? `Connection #${connectionId}`}
+            {connections?.state.list?.find(connection => connection.data.id === connectionId)?.data.name ?? `Connection #${connectionId}`}
         </Link>
     );
 }

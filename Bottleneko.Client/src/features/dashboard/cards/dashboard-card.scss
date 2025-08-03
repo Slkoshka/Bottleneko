@@ -6,14 +6,16 @@
     vertical-align: middle;
 }
 
-.dashboard-card-header {
-    background-color: $primary;
-}
-
 .dashboard-card-bot td:nth-child(1) {
     width: 7em;
 }
 
 .dashboard-card-system td:nth-child(1) {
     width: 7em;
+}
+
+@media only screen and (max-width: 600px) {
+    .dashboard-card {
+        width: 100% !important;
+    }
 }

@@ -1,52 +1,36 @@
 import { request } from '../api/utils';
-import { ProxyDto, ProxyType } from '../api/dtos.gen';
+import { ProxyDto } from '../api/dtos.gen';
 
-export interface ListProxysResponse {
-    proxies: ProxyDto[];
+export interface ListProxiesResponse {
+    result: ProxyDto[];
 }
 
 export interface AddProxyResponse {
-    proxy: ProxyDto;
+    result: ProxyDto;
 }
 
 export interface UpdateProxyResponse {
-    proxy: ProxyDto;
+    result: ProxyDto;
 }
 
 export default {
     list: async (signal?: AbortSignal) => {
-        return await request<ListProxysResponse>('GET', 'proxies', { signal });
+        return await request<ListProxiesResponse>('GET', 'proxies', { signal });
     },
 
     get: async (id: string, signal?: AbortSignal) => {
         return await request<ProxyDto>('GET', `proxies/${id}`, { signal });
     },
 
-    add: async (name: string, type: ProxyType, hostname: string, port: number, auth?: { username: string; password?: string }) => {
+    add: async (proxy: Partial<Omit<ProxyDto, 'id'>>) => {
         return await request<AddProxyResponse>('PUT', `proxies`, {
-            body: {
-                name,
-                type,
-                hostname,
-                port,
-                isAuthRequired: !!auth,
-                username: auth?.username ?? '',
-                password: auth?.password ?? '',
-            },
+            body: proxy,
         });
     },
 
-    update: async (id: string, proxy: { name?: string; type?: ProxyType; hostname?: string; port?: number; auth?: { username?: string; password?: string } }) => {
+    update: async (id: string, proxy: Partial<Omit<ProxyDto, 'id'>>) => {
         return await request<UpdateProxyResponse>('PATCH', `proxies/${id}`, {
-            body: {
-                name: proxy.name,
-                type: proxy.type,
-                hostname: proxy.hostname,
-                port: proxy.port,
-                isAuthRequired: proxy.auth ? true : null,
-                username: proxy.auth?.username ?? null,
-                password: proxy.auth?.password ?? null,
-            },
+            body: proxy,
         });
     },
 

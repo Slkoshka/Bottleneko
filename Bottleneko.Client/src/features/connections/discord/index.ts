@@ -1,5 +1,4 @@
 import * as yup from 'yup';
-import { Connection } from '..';
 import { Protocol } from '../../api/dtos.gen';
 
 export const DiscordConfigSchema = yup.object().shape({
@@ -11,5 +10,3 @@ export const DiscordConfigSchema = yup.object().shape({
     isMessageContentIntentEnabled: yup.boolean().default(false),
     proxyId: yup.string().default(''),
 });
-
-export type Discord = Connection<Protocol.Discord, yup.InferType<typeof DiscordConfigSchema>>;
