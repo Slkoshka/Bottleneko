@@ -1,0 +1,37 @@
+<Solution>
+  <Folder Name="/.NET Aspire/">
+    <Project Path="Bottleneko.AppHost/Bottleneko.AppHost.csproj" />
+    <Project Path="Bottleneko.ServiceDefaults/Bottleneko.ServiceDefaults.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="Bottleneko.Common.props" />
+    <File Path="Dockerfile" />
+    <File Path="GenerateBindings.ps1" />
+    <File Path="Publish.ps1" />
+  </Folder>
+  <Folder Name="/TwitchLib/">
+    <File Path="External/TwitchLib/TwitchLib.Api/Directory.Build.props" />
+    <Project Path="External/TwitchLib/TwitchLib.Api/TwitchLib.Api.Core.Enums/TwitchLib.Api.Core.Enums.csproj" />
+    <Project Path="External/TwitchLib/TwitchLib.Api/TwitchLib.Api.Core.Interfaces/TwitchLib.Api.Core.Interfaces.csproj" />
+    <Project Path="External/TwitchLib/TwitchLib.Api/TwitchLib.Api.Core.Models/TwitchLib.Api.Core.Models.csproj" />
+    <Project Path="External/TwitchLib/TwitchLib.Api/TwitchLib.Api.Core/TwitchLib.Api.Core.csproj" />
+    <Project Path="External/TwitchLib/TwitchLib.Api/TwitchLib.Api.Helix.Models/TwitchLib.Api.Helix.Models.csproj" />
+    <Project Path="External/TwitchLib/TwitchLib.Api/TwitchLib.Api.Helix/TwitchLib.Api.Helix.csproj" />
+    <Project Path="External/TwitchLib/TwitchLib.Api/TwitchLib.Api/TwitchLib.Api.csproj" />
+    <Project Path="External/TwitchLib/TwitchLib.EventSub.Websockets/TwitchLib.EventSub.Websockets/TwitchLib.EventSub.Websockets.csproj" />
+  </Folder>
+  <Project Path="Bottleneko.Api/Bottleneko.Api.csproj" />
+  <Project Path="Bottleneko.Client/Bottleneko.Client.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="Bottleneko.CodeGenerator/Bottleneko.CodeGenerator.csproj" />
+  <Project Path="Bottleneko.Common/Bottleneko.Common.csproj" />
+  <Project Path="Bottleneko.Core/Bottleneko.Core.csproj" />
+  <Project Path="Bottleneko.Database/Bottleneko.Database.csproj" />
+  <Project Path="Bottleneko.ScriptAPI/Bottleneko.ScriptAPI.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="Bottleneko.Server/Bottleneko.Server.csproj" />
+</Solution>

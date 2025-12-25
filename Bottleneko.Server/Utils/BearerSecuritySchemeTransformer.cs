@@ -1,9 +1,9 @@
-﻿using System.Reflection;
-using Microsoft.AspNetCore.Authentication;
+﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.OpenApi;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Reflection;
 
 namespace Bottleneko.Server;
 
@@ -14,7 +14,7 @@ class BearerSecuritySchemeTransformer(IAuthenticationSchemeProvider authenticati
         var authenticationSchemes = await authenticationSchemeProvider.GetAllSchemesAsync();
         if (authenticationSchemes.Any(authScheme => authScheme.Name == "Bearer"))
         {
-            var requirements = new Dictionary<string, OpenApiSecurityScheme>
+            var requirements = new Dictionary<string, IOpenApiSecurityScheme>
             {
                 ["Bearer"] = new OpenApiSecurityScheme
                 {
@@ -29,9 +29,9 @@ class BearerSecuritySchemeTransformer(IAuthenticationSchemeProvider authenticati
             document.Components ??= new OpenApiComponents();
             document.Components.SecuritySchemes = requirements;
 
-            foreach (var operation in document.Paths.Values.SelectMany(path => path.Operations.Values))
+            foreach (var operation in document.Paths.Values.Where(x => x.Operations is not null).SelectMany(path => path.Operations!.Values))
             {
-                var action = context.DescriptionGroups.SelectMany(group => group.Items).Single(api => (string)operation.Annotations["x-aspnetcore-id"] == api.ActionDescriptor.Id);
+                var action = context.DescriptionGroups.SelectMany(group => group.Items).Single(api => (string?)operation.Metadata?["x-aspnetcore-id"] == api.ActionDescriptor.Id);
 
                 var requireAuth = false;
                 if (action.TryGetMethodInfo(out var methodInfo))
@@ -45,16 +45,10 @@ class BearerSecuritySchemeTransformer(IAuthenticationSchemeProvider authenticati
                 
                 if (requireAuth)
                 {
+                    operation.Security ??= [];
                     operation.Security.Add(new OpenApiSecurityRequirement()
                     {
-                        [new OpenApiSecurityScheme()
-                        {
-                            Reference = new OpenApiReference()
-                            {
-                                Type = ReferenceType.SecurityScheme,
-                                Id = "Bearer",
-                            },
-                        }] = [],
+                        [new OpenApiSecuritySchemeReference("Bearer", document)] = [],
                     });
                 }
             }

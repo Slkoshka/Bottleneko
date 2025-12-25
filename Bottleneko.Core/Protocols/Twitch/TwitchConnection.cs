@@ -17,16 +17,17 @@ using TwitchLib.Api;
 using TwitchLib.Api.Core.Enums;
 using TwitchLib.Api.Core.Exceptions;
 using TwitchLib.Api.Core.HttpCallHandlers;
+using TwitchLib.Api.Helix.Models.Channels.SendChatMessage;
 using TwitchLib.Api.Helix.Models.EventSub;
 using TwitchLib.Api.Helix.Models.Users.GetUsers;
+using TwitchLib.EventSub.Core.EventArgs.Channel;
+using TwitchLib.EventSub.Core.EventArgs.User;
 using TwitchLib.EventSub.Core.SubscriptionTypes.Channel;
 using TwitchLib.EventSub.Core.SubscriptionTypes.User;
 using TwitchLib.EventSub.Websockets;
 using TwitchLib.EventSub.Websockets.Client;
 using TwitchLib.EventSub.Websockets.Core.EventArgs;
-using TwitchLib.EventSub.Websockets.Core.EventArgs.Channel;
-using TwitchLib.EventSub.Websockets.Core.EventArgs.User;
-using TwitchLib.EventSub.Websockets.Core.Handler;
+using TwitchLib.EventSub.Websockets.Core.Models;
 using TwitchLib.EventSub.Websockets.Interfaces;
 
 namespace Bottleneko.Protocols.Twitch;
@@ -162,10 +163,6 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
         var eventSub = config.ReceiveEvents ?
             new EventSubWebsocketClient(
                 new TwitchLogAdapter<EventSubWebsocketClient>(logger),
-                [.. typeof(INotificationHandler)
-                    .Assembly.ExportedTypes
-                    .Where(x => typeof(INotificationHandler).IsAssignableFrom(x) && !x.IsInterface && !x.IsAbstract)
-                    .Select(Activator.CreateInstance).Cast<INotificationHandler>()],
                 new WebsocketClientServiceProvider(provider),
                 new WebsocketClient(new TwitchLogAdapter<WebsocketClient>(logger), provider)) :
                 null;
@@ -278,9 +275,9 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
         }
     }
 
-    private async Task OnChannelChatMessageAsync(object sender, ChannelChatMessageArgs args)
+    private async Task OnChannelChatMessageAsync(object? sender, ChannelChatMessageArgs args)
     {
-        var message = args.Notification.Payload.Event;
+        var message = args.Payload.Event;
 
         if (message.ChatterUserId == _me.Id)
         {
@@ -382,7 +379,7 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
         {
             Id = twitchChatMessage.ChatMessageId,
             ConnectionId = data.ConnectionId,
-            RemoteTimestamp = args.Notification.Metadata.MessageTimestamp,
+            RemoteTimestamp = ((WebsocketEventSubMetadata)args.Metadata).MessageTimestamp,
             Chat = chat,
             Author = author,
             TextContent = message.Message.Text,
@@ -451,9 +448,9 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
         MessageReceived(msg, msgBinding);
     }
 
-    private async Task OnUserWhisperMessageAsync(object sender, UserWhisperMessageArgs args)
+    private async Task OnUserWhisperMessageAsync(object? sender, UserWhisperMessageArgs args)
     {
-        var message = args.Notification.Payload.Event;
+        var message = args.Payload.Event;
 
         if (message.FromUserId == _me.Id)
         {
@@ -529,7 +526,7 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
         {
             Id = twitchChatMessage.ChatMessageId,
             ConnectionId = data.ConnectionId,
-            RemoteTimestamp = args.Notification.Metadata.MessageTimestamp,
+            RemoteTimestamp = ((WebsocketEventSubMetadata)args.Metadata).MessageTimestamp,
             Chat = chat,
             ChatId = chat.Id,
             Author = author,
@@ -690,7 +687,7 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
         }
     }
 
-    private async Task OnWebsocketConnectedAsync(object sender, WebsocketConnectedArgs args)
+    private async Task OnWebsocketConnectedAsync(object? sender, WebsocketConnectedArgs args)
     {
         logger.LogVerbose(LogCategory, $"WebSocket {_eventSub!.SessionId} connected");
 
@@ -712,7 +709,7 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
         }
     }
 
-    private Task OnWebsocketDisconnectedAsync(object sender, EventArgs args)
+    private Task OnWebsocketDisconnectedAsync(object? sender, EventArgs args)
     {
         logger.LogVerbose(LogCategory, $"WebSocket {_eventSub!.SessionId} disconnected");
         if (!_disconnectRequested)
@@ -722,7 +719,7 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
         return Task.CompletedTask;
     }
 
-    private Task OnErrorOccurredAsync(object sender, ErrorOccuredArgs args)
+    private Task OnErrorOccurredAsync(object? sender, ErrorOccuredArgs args)
     {
         logger.LogWarning(LogCategory, $"An error has occured: {args.Message}", args.Exception);
         return Task.CompletedTask;
@@ -769,7 +766,13 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
                         switch (twitchMessage.Message)
                         {
                             case ChannelChatMessage channelMessage:
-                                await WithApi(api => api.Helix.Chat.SendChatMessage(channelMessage.BroadcasterUserId, _me.Id, simpleReply.Text, channelMessage.MessageId));
+                                await WithApi(api => api.Helix.Chat.SendChatMessage(new SendChatMessageRequest()
+                                {
+                                    BroadcasterId = channelMessage.BroadcasterUserId,
+                                    SenderId = _me.Id,
+                                    Message = simpleReply.Text,
+                                    ReplyParentMessageId = channelMessage.MessageId,
+                                }));
                                 break;
 
                             case UserWhisperMessage whisperMessage:
@@ -791,7 +794,12 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
                         switch (twitchChat.Message)
                         {
                             case ChannelChatMessage channelMessage:
-                                await WithApi(api => api.Helix.Chat.SendChatMessage(channelMessage.BroadcasterUserId, _me.Id, sendMessage.Text));
+                                await WithApi(api => api.Helix.Chat.SendChatMessage(new SendChatMessageRequest()
+                                {
+                                    BroadcasterId = channelMessage.BroadcasterUserId,
+                                    SenderId = _me.Id,
+                                    Message = sendMessage.Text,
+                                }));
                                 break;
 
                             case UserWhisperMessage whisperMessage:

@@ -11,7 +11,7 @@ var server = builder.AddProject<Projects.Bottleneko_Server>("bottleneko-server",
     .WithUrlForEndpoint("http", annotation => annotation.Url += "/swagger/")
     .WithExternalHttpEndpoints();
 
-var npmApp = builder.AddNpmApp("bottleneko-client", "../Bottleneko.Client")
+var npmApp = builder.AddJavaScriptApp("bottleneko-client", "../Bottleneko.Client")
     .WithReference(server)
     .WithEnvironment("BROWSER", "none")
     .WithHttpEndpoint(env: "VITE_PORT")
