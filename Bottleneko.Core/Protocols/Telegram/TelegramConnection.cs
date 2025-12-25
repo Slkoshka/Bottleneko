@@ -352,7 +352,16 @@ class TelegramConnection(INekoLogger logger, ConnectionCreationData<TelegramProt
         {
             try
             {
-                var updates = await _bot.GetUpdates(lastUpdateId is null ? null : lastUpdateId + 1, timeout: isInitialReceive ? 0 : 30, cancellationToken: cancellationToken);
+                Update[] updates;
+                try
+                {
+                    updates = await _bot.GetUpdates(lastUpdateId is null ? null : lastUpdateId + 1, timeout: isInitialReceive ? 0 : 30, cancellationToken: cancellationToken);
+                }
+                catch (RequestException)
+                {
+                    RequestRestart(true);
+                    break;
+                }
 
                 if (updates.Length == 0)
                 {
