@@ -103,6 +103,7 @@ class ConnectionInstance(IServiceProvider services, INekoLogger logger, Protocol
                 return true;
 
             case DelayedRestart:
+                LocalLog.LogInfo("Bottleneko.Connection", $"Delaying reconnect by {_reconnectDelay.TotalSeconds:N0} seconds");
                 Self.Tell(new IContainerMessage.DelayedRestart(_id, _reconnectDelay));
                 _reconnectDelay = TimeSpan.FromSeconds(Math.Min(_reconnectDelay.TotalSeconds * 2, _maxReconnectDelay.TotalSeconds));
                 return true;
