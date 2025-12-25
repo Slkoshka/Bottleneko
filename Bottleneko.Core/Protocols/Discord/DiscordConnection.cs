@@ -91,7 +91,7 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
                 Connected();
             }
         }
-        catch (HttpRequestException ex)
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
             logger.LogWarning(LogCategory, "An error has occured during connection startup", ex);
             RequestRestart(false);
