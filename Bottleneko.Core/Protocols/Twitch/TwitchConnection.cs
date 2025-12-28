@@ -32,7 +32,7 @@ using TwitchLib.EventSub.Websockets.Interfaces;
 
 namespace Bottleneko.Protocols.Twitch;
 
-class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocolConfiguration> data) : ConnectionBase, IProtocol
+class TwitchConnection(StaticConnectionCreationData<TwitchProtocolConfiguration> data) : StaticConnectionBase<TwitchProtocolConfiguration>(data), IProtocol
 {
     class WebsocketClientServiceProvider(IClientWebsocketProvider clientWebsocketProvider) : IServiceProvider
     {
@@ -140,7 +140,7 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
     private EventSubWebsocketClient? _eventSub;
     private bool _disconnectRequested = false;
 
-    private readonly HashSet<TwitchScope> _scopes = [.. data.Configuration.Auth.Scopes];
+    private readonly HashSet<TwitchScope> _scopes = [.. data.Context.Configuration.Auth.Scopes];
     private User _me = null!;
     private readonly ConcurrentDictionary<string, User> _usersCache = new(StringComparer.OrdinalIgnoreCase);
     private readonly CancellationTokenSource _cts = new();
@@ -149,22 +149,22 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
 
     public static ProtocolDescription GetDescription()
     {
-        return ProtocolDescription.Make<TwitchProtocolConfiguration>(ProtocolId, (_, logger, data) => new TwitchConnection(logger, data), TestAsync, (connectionId, connection) => new TwitchConnectionBinding(connectionId, connection));
+        return ProtocolDescription.Make<TwitchProtocolConfiguration>(ProtocolId, data => new TwitchConnection(data), TestAsync, (connectionId, connection) => new TwitchConnectionBinding(connectionId, connection));
     }
 
-    private static async Task<(TwitchAPI API, EventSubWebsocketClient? EventSub)> CreateAsync(INekoLogger logger, TwitchProtocolConfiguration config)
+    private static async Task<(TwitchAPI API, EventSubWebsocketClient? EventSub)> CreateAsync(StaticProtocolContext<TwitchProtocolConfiguration> context)
     {
-        var proxy = await GetProxyAsync(config.ProxyId);
+        var proxy = await GetProxyAsync(context.Configuration.ProxyId);
         var provider = new DefaultClientWebsocketProvider(proxy);
 
-        var api = new TwitchAPI(http: new TwitchHttpClient(new TwitchLogAdapter<TwitchHttpClient>(logger), proxy));
-        api.Settings.ClientId = config.Auth.ClientId;
+        var api = new TwitchAPI(http: new TwitchHttpClient(new TwitchLogAdapter<TwitchHttpClient>(context.Logger), proxy));
+        api.Settings.ClientId = context.Configuration.Auth.ClientId;
 
-        var eventSub = config.ReceiveEvents ?
+        var eventSub = context.Configuration.ReceiveEvents ?
             new EventSubWebsocketClient(
-                new TwitchLogAdapter<EventSubWebsocketClient>(logger),
+                new TwitchLogAdapter<EventSubWebsocketClient>(context.Logger),
                 new WebsocketClientServiceProvider(provider),
-                new WebsocketClient(new TwitchLogAdapter<WebsocketClient>(logger), provider)) :
+                new WebsocketClient(new TwitchLogAdapter<WebsocketClient>(context.Logger), provider)) :
                 null;
 
         return (api, eventSub);
@@ -176,13 +176,13 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
 
         if (_eventSub is not null)
         {
-            var channels = await GetUsersInfoAsync(data.Configuration.Channels.Select(channel => channel.Name));
+            var channels = await GetUsersInfoAsync(Configuration.Channels.Select(channel => channel.Name));
 
-            foreach (var channel in data.Configuration.Channels)
+            foreach (var channel in Configuration.Channels)
             {
                 if (!channels.TryGetValue(channel.Name, out var channelInfo))
                 {
-                    logger.LogWarning(LogCategory, $"Unable to get channel information for '{channel.Name}'");
+                    Logger.LogWarning(LogCategory, $"Unable to get channel information for '{channel.Name}'");
                     continue;
                 }
 
@@ -202,7 +202,7 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
 
     public override async Task StartAsync()
     {
-        (_api, _eventSub) = await CreateAsync(logger, data.Configuration);
+        (_api, _eventSub) = await CreateAsync(Context);
 
         try
         {
@@ -219,7 +219,7 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
-            logger.LogWarning(LogCategory, "An error has occured during connection startup", ex);
+            Logger.LogWarning(LogCategory, "An error has occured during connection startup", ex);
             RequestRestart(false);
             return;
         }
@@ -253,7 +253,7 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
                 }
                 catch (Exception ex)
                 {
-                    logger.LogWarning(LogCategory, "An error has occured while validating access token", ex);
+                    Logger.LogWarning(LogCategory, "An error has occured while validating access token", ex);
                 }
             }
         }, _cts.Token);
@@ -286,9 +286,9 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
 
         await using var db = NekoDbContext.Get();
 
-        var twitchChat = await db.TwitchChats.SingleOrDefaultAsync(chat => chat.ConnectionId == data.ConnectionId && chat.TwitchId == message.BroadcasterUserId && !chat.IsWhisper) ?? new TwitchChatEntity()
+        var twitchChat = await db.TwitchChats.SingleOrDefaultAsync(chat => chat.ConnectionId == ConnectionId && chat.TwitchId == message.BroadcasterUserId && !chat.IsWhisper) ?? new TwitchChatEntity()
         {
-            ConnectionId = data.ConnectionId,
+            ConnectionId = ConnectionId,
             TwitchId = message.BroadcasterUserId,
             TwitchName = message.BroadcasterUserLogin,
             IsWhisper = false,
@@ -297,7 +297,7 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
         var chat = new ChatEntity()
         {
             Id = twitchChat.ChatId,
-            ConnectionId = data.ConnectionId,
+            ConnectionId = ConnectionId,
             DisplayName = message.BroadcasterUserName,
             IsPrivate = false,
             Twitch = twitchChat,
@@ -312,9 +312,9 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
             db.Chats.Update(chat);
         }
 
-        var twitchBroadcaster = await db.TwitchChatters.SingleOrDefaultAsync(chatter => chatter.ConnectionId == data.ConnectionId && chatter.TwitchId == message.BroadcasterUserId) ?? new TwitchChatterEntity()
+        var twitchBroadcaster = await db.TwitchChatters.SingleOrDefaultAsync(chatter => chatter.ConnectionId == ConnectionId && chatter.TwitchId == message.BroadcasterUserId) ?? new TwitchChatterEntity()
         {
-            ConnectionId = data.ConnectionId,
+            ConnectionId = ConnectionId,
             TwitchId = message.BroadcasterUserId,
             TwitchName = message.BroadcasterUserName,
         };
@@ -322,7 +322,7 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
         var broadcaster = new ChatterEntity()
         {
             Id = twitchBroadcaster.ChatterId,
-            ConnectionId = data.ConnectionId,
+            ConnectionId = ConnectionId,
             DisplayName = message.BroadcasterUserName,
             Username = message.BroadcasterUserLogin,
             IsBot = false,
@@ -338,9 +338,9 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
             db.Chatters.Update(broadcaster);
         }
 
-        var twitchAuthor = message.BroadcasterUserId == message.ChatterUserId ? twitchBroadcaster : await db.TwitchChatters.SingleOrDefaultAsync(chatter => chatter.ConnectionId == data.ConnectionId && chatter.TwitchId == message.ChatterUserId) ?? new TwitchChatterEntity()
+        var twitchAuthor = message.BroadcasterUserId == message.ChatterUserId ? twitchBroadcaster : await db.TwitchChatters.SingleOrDefaultAsync(chatter => chatter.ConnectionId == ConnectionId && chatter.TwitchId == message.ChatterUserId) ?? new TwitchChatterEntity()
         {
-            ConnectionId = data.ConnectionId,
+            ConnectionId = ConnectionId,
             TwitchId = message.ChatterUserId,
             TwitchName = message.ChatterUserName,
         };
@@ -348,7 +348,7 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
         var author = new ChatterEntity()
         {
             Id = twitchAuthor.ChatterId,
-            ConnectionId = data.ConnectionId,
+            ConnectionId = ConnectionId,
             DisplayName = message.ChatterUserName,
             Username = message.ChatterUserLogin,
             IsBot = message.Badges.Any(badge => badge.SetId.Equals("bot", StringComparison.OrdinalIgnoreCase)),
@@ -365,12 +365,12 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
         }
 
         var twitchChatMessage = await db.TwitchChatMessages.SingleOrDefaultAsync(chatMessage =>
-            chatMessage.ConnectionId == data.ConnectionId &&
+            chatMessage.ConnectionId == ConnectionId &&
             chatMessage.TwitchChatId == message.BroadcasterUserId &&
             chatMessage.TwitchId == message.MessageId &&
             !chatMessage.IsWhisper) ?? new TwitchChatMessageEntity()
         {
-            ConnectionId = data.ConnectionId,
+            ConnectionId = ConnectionId,
             TwitchChatId = message.BroadcasterUserId,
             TwitchId = message.MessageId,
             IsWhisper = false,
@@ -378,7 +378,7 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
         var msg = new ChatMessageEntity()
         {
             Id = twitchChatMessage.ChatMessageId,
-            ConnectionId = data.ConnectionId,
+            ConnectionId = ConnectionId,
             RemoteTimestamp = ((WebsocketEventSubMetadata)args.Metadata).MessageTimestamp,
             Chat = chat,
             Author = author,
@@ -387,7 +387,7 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
             IsDirect = message.Message.Fragments.Any(fragment => fragment.Type.Equals("mention", StringComparison.OrdinalIgnoreCase) && fragment.Mention?.UserId == _me.Id) || message.Reply?.ParentUserId == _me.Id,
             IsOffline = false,
             ReplyToId = message.Reply is null ? null : (await db.TwitchChatMessages.SingleOrDefaultAsync(chatMessage =>
-                chatMessage.ConnectionId == data.ConnectionId &&
+                chatMessage.ConnectionId == ConnectionId &&
                 chatMessage.TwitchChatId == message.BroadcasterUserId &&
                 chatMessage.TwitchId == message.Reply.ParentMessageId &&
                 !chatMessage.IsWhisper))?.Id,
@@ -405,18 +405,18 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
 
         await db.SaveChangesAsync();
 
-        var msgBinding = new ChatMessageBinding(data.Owner, new TwitchChatMessageBinding(message))
+        var msgBinding = new ChatMessageBinding(Owner, new TwitchChatMessageBinding(message))
         {
             id = msg.Id,
             protocol = ProtocolId,
-            connectionId = data.ConnectionId,
+            connectionId = ConnectionId,
             timestamp = msg.RemoteTimestamp,
             attachments = [],
-            chat = new ChatBinding(data.Owner, new TwitchChatBinding(message))
+            chat = new ChatBinding(Owner, new TwitchChatBinding(message))
             {
                 id = chat.Id,
                 protocol = ProtocolId,
-                connectionId = data.ConnectionId,
+                connectionId = ConnectionId,
                 displayName = chat.DisplayName,
                 flags = new ChatFlags()
                 {
@@ -427,7 +427,7 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
             {
                 id = author.Id,
                 protocol = ProtocolId,
-                connectionId = data.ConnectionId,
+                connectionId = ConnectionId,
                 displayName = author.DisplayName,
                 username = author.Username,
                 flags = new ChatterFlags()
@@ -459,9 +459,9 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
 
         await using var db = NekoDbContext.Get();
 
-        var twitchChat = await db.TwitchChats.SingleOrDefaultAsync(chat => chat.ConnectionId == data.ConnectionId && chat.TwitchId == message.FromUserId && chat.IsWhisper) ?? new TwitchChatEntity()
+        var twitchChat = await db.TwitchChats.SingleOrDefaultAsync(chat => chat.ConnectionId == ConnectionId && chat.TwitchId == message.FromUserId && chat.IsWhisper) ?? new TwitchChatEntity()
         {
-            ConnectionId = data.ConnectionId,
+            ConnectionId = ConnectionId,
             TwitchId = message.FromUserId,
             TwitchName = message.FromUserLogin,
             IsWhisper = true,
@@ -470,7 +470,7 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
         var chat = new ChatEntity()
         {
             Id = twitchChat.ChatId,
-            ConnectionId = data.ConnectionId,
+            ConnectionId = ConnectionId,
             DisplayName = message.FromUserName,
             IsPrivate = true,
             Twitch = twitchChat,
@@ -485,9 +485,9 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
             db.Chats.Update(chat);
         }
 
-        var twitchAuthor = await db.TwitchChatters.SingleOrDefaultAsync(chatter => chatter.ConnectionId == data.ConnectionId && chatter.TwitchId == message.FromUserId) ?? new TwitchChatterEntity()
+        var twitchAuthor = await db.TwitchChatters.SingleOrDefaultAsync(chatter => chatter.ConnectionId == ConnectionId && chatter.TwitchId == message.FromUserId) ?? new TwitchChatterEntity()
         {
-            ConnectionId = data.ConnectionId,
+            ConnectionId = ConnectionId,
             TwitchId = message.FromUserId,
             TwitchName = message.FromUserName,
         };
@@ -495,7 +495,7 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
         var author = new ChatterEntity()
         {
             Id = twitchAuthor.ChatterId,
-            ConnectionId = data.ConnectionId,
+            ConnectionId = ConnectionId,
             DisplayName = message.FromUserName,
             Username = message.FromUserLogin,
             IsBot = twitchAuthor.Chatter?.IsBot ?? false,
@@ -512,12 +512,12 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
         }
 
         var twitchChatMessage = await db.TwitchChatMessages.SingleOrDefaultAsync(chatMessage =>
-            chatMessage.ConnectionId == data.ConnectionId &&
+            chatMessage.ConnectionId == ConnectionId &&
             chatMessage.TwitchChatId == message.FromUserId &&
             chatMessage.TwitchId == message.WhisperId &&
             chatMessage.IsWhisper) ?? new TwitchChatMessageEntity()
         {
-            ConnectionId = data.ConnectionId,
+            ConnectionId = ConnectionId,
             TwitchChatId = message.FromUserId,
             TwitchId = message.WhisperId,
             IsWhisper = true,
@@ -525,7 +525,7 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
         var msg = new ChatMessageEntity()
         {
             Id = twitchChatMessage.ChatMessageId,
-            ConnectionId = data.ConnectionId,
+            ConnectionId = ConnectionId,
             RemoteTimestamp = ((WebsocketEventSubMetadata)args.Metadata).MessageTimestamp,
             Chat = chat,
             ChatId = chat.Id,
@@ -550,18 +550,18 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
 
         await db.SaveChangesAsync();
 
-        var msgBinding = new ChatMessageBinding(data.Owner, new TwitchChatMessageBinding(message))
+        var msgBinding = new ChatMessageBinding(Owner, new TwitchChatMessageBinding(message))
         {
             id = msg.Id,
             protocol = ProtocolId,
-            connectionId = data.ConnectionId,
+            connectionId = ConnectionId,
             timestamp = msg.RemoteTimestamp,
             attachments = [],
-            chat = new ChatBinding(data.Owner, new TwitchChatBinding(message))
+            chat = new ChatBinding(Owner, new TwitchChatBinding(message))
             {
                 id = chat.Id,
                 protocol = ProtocolId,
-                connectionId = data.ConnectionId,
+                connectionId = ConnectionId,
                 displayName = chat.DisplayName,
                 flags = new ChatFlags()
                 {
@@ -572,7 +572,7 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
             {
                 id = author.Id,
                 protocol = ProtocolId,
-                connectionId = data.ConnectionId,
+                connectionId = ConnectionId,
                 displayName = author.DisplayName,
                 username = author.Username,
                 flags = new ChatterFlags()
@@ -611,7 +611,7 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
         }
         catch (BadTokenException ex)
         {
-            logger.LogError(LogCategory, "Invalid access token", ex);
+            Logger.LogError(LogCategory, "Invalid access token", ex);
             Die(ex);
             throw;
         }
@@ -622,7 +622,7 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
         }
         catch (Exception ex)
         {
-            logger.LogError(LogCategory, "Error during API call", ex);
+            Logger.LogError(LogCategory, "Error during API call", ex);
             throw;
         }
         finally
@@ -677,19 +677,19 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
         {
             var result = await WithApi(api => api.Helix.EventSub.CreateEventSubSubscriptionAsync(topic, version, condition.ToDictionary(), EventSubTransportMethod.Websocket, websocketSessionId: _eventSub!.SessionId));
             var sub = result.Subscriptions[0];
-            logger.LogVerbose(LogCategory, $"Subscribed to {topicName} (cost: {sub.Cost}, available: {result.MaxTotalCost - result.TotalCost})");
+            Logger.LogVerbose(LogCategory, $"Subscribed to {topicName} (cost: {sub.Cost}, available: {result.MaxTotalCost - result.TotalCost})");
             return result;
         }
         catch (Exception ex)
         {
-            logger.LogWarning(LogCategory, $"Failed to subscribe to {topicName}", ex);
+            Logger.LogWarning(LogCategory, $"Failed to subscribe to {topicName}", ex);
             return null;
         }
     }
 
     private async Task OnWebsocketConnectedAsync(object? sender, WebsocketConnectedArgs args)
     {
-        logger.LogVerbose(LogCategory, $"WebSocket {_eventSub!.SessionId} connected");
+        Logger.LogVerbose(LogCategory, $"WebSocket {_eventSub!.SessionId} connected");
 
         try
         {
@@ -711,7 +711,7 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
 
     private Task OnWebsocketDisconnectedAsync(object? sender, EventArgs args)
     {
-        logger.LogVerbose(LogCategory, $"WebSocket {_eventSub!.SessionId} disconnected");
+        Logger.LogVerbose(LogCategory, $"WebSocket {_eventSub!.SessionId} disconnected");
         if (!_disconnectRequested)
         {
             RequestRestart(false);
@@ -721,29 +721,29 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
 
     private Task OnErrorOccurredAsync(object? sender, ErrorOccuredArgs args)
     {
-        logger.LogWarning(LogCategory, $"An error has occured: {args.Message}", args.Exception);
+        Logger.LogWarning(LogCategory, $"An error has occured: {args.Message}", args.Exception);
         return Task.CompletedTask;
     }
 
     private async Task RefreshTokenAsync()
     {
         await using var db = NekoDbContext.Get();
-        var connection = await db.Connections.SingleAsync(connection => connection.Id == data.ConnectionId);
+        var connection = await db.Connections.SingleAsync(connection => connection.Id == ConnectionId);
         var extra = (TwitchExtraProtocolData?)connection.Extra;
 
-        if (extra is not null && (extra.StartingAccessToken != data.Configuration.Auth.AccessToken || extra.StartingRefreshToken != data.Configuration.Auth.RefreshToken))
+        if (extra is not null && (extra.StartingAccessToken != Configuration.Auth.AccessToken || extra.StartingRefreshToken != Configuration.Auth.RefreshToken))
         {
             extra = null;
         }
 
-        var result = await _api.Auth.RefreshAuthTokenAsync(extra?.CurrentRefreshToken ?? data.Configuration.Auth.RefreshToken);
+        var result = await _api.Auth.RefreshAuthTokenAsync(extra?.CurrentRefreshToken ?? Configuration.Auth.RefreshToken);
         _api.Settings.AccessToken = result.AccessToken;
 
-        connection.Extra = new TwitchExtraProtocolData(data.Configuration.Auth.AccessToken, data.Configuration.Auth.RefreshToken, result.AccessToken, result.RefreshToken);
+        connection.Extra = new TwitchExtraProtocolData(Configuration.Auth.AccessToken, Configuration.Auth.RefreshToken, result.AccessToken, result.RefreshToken);
 
         await db.SaveChangesAsync();
 
-        logger.LogInfo(LogCategory, "Refreshed access token!");
+        Logger.LogInfo(LogCategory, "Refreshed access token!");
     }
 
     public override async Task HandleMessageAsync(IActorRef sender, IConnectionsMessage message)
@@ -752,7 +752,7 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
         {
             case IConnectionsMessage.ProxyUpdated proxyUpdated:
                 {
-                    if (!string.IsNullOrEmpty(data.Configuration.ProxyId) && long.TryParse(data.Configuration.ProxyId, out var proxyId) && proxyId == proxyUpdated.Id)
+                    if (!string.IsNullOrEmpty(Configuration.ProxyId) && long.TryParse(Configuration.ProxyId, out var proxyId) && proxyId == proxyUpdated.Id)
                     {
                         RequestRestart(true);
                     }
@@ -816,11 +816,11 @@ class TwitchConnection(INekoLogger logger, ConnectionCreationData<TwitchProtocol
         }
     }
 
-    public static async Task<object?> TestAsync(IServiceProvider _, TwitchProtocolConfiguration config, CancellationToken __)
+    public static async Task<object?> TestAsync(StaticProtocolContext<TwitchProtocolConfiguration> context, CancellationToken __)
     {
         var log = new LogRouter(LogSourceType.System, "");
-        var (api, _) = await CreateAsync(log, config with { ReceiveEvents = false });
-        api.Settings.AccessToken = config.Auth.AccessToken;
+        var (api, _) = await CreateAsync(context with { Configuration = context.Configuration with { ReceiveEvents = false } });
+        api.Settings.AccessToken = context.Configuration.Auth.AccessToken;
 
         var me = (await api.Helix.Users.GetUsersAsync()).Users.Single();
 

@@ -1,10 +1,14 @@
 ﻿using Akka.Actor;
+using Bottleneko.Api.Protocols;
+using Bottleneko.Connections;
 using Bottleneko.Database;
 using Bottleneko.Database.Schema;
+using Bottleneko.Logging;
 using Bottleneko.Messages;
 using Bottleneko.Scripting.Bindings;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Bottleneko.Protocols;
 
@@ -37,4 +41,15 @@ public abstract class ConnectionBase : IAsyncDisposable
     public abstract Task HandleMessageAsync(IActorRef sender, IConnectionsMessage message);
 
     public abstract ValueTask DisposeAsync();
+}
+
+public abstract class StaticConnectionBase<TConfig>(StaticConnectionCreationData<TConfig> data) : ConnectionBase
+    where TConfig : ProtocolConfiguration
+{
+    public StaticProtocolContext<TConfig> Context { get; } = data.Context;
+    public IActorRef Owner { get; } = data.Owner;
+    public long ConnectionId { get; } = data.ConnectionId;
+    public IServiceProvider Services { get; } = data.Context.Services;
+    public INekoLogger Logger { get; } = data.Context.Logger;
+    public TConfig Configuration { get; } = data.Context.Configuration;
 }

@@ -9,34 +9,31 @@ using System.Reflection;
 
 namespace Bottleneko.Protocols;
 
-public delegate ConnectionBase ConnectionFactory<TConfig>(IServiceProvider services, INekoLogger logger, ConnectionCreationData<TConfig> data) where TConfig : ProtocolConfiguration;
+public delegate ConnectionBase DynamicConnectionFactory(ConnectionCreationData data, ProtocolContext context, ProtocolConfiguration config);
+public delegate ConnectionBase StaticConnectionFactory<TConfig>(StaticConnectionCreationData<TConfig> context) where TConfig : ProtocolConfiguration;
+
+public delegate Task<object?> DynamicConnectionTest(ProtocolContext context, ProtocolConfiguration config, CancellationToken cancellationToken);
+public delegate Task<object?> StaticConnectionTest<TConfig>(StaticProtocolContext<TConfig> context, CancellationToken cancellationToken) where TConfig : ProtocolConfiguration;
+
 public delegate RawConnectionBinding ConnectionBindingFactory(long connectionId, IActorRef connection);
-public delegate Task<object?> ConnectionTest<TConfig>(IServiceProvider services, TConfig config, CancellationToken cancellationToken) where TConfig: ProtocolConfiguration;
-public class ProtocolDescription
+
+public record ProtocolContext(IServiceProvider Services, INekoLogger Logger)
 {
-    public Protocol Id { get; }
-    public ConnectionFactory<ProtocolConfiguration> Factory { get; }
-    public ConnectionTest<ProtocolConfiguration> Test { get; }
-    public Type ConfigType { get; }
-    public ConnectionBindingFactory BindingFactory { get; }
+    public StaticProtocolContext<TConfig> Configure<TConfig>(ProtocolConfiguration config) where TConfig : ProtocolConfiguration => new(Services, Logger, (TConfig)config);
+}
 
-    private ProtocolDescription(Protocol id, ConnectionFactory<ProtocolConfiguration> factory, ConnectionTest<ProtocolConfiguration> test, Type configType, ConnectionBindingFactory bindingFactory)
-    {
-        Id = id;
-        Factory = factory;
-        Test = test;
-        ConfigType = configType;
-        BindingFactory = bindingFactory;
-    }
+public record StaticProtocolContext<TConfig>(IServiceProvider Services, INekoLogger Logger, TConfig Configuration) : ProtocolContext(Services, Logger) where TConfig : ProtocolConfiguration;
 
-    public static ProtocolDescription Make<TConfig>(Protocol id, ConnectionFactory<TConfig> factory, ConnectionTest<TConfig> test, ConnectionBindingFactory bindingFactory) where TConfig: ProtocolConfiguration
+public record ProtocolDescription(Protocol Id, DynamicConnectionFactory Factory, DynamicConnectionTest Test, ConnectionBindingFactory BindingFactory, Type ConfigType)
+{
+    public static ProtocolDescription Make<TConfig>(Protocol id, StaticConnectionFactory<TConfig> factory, StaticConnectionTest<TConfig> test, ConnectionBindingFactory bindingFactory) where TConfig: ProtocolConfiguration
     {
         return new(
             id,
-            (services, logger, data) => factory(services, logger, data.To<TConfig>()),
-            (services, config, cancellationToken) => test(services, (TConfig)config, cancellationToken),
-            typeof(TConfig),
-            bindingFactory
+            (data, context, config) => factory(data.Configure<TConfig>(context, config)),
+            (context, config, cancellationToken) => test(context.Configure<TConfig>(config), cancellationToken),
+            bindingFactory,
+            typeof(TConfig)
         );
     }
 }

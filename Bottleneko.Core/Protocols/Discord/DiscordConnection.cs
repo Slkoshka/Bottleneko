@@ -24,12 +24,10 @@ using Discord.Net.WebSockets;
 
 namespace Bottleneko.Protocols.Discord;
 
-class DiscordConnection(IServiceProvider services, INekoLogger logger, ConnectionCreationData<DiscordProtocolConfiguration> data) : ConnectionBase, IProtocol, IAsyncDisposable
+class DiscordConnection(StaticConnectionCreationData<DiscordProtocolConfiguration> data) : StaticConnectionBase<DiscordProtocolConfiguration>(data), IProtocol, IAsyncDisposable
 {
     public const Protocol ProtocolId = Protocol.Discord;
     public const string LogCategory = "Bottleneko.Discord";
-
-    public IServiceProvider Services { get; } = services;
 
     private DiscordRestClient _rest = null!;
     private DiscordSocketClient? _client = null;
@@ -37,7 +35,7 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
 
     public static ProtocolDescription GetDescription()
     {
-        return ProtocolDescription.Make<DiscordProtocolConfiguration>(ProtocolId, (services, logger, data) => new DiscordConnection(services, logger, data), TestAsync, (connectionId, connection) => new DiscordConnectionBinding(connectionId, connection));
+        return ProtocolDescription.Make<DiscordProtocolConfiguration>(ProtocolId, (data) => new DiscordConnection(data), TestAsync, (connectionId, connection) => new DiscordConnectionBinding(connectionId, connection));
     }
 
     private static GatewayIntents GetIntents(DiscordProtocolConfiguration config)
@@ -48,9 +46,9 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
             | (config.IsMessageContentIntentEnabled ? GatewayIntents.MessageContent : 0);
     }
 
-    private static async Task<(DiscordRestClient RestClient, DiscordSocketClient? SocketClient)> CreateAsync(DiscordProtocolConfiguration config)
+    private static async Task<(DiscordRestClient RestClient, DiscordSocketClient? SocketClient)> CreateAsync(StaticProtocolContext<DiscordProtocolConfiguration> context)
     {
-        var proxy = await GetProxyAsync(config.ProxyId);
+        var proxy = await GetProxyAsync(context.Configuration.ProxyId);
         var restProvider = DefaultRestClientProvider.Create(proxy is not null, proxy);
 
         var rest = new DiscordRestClient(new DiscordRestConfig()
@@ -58,9 +56,9 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
             RestClientProvider = restProvider,
         });
 
-        var client = config.ReceiveEvents ? new DiscordSocketClient(new DiscordSocketConfig
+        var client = context.Configuration.ReceiveEvents ? new DiscordSocketClient(new DiscordSocketConfig
         {
-            GatewayIntents = GetIntents(config),
+            GatewayIntents = GetIntents(context.Configuration),
             RestClientProvider = restProvider,
             WebSocketProvider = DefaultWebSocketProvider.Create(proxy),
         }) : null;
@@ -70,11 +68,11 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
 
     public override async Task StartAsync()
     {
-        (_rest, _client) = await CreateAsync(data.Configuration);
+        (_rest, _client) = await CreateAsync(Context);
 
         try
         {
-            await _rest.LoginAsync(TokenType.Bot, data.Configuration.Token);
+            await _rest.LoginAsync(TokenType.Bot, Configuration.Token);
 
             if (_client is not null)
             {
@@ -83,7 +81,7 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
                 _client.MessageReceived += Client_MessageReceivedAsync;
                 _client.Disconnected += Client_DisconnectedAsync;
 
-                await _client.LoginAsync(TokenType.Bot, data.Configuration.Token);
+                await _client.LoginAsync(TokenType.Bot, Configuration.Token);
                 await _client.StartAsync();
             }
             else
@@ -93,7 +91,7 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
-            logger.LogWarning(LogCategory, "An error has occured during connection startup", ex);
+            Logger.LogWarning(LogCategory, "An error has occured during connection startup", ex);
             RequestRestart(false);
         }
     }
@@ -106,7 +104,7 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
 
     private Task Client_LogAsync(LogMessage message)
     {
-        logger?.Log(message.Severity switch
+        Logger.Log(message.Severity switch
         {
             DiscordLogSeverity.Critical => NekoLogSeverity.Critical,
             DiscordLogSeverity.Error => NekoLogSeverity.Error,
@@ -122,16 +120,16 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
     private async Task<ChatEntity> SaveChatAsync(NekoDbContext db, IChannel channel)
     {
         var guildChannelId = (channel as IGuildChannel)?.GuildId;
-        var discordChat = await db.DiscordChats.SingleOrDefaultAsync(chat => chat.ConnectionId == data.ConnectionId && chat.DiscordGuildId == guildChannelId && chat.DiscordChannelId == channel.Id) ?? new DiscordChatEntity()
+        var discordChat = await db.DiscordChats.SingleOrDefaultAsync(chat => chat.ConnectionId == ConnectionId && chat.DiscordGuildId == guildChannelId && chat.DiscordChannelId == channel.Id) ?? new DiscordChatEntity()
         {
-            ConnectionId = data.ConnectionId,
+            ConnectionId = ConnectionId,
             DiscordGuildId = guildChannelId,
             DiscordChannelId = channel.Id,
         };
         var chat = new ChatEntity()
         {
             Id = discordChat.ChatId,
-            ConnectionId = data.ConnectionId,
+            ConnectionId = ConnectionId,
             DisplayName = channel switch
             {
                 IGroupChannel groupChannel => $"{groupChannel.Name}",
@@ -149,15 +147,15 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
 
     private async Task<ChatterEntity> SaveChatterAsync(NekoDbContext db, SocketUser user)
     {
-        var discordChatter = await db.DiscordChatters.SingleOrDefaultAsync(chatter => chatter.ConnectionId == data.ConnectionId && chatter.DiscordUserId == user.Id) ?? new DiscordChatterEntity()
+        var discordChatter = await db.DiscordChatters.SingleOrDefaultAsync(chatter => chatter.ConnectionId == ConnectionId && chatter.DiscordUserId == user.Id) ?? new DiscordChatterEntity()
         {
-            ConnectionId = data.ConnectionId,
+            ConnectionId = ConnectionId,
             DiscordUserId = user.Id,
         };
         var chatter = new ChatterEntity()
         {
             Id = discordChatter.ChatterId,
-            ConnectionId = data.ConnectionId,
+            ConnectionId = ConnectionId,
             Username = $"{user.Username}{(user.DiscriminatorValue == 0 ? "" : $"#{user.Discriminator}")}",
             DisplayName = user.GlobalName ?? user.Username,
             IsBot = user.IsBot,
@@ -173,12 +171,12 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
     {
         var guildId = (message.Channel as IGuildChannel)?.GuildId;
         var discordChatMessage = await db.DiscordChatMessages.Include(chatMessage => chatMessage.ChatMessage).ThenInclude(chatMessage => chatMessage.Attachments).ThenInclude(attachment => attachment.Discord).SingleOrDefaultAsync(chatMessage =>
-            chatMessage.ConnectionId == data.ConnectionId &&
+            chatMessage.ConnectionId == ConnectionId &&
             chatMessage.DiscordGuildId == guildId &&
             chatMessage.DiscordChannelId == message.Channel.Id &&
             chatMessage.DiscordMessageId == message.Id) ?? new DiscordChatMessageEntity()
         {
-            ConnectionId = data.ConnectionId,
+            ConnectionId = ConnectionId,
             DiscordGuildId = guildId,
             DiscordChannelId = message.Channel.Id,
             DiscordMessageId = message.Id,
@@ -187,7 +185,7 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
         var chatMessage = new ChatMessageEntity()
         {
             Id = discordChatMessage.ChatMessageId,
-            ConnectionId = data.ConnectionId,
+            ConnectionId = ConnectionId,
             RemoteTimestamp = message.Timestamp.UtcDateTime,
             Chat = chat,
             ChatId = chat.Id,
@@ -198,18 +196,18 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
             IsDirect = message.Channel is IDMChannel || message.MentionedUsers.Any(user => user.Id == _rest.CurrentUser.Id) || replyTo?.Author.Id == _rest.CurrentUser.Id,
             IsOffline = false,
             ReplyToId = replyTo is null ? null : (await db.DiscordChatMessages.SingleOrDefaultAsync(chatMessage =>
-                chatMessage.ChatMessage.ConnectionId == data.ConnectionId &&
+                chatMessage.ChatMessage.ConnectionId == ConnectionId &&
                 chatMessage.DiscordGuildId == guildId &&
                 chatMessage.DiscordChannelId == message.Channel.Id &&
                 chatMessage.DiscordMessageId == replyTo.Id))?.ChatMessageId,
-            Attachments = [..message.Attachments.Select(attachment => discordChatMessage.ChatMessage?.Attachments.FirstOrDefault(savedAttachment => savedAttachment.ConnectionId == data.ConnectionId && savedAttachment.Discord?.DiscordAttachmentId == attachment.Id) ?? new ChatMessageAttachmentEntity()
+            Attachments = [..message.Attachments.Select(attachment => discordChatMessage.ChatMessage?.Attachments.FirstOrDefault(savedAttachment => savedAttachment.ConnectionId == ConnectionId && savedAttachment.Discord?.DiscordAttachmentId == attachment.Id) ?? new ChatMessageAttachmentEntity()
             {
-                ConnectionId = data.ConnectionId,
+                ConnectionId = ConnectionId,
                 ContentType = attachment.ContentType ?? "application/octet-stream",
                 FileName = attachment.Filename,
                 Discord = new DiscordChatMessageAttachmentEntity()
                 {
-                    ConnectionId = data.ConnectionId,
+                    ConnectionId = ConnectionId,
                     DiscordGuildId = guildId,
                     DiscordChannelId = message.Channel.Id,
                     DiscordAttachmentId = attachment.Id,
@@ -246,11 +244,11 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
 
         await db.SaveChangesAsync();
 
-        var msgBinding = new ChatMessageBinding(data.Owner, new DiscordChatMessageBinding(message))
+        var msgBinding = new ChatMessageBinding(Owner, new DiscordChatMessageBinding(message))
         {
             id = msg.Id,
             protocol = ProtocolId,
-            connectionId = data.ConnectionId,
+            connectionId = ConnectionId,
             timestamp = message.Timestamp.UtcDateTime,
             attachments = [.. message.Attachments.Select(attachment => new ChatMessageAttachmentBinding(new DiscordChatMessageAttachmentBinding(attachment))
             {
@@ -259,11 +257,11 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
                 contentType = attachment.ContentType ?? "application/octet-stream",
                 fileName = attachment.Filename,
             })],
-            chat = new ChatBinding(data.Owner, new DiscordChatBinding(message.Channel))
+            chat = new ChatBinding(Owner, new DiscordChatBinding(message.Channel))
             {
                 id = chat.Id,
                 protocol = ProtocolId,
-                connectionId = data.ConnectionId,
+                connectionId = ConnectionId,
                 displayName = chat.DisplayName,
                 flags = new ChatFlags()
                 {
@@ -274,7 +272,7 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
             {
                 id = author.Id,
                 protocol = ProtocolId,
-                connectionId = data.ConnectionId,
+                connectionId = ConnectionId,
                 displayName = author.DisplayName,
                 username = author.Username,
                 flags = new ChatterFlags()
@@ -313,13 +311,13 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
         return Task.CompletedTask;
     }
 
-    public static async Task<object?> TestAsync(IServiceProvider _, DiscordProtocolConfiguration config, CancellationToken cancellationToken)
+    public static async Task<object?> TestAsync(StaticProtocolContext<DiscordProtocolConfiguration> context, CancellationToken cancellationToken)
     {
-        var (rest, client) = await CreateAsync(config);
+        var (rest, client) = await CreateAsync(context);
 
         try
         {
-            await rest.LoginAsync(TokenType.Bot, config.Token);
+            await rest.LoginAsync(TokenType.Bot, context.Configuration.Token);
 
             if (client is null)
             {
@@ -372,7 +370,7 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
                 try
                 {
                     var cancelTask = cancellationToken.WaitHandle.WaitOneAsync();
-                    await Task.WhenAny(client.LoginAsync(TokenType.Bot, config.Token), cancelTask);
+                    await Task.WhenAny(client.LoginAsync(TokenType.Bot, context.Configuration.Token), cancelTask);
                     await Task.WhenAny(client.StartAsync(), cancelTask);
                     await Task.WhenAny(tcs.Task, cancelTask);
 
@@ -420,7 +418,7 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
         {
             case IConnectionsMessage.ProxyUpdated proxyUpdated:
                 {
-                    if (!string.IsNullOrEmpty(data.Configuration.ProxyId) && long.TryParse(data.Configuration.ProxyId, out var proxyId) && proxyId == proxyUpdated.Id)
+                    if (!string.IsNullOrEmpty(Configuration.ProxyId) && long.TryParse(Configuration.ProxyId, out var proxyId) && proxyId == proxyUpdated.Id)
                     {
                         RequestRestart(true);
                     }
@@ -442,7 +440,7 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
                     }
                     catch (Exception ex)
                     {
-                        logger.LogError(LogCategory, "Failed to send message", ex);
+                        Logger.LogError(LogCategory, "Failed to send message", ex);
                     }
                     break;
                 }
@@ -462,7 +460,7 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
                     }
                     catch (Exception ex)
                     {
-                        logger.LogError(LogCategory, "Failed to send message", ex);
+                        Logger.LogError(LogCategory, "Failed to send message", ex);
                     }
                 break;
                 }
@@ -503,11 +501,11 @@ class DiscordConnection(IServiceProvider services, INekoLogger logger, Connectio
                         }
                         var chat = await SaveChatAsync(db, channel);
 
-                        sender.Tell(new ChatBinding(data.Owner, new DiscordChatBinding(channel))
+                        sender.Tell(new ChatBinding(Owner, new DiscordChatBinding(channel))
                         {
                             id = chat.Id,
                             protocol = ProtocolId,
-                            connectionId = data.ConnectionId,
+                            connectionId = ConnectionId,
                             displayName = chat.DisplayName,
                             flags = new ChatFlags()
                             {

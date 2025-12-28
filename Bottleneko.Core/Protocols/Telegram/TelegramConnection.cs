@@ -17,7 +17,7 @@ using Telegram.Bot.Types.Enums;
 
 namespace Bottleneko.Protocols.Telegram;
 
-class TelegramConnection(INekoLogger logger, ConnectionCreationData<TelegramProtocolConfiguration> data) : ConnectionBase, IProtocol, IAsyncDisposable
+class TelegramConnection(StaticConnectionCreationData<TelegramProtocolConfiguration> data) : StaticConnectionBase<TelegramProtocolConfiguration>(data), IProtocol, IAsyncDisposable
 {
     public const Protocol ProtocolId = Protocol.Telegram;
     public const string LogCategory = "Bottleneko.Telegram";
@@ -29,15 +29,15 @@ class TelegramConnection(INekoLogger logger, ConnectionCreationData<TelegramProt
 
     public static ProtocolDescription GetDescription()
     {
-        return ProtocolDescription.Make<TelegramProtocolConfiguration>(ProtocolId, (_, logger, data) => new TelegramConnection(logger, data), TestAsync, (connectionId, connection) => new TelegramConnectionBinding(connectionId, connection));
+        return ProtocolDescription.Make<TelegramProtocolConfiguration>(ProtocolId, (data) => new TelegramConnection(data), TestAsync, (connectionId, connection) => new TelegramConnectionBinding(connectionId, connection));
     }
 
     public static string FormatName(string firstName, string? lastName) => lastName is null ? firstName : $"{firstName} {lastName}";
 
-    private static async Task<TelegramBotClient> CreateAsync(TelegramProtocolConfiguration config)
+    private static async Task<TelegramBotClient> CreateAsync(StaticProtocolContext<TelegramProtocolConfiguration> context)
     {
-        var proxy = await GetProxyAsync(config.ProxyId);
-        return new TelegramBotClient(config.Token, new HttpClient(new HttpClientHandler()
+        var proxy = await GetProxyAsync(context.Configuration.ProxyId);
+        return new TelegramBotClient(context.Configuration.Token, new HttpClient(new HttpClientHandler()
         {
             UseProxy = proxy is not null,
             Proxy = proxy,
@@ -46,7 +46,7 @@ class TelegramConnection(INekoLogger logger, ConnectionCreationData<TelegramProt
 
     public override async Task StartAsync()
     {
-        _bot = await CreateAsync(data.Configuration);
+        _bot = await CreateAsync(Context);
 
         try
         {
@@ -54,12 +54,12 @@ class TelegramConnection(INekoLogger logger, ConnectionCreationData<TelegramProt
         }
         catch (RequestException ex)
         {
-            logger.LogWarning(LogCategory, "An error has occured during connection startup", ex);
+            Logger.LogWarning(LogCategory, "An error has occured during connection startup", ex);
             RequestRestart(false);
             return;
         }
 
-        if (data.Configuration.ReceiveEvents)
+        if (Configuration.ReceiveEvents)
         {
             _mainLoopTask = MainLoopAsync(_cts.Token);
         }
@@ -98,15 +98,15 @@ class TelegramConnection(INekoLogger logger, ConnectionCreationData<TelegramProt
 
         await using var db = NekoDbContext.Get();
 
-        var telegramChat = await db.TelegramChats.Include(chat => chat.Chat).SingleOrDefaultAsync(chat => chat.ConnectionId == data.ConnectionId && chat.TelegramId == message.Chat.Id) ?? new TelegramChatEntity()
+        var telegramChat = await db.TelegramChats.Include(chat => chat.Chat).SingleOrDefaultAsync(chat => chat.ConnectionId == ConnectionId && chat.TelegramId == message.Chat.Id) ?? new TelegramChatEntity()
         {
-            ConnectionId = data.ConnectionId,
+            ConnectionId = ConnectionId,
             TelegramId = message.Chat.Id,
         };
         var chat = new ChatEntity()
         {
             Id = telegramChat.ChatId,
-            ConnectionId = data.ConnectionId,
+            ConnectionId = ConnectionId,
             DisplayName = message.Chat.Title ?? (message.Chat.FirstName is not null ? FormatName(message.Chat.FirstName, message.Chat.LastName) : message.Chat.Id.ToString()),
             IsPrivate = message.Chat.Type == ChatType.Private,
             Telegram = telegramChat,
@@ -121,15 +121,15 @@ class TelegramConnection(INekoLogger logger, ConnectionCreationData<TelegramProt
             db.Chats.Update(chat);
         }
 
-        var telegramAuthor = await db.TelegramChatters.Include(chatter => chatter.Chatter).SingleOrDefaultAsync(chatter => chatter.ConnectionId == data.ConnectionId && chatter.TelegramId == message.From.Id) ?? new TelegramChatterEntity()
+        var telegramAuthor = await db.TelegramChatters.Include(chatter => chatter.Chatter).SingleOrDefaultAsync(chatter => chatter.ConnectionId == ConnectionId && chatter.TelegramId == message.From.Id) ?? new TelegramChatterEntity()
         {
-            ConnectionId = data.ConnectionId,
+            ConnectionId = ConnectionId,
             TelegramId = message.From.Id,
         };
         var author = new ChatterEntity()
         {
             Id = telegramAuthor.ChatterId,
-            ConnectionId = data.ConnectionId,
+            ConnectionId = ConnectionId,
             DisplayName = FormatName(message.From.FirstName, message.From.LastName),
             Username = message.From.Username ?? $"id:{message.From.Id}",
             IsBot = message.From.IsBot,
@@ -146,10 +146,10 @@ class TelegramConnection(INekoLogger logger, ConnectionCreationData<TelegramProt
         }
 
         var telegramChatMessage = await db.TelegramChatMessages.Include(chatMessage => chatMessage.ChatMessage).ThenInclude(chatMessage => chatMessage.Attachments).ThenInclude(attachment => attachment.Telegram).SingleOrDefaultAsync(chatMessage =>
-            chatMessage.ChatMessage.ConnectionId == data.ConnectionId &&
+            chatMessage.ChatMessage.ConnectionId == ConnectionId &&
             chatMessage.TelegramId == message.Id) ?? new TelegramChatMessageEntity()
         {
-            ConnectionId = data.ConnectionId,
+            ConnectionId = ConnectionId,
             TelegramChatId = message.Chat.Id,
             TelegramId = message.Id,
             TelegramMediaGroupId = message.MediaGroupId,
@@ -157,7 +157,7 @@ class TelegramConnection(INekoLogger logger, ConnectionCreationData<TelegramProt
         var msg = new ChatMessageEntity()
         {
             Id = telegramChatMessage.ChatMessageId,
-            ConnectionId = data.ConnectionId,
+            ConnectionId = ConnectionId,
             RemoteTimestamp = message.Date,
             Chat = chat,
             ChatId = chat.Id,
@@ -168,14 +168,14 @@ class TelegramConnection(INekoLogger logger, ConnectionCreationData<TelegramProt
             IsDirect = message.Chat.Type == ChatType.Private || ((message.Entities ?? message.CaptionEntities)?.Any(entity => IsMentioningMe(message, entity)) ?? false),
             IsOffline = isOffline,
             ReplyToId = message.ReplyToMessage is null ? null : (await db.TelegramChatMessages.SingleOrDefaultAsync(chatMessage =>
-                chatMessage.ChatMessage.ConnectionId == data.ConnectionId &&
+                chatMessage.ChatMessage.ConnectionId == ConnectionId &&
                 chatMessage.TelegramId == message.Id))?.Id,
             Telegram = telegramChatMessage,
         };
         var addToGroup = false;
         if (message.MediaGroupId is not null)
         {
-            var group = await db.TelegramChatMessages.Include(chatMessage => chatMessage.ChatMessage).ThenInclude(chatMessage => chatMessage.Attachments).ThenInclude(attachment => attachment.Telegram).SingleOrDefaultAsync(msg => msg.ConnectionId == data.ConnectionId && msg.TelegramChatId == message.Chat.Id && msg.TelegramMediaGroupId == message.MediaGroupId);
+            var group = await db.TelegramChatMessages.Include(chatMessage => chatMessage.ChatMessage).ThenInclude(chatMessage => chatMessage.Attachments).ThenInclude(attachment => attachment.Telegram).SingleOrDefaultAsync(msg => msg.ConnectionId == ConnectionId && msg.TelegramChatId == message.Chat.Id && msg.TelegramMediaGroupId == message.MediaGroupId);
             if (group is not null)
             {
                 telegramChatMessage = group;
@@ -201,19 +201,19 @@ class TelegramConnection(INekoLogger logger, ConnectionCreationData<TelegramProt
 
         void AddAttachment(TelegramChatMessageAttachmentType type, FileBase file, string mimeType, string? filename)
         {
-            var savedAttachment = telegramChatMessage.ChatMessage?.Attachments.SingleOrDefault(attachment => attachment.Telegram?.ConnectionId == data.ConnectionId && attachment.Telegram?.TelegramAttachmentType == type && attachment.Telegram.TelegramChatId == message.Chat.Id && attachment.Telegram.TelegramMessageId == message.Id);
+            var savedAttachment = telegramChatMessage.ChatMessage?.Attachments.SingleOrDefault(attachment => attachment.Telegram?.ConnectionId == ConnectionId && attachment.Telegram?.TelegramAttachmentType == type && attachment.Telegram.TelegramChatId == message.Chat.Id && attachment.Telegram.TelegramMessageId == message.Id);
             if (savedAttachment is null)
             {
                 savedAttachment = new ChatMessageAttachmentEntity()
                 {
-                    ConnectionId = data.ConnectionId,
+                    ConnectionId = ConnectionId,
                     MessageId = msg.Id,
                     Message = msg,
                     ContentType = mimeType,
                     FileName = filename,
                     Telegram = new TelegramChatMessageAttachmentEntity()
                     {
-                        ConnectionId = data.ConnectionId,
+                        ConnectionId = ConnectionId,
                         TelegramAttachmentType = type,
                         TelegramChatId = message.Chat.Id,
                         TelegramMessageId = message.Id,
@@ -272,11 +272,11 @@ class TelegramConnection(INekoLogger logger, ConnectionCreationData<TelegramProt
             return;
         }
 
-        var msgBinding = new ChatMessageBinding(data.Owner, new TelegramChatMessageBinding(update))
+        var msgBinding = new ChatMessageBinding(Owner, new TelegramChatMessageBinding(update))
         {
             id = msg.Id,
             protocol = ProtocolId,
-            connectionId = data.ConnectionId,
+            connectionId = ConnectionId,
             timestamp = message.Date,
             attachments = [.. attachments.DistinctBy(attachment => attachment.Entity.Id).Select(attachment => new ChatMessageAttachmentBinding(new TelegramChatMessageAttachmentBinding(attachment.File))
             {
@@ -285,11 +285,11 @@ class TelegramConnection(INekoLogger logger, ConnectionCreationData<TelegramProt
                 contentType = attachment.Entity.ContentType,
                 fileName = attachment.Entity.FileName,
             })],
-            chat = new ChatBinding(data.Owner, new TelegramChatBinding(message.Chat))
+            chat = new ChatBinding(Owner, new TelegramChatBinding(message.Chat))
             {
                 id = chat.Id,
                 protocol = ProtocolId,
-                connectionId = data.ConnectionId,
+                connectionId = ConnectionId,
                 displayName = chat.DisplayName,
                 flags = new ChatFlags()
                 {
@@ -300,7 +300,7 @@ class TelegramConnection(INekoLogger logger, ConnectionCreationData<TelegramProt
             {
                 id = author.Id,
                 protocol = ProtocolId,
-                connectionId = data.ConnectionId,
+                connectionId = ConnectionId,
                 displayName = author.DisplayName,
                 username = author.Username,
                 flags = new ChatterFlags()
@@ -380,7 +380,7 @@ class TelegramConnection(INekoLogger logger, ConnectionCreationData<TelegramProt
                     }
                     catch (Exception ex)
                     {
-                        logger.LogError(LogCategory, "An error has occured while processing an update", ex);
+                        Logger.LogError(LogCategory, "An error has occured while processing an update", ex);
                     }
                 }
             }
@@ -390,7 +390,7 @@ class TelegramConnection(INekoLogger logger, ConnectionCreationData<TelegramProt
             }
             catch (Exception ex)
             {
-                logger.LogWarning(LogCategory, "An error has occured in the update receive loop", ex);
+                Logger.LogWarning(LogCategory, "An error has occured in the update receive loop", ex);
             }
         }
     }
@@ -401,7 +401,7 @@ class TelegramConnection(INekoLogger logger, ConnectionCreationData<TelegramProt
         {
             case IConnectionsMessage.ProxyUpdated proxyUpdated:
                 {
-                    if (!string.IsNullOrEmpty(data.Configuration.ProxyId) && long.TryParse(data.Configuration.ProxyId, out var proxyId) && proxyId == proxyUpdated.Id)
+                    if (!string.IsNullOrEmpty(Configuration.ProxyId) && long.TryParse(Configuration.ProxyId, out var proxyId) && proxyId == proxyUpdated.Id)
                     {
                         RequestRestart(true);
                     }
@@ -443,15 +443,15 @@ class TelegramConnection(INekoLogger logger, ConnectionCreationData<TelegramProt
                         sender.Tell(null);
                         break;
                     }
-                    sender.Tell($"https://api.telegram.org/file/bot{data.Configuration.Token}/{(await _bot.GetFile(attachment.Telegram.TelegramFileId)).FilePath}");
+                    sender.Tell($"https://api.telegram.org/file/bot{Configuration.Token}/{(await _bot.GetFile(attachment.Telegram.TelegramFileId)).FilePath}");
                     break;
                 }
         }
     }
 
-    public static async Task<object?> TestAsync(IServiceProvider _, TelegramProtocolConfiguration config, CancellationToken cancellationToken)
+    public static async Task<object?> TestAsync(StaticProtocolContext<TelegramProtocolConfiguration> context, CancellationToken cancellationToken)
     {
-        var telegram = await CreateAsync(config);
+        var telegram = await CreateAsync(context);
         var me = await telegram.GetMe(cancellationToken);
 
         return new
@@ -460,7 +460,7 @@ class TelegramConnection(INekoLogger logger, ConnectionCreationData<TelegramProt
             {
                 me.Id,
                 me.Username,
-                DisplayName = me.LastName is null ? me.FirstName : $"{me.FirstName} {me.LastName}",
+                DisplayName = FormatName(me.FirstName, me.LastName),
                 me.CanConnectToBusiness,
                 me.CanJoinGroups,
                 me.CanReadAllGroupMessages,

@@ -12,11 +12,12 @@ using Bottleneko.Server.Utils;
 using Bottleneko.Api.Protocols;
 using Bottleneko.Services;
 using Bottleneko.Messages;
+using Bottleneko.Logging;
 
 namespace Bottleneko.Server.Controllers;
 
 [Authorize]
-public class ConnectionsController(IServiceProvider services, IOptions<JsonOptions> jsonOptions, ProtocolRegistry protocolRegistry, AkkaService akka, NekoDbContext db) : CrudController<ConnectionsController.AddConnectionRequest, ConnectionsController.UpdateConnectionRequest>
+public class ConnectionsController(IServiceProvider services, IOptions<JsonOptions> jsonOptions, ProtocolRegistry protocolRegistry, AkkaService akka, NekoDbContext db, INekoLogger logger) : CrudController<ConnectionsController.AddConnectionRequest, ConnectionsController.UpdateConnectionRequest>
 {
     public override async Task<IActionResult> ListAsync()
     {
@@ -36,12 +37,12 @@ public class ConnectionsController(IServiceProvider services, IOptions<JsonOptio
         try
         {
             var connectionType = protocolRegistry.GetProtocol(request.Protocol);
-            var config = request.Config.Deserialize(connectionType.ConfigType, jsonOptions.Value.JsonSerializerOptions) ?? throw new ArgumentException("Empty Connection configs are not supported");
+            var config = (ProtocolConfiguration?)request.Config.Deserialize(connectionType.ConfigType, jsonOptions.Value.JsonSerializerOptions) ?? throw new ArgumentException("Empty Connection configs are not supported");
 
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10.0));
             try
             {
-                var extra = await connectionType.Test(services, (ProtocolConfiguration)config, cts.Token);
+                var extra = await connectionType.Test(new ProtocolContext(services, logger), config, cts.Token);
                 timer.Stop();
 
                 return Ok(new

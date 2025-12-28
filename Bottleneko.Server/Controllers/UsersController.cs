@@ -17,11 +17,9 @@ public class UsersController(NekoDbContext db) : CrudController<UsersController.
 {
     private async Task<ClaimsIdentity?> GetIdentityAsync(string login, string password)
     {
-        login = login.Trim();
+        login = login.Trim().ToLowerInvariant();
 
-#pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
-        var user = await db.Users.SingleOrDefaultAsync(user => user.Login == login.ToLowerInvariant() && !user.IsDeleted);
-#pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
+        var user = await db.Users.SingleOrDefaultAsync(user => user.Login == login && !user.IsDeleted);
         if (user is null || !user.CheckPassword(password))
         {
             return null;

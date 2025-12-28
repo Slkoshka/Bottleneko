@@ -9,13 +9,15 @@ using Bottleneko.Utils;
 
 namespace Bottleneko.Connections;
 
-public record ConnectionCreationData<TConfig>(IActorRef Owner, long ConnectionId, TConfig Configuration) where TConfig: ProtocolConfiguration
+public record ConnectionCreationData(IActorRef Owner, long ConnectionId)
 {
-    public ConnectionCreationData<T> To<T>() where T : ProtocolConfiguration
+    public StaticConnectionCreationData<T> Configure<T>(ProtocolContext context, ProtocolConfiguration configuration) where T : ProtocolConfiguration
     {
-        return new(Owner, ConnectionId, (T)(object)Configuration);
+        return new(Owner, ConnectionId, context.Configure<T>(configuration));
     }
 }
+
+public record StaticConnectionCreationData<TConfig>(IActorRef Owner, long ConnectionId, StaticProtocolContext<TConfig> Context) : ConnectionCreationData(Owner, ConnectionId) where TConfig: ProtocolConfiguration;
 
 class ConnectionActor(IServiceProvider services, AkkaService akka, INekoLogger logger, IActorRef owner, long id, ProtocolDescription protocol, ProtocolConfiguration configuration) : NekoActor(services)
 {
@@ -32,7 +34,7 @@ class ConnectionActor(IServiceProvider services, AkkaService akka, INekoLogger l
     {
         try
         {
-            _connection = protocol.Factory(Services, logger, new ConnectionCreationData<ProtocolConfiguration>(self, id, configuration));
+            _connection = protocol.Factory(new ConnectionCreationData(self, id), new ProtocolContext(Services, logger), configuration);
 
             try
             {
