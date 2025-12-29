@@ -1,4 +1,4 @@
-import { CSSProperties } from 'react';
+import { CSSProperties, JSX } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { ClassicScheme, RenderEmit, Presets } from 'rete-react-plugin';
 import Icon from '../../../../components/Icon';

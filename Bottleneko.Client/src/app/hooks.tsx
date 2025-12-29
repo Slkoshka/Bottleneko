@@ -148,7 +148,7 @@ export function useEntityEditor<Type extends EntityConfig>(id: string | undefine
 }
 
 export function useDebounce(callback: () => void, timeout: number): [execute: () => void, cancel: () => void] {
-    const timerRef = useRef<ReturnType<typeof setTimeout>>();
+    const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
     const callbackRef = useRef(callback);
 
     const cancel = () => {

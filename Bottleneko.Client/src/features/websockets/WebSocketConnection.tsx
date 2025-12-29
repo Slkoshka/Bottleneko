@@ -18,7 +18,7 @@ export default function WebSocketConnection({ children }: { children?: ReactNode
         filter: () => false,
     });
 
-    const prevStateRef = useRef<ReadyState>();
+    const prevStateRef = useRef<ReadyState>(null);
     const isReadyRef = useRef(false);
 
     const dispatch = useCallback((action: WebSocketAction) => {

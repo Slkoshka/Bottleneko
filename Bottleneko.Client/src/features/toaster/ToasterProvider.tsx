@@ -1,9 +1,9 @@
 ﻿import { v4 as uuidv4 } from 'uuid';
-import { ReactNode, Reducer, useReducer } from 'react';
+import { ReactNode, useReducer } from 'react';
 import { ToasterAction, ToasterContext, ToasterDispatchContext, ToasterState } from './context';
 
 export default function ToasterProvider({ children }: { children?: ReactNode | undefined }) {
-    const [toasts, dispatch] = useReducer<Reducer<ToasterState, ToasterAction>>((state, action) => {
+    const [toasts, dispatch] = useReducer<ToasterState, [ToasterAction]>((state, action) => {
         switch (action.action) {
             case 'show':
                 return {
