@@ -20,8 +20,8 @@ export default function AddScriptTemplate({ setStage }: { setStage: (stage: AddS
     };
 
     return (
-        <Accordion defaultActiveKey="graph">
-            <Accordion.Item eventKey="graph">
+        <Accordion defaultActiveKey="js">
+            {/* <Accordion.Item eventKey="graph">
                 <Accordion.Header>
                     <span className="fs-5">Graph templates</span>
                 </Accordion.Header>
@@ -32,7 +32,7 @@ export default function AddScriptTemplate({ setStage }: { setStage: (stage: AddS
                         }
                     </div>
                 </Accordion.Body>
-            </Accordion.Item>
+            </Accordion.Item> */}
 
             <Accordion.Item eventKey="js">
                 <Accordion.Header>
