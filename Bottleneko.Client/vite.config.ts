@@ -13,6 +13,13 @@ export default defineConfig(({ mode }) => {
                 '@': fileURLToPath(new URL('./src', import.meta.url)),
             },
         },
+        css: {
+            preprocessorOptions: {
+                scss: {
+                    silenceDeprecations: ['import', 'color-functions', 'global-builtin', 'if-function', 'slash-div'],
+                },
+            },
+        },
         server: {
             proxy: {
                 '^/api': {
