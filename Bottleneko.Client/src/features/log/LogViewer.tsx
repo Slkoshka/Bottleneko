@@ -57,7 +57,7 @@ export default function LogViewer({ sourceType, sourceId, className }: { sourceT
 
     const columns: TableColumn[] = [];
     columns.push({ id: 'timestamp', header: 'Timestamp' });
-    if (!showSource) {
+    if (showSource) {
         columns.push({ id: 'source', header: 'Source' });
     }
     columns.push({ id: 'category', header: 'Category' });
