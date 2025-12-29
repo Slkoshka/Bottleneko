@@ -23,7 +23,7 @@ RUN set -eux; \
         arm64) dotnetArch='linux-arm64' ;; \
         *) echo "Unsupported architecture: ${dpkgArch##*-}"; exit 1 ;; \
     esac; \
-    dotnet publish ./Bottleneko.Server/Bottleneko.Server.csproj -c Release -r ${dotnetArch} /p:VersionSuffix=${VERSION_SUFFIX} -o /app
+    dotnet publish ./Bottleneko.Server/Bottleneko.Server.csproj -c Release -r ${dotnetArch} /p:VersionSuffix=${VERSION_SUFFIX} /p:WarningLevel=0 -o /app
 
 FROM node:25-slim AS build-node
 WORKDIR /src
