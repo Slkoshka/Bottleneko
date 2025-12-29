@@ -46,9 +46,8 @@ Now that the installation is complete, you can start the initial setup wizard by
 * x86-64 or ARM64 CPU
 
 For development:
-* .NET SDK 9.0
+* .NET SDK 10.0
 * Node.js and npm
-* PowerShell 7+ (optional)
 
 ## Useful links
 
@@ -60,7 +59,7 @@ For development:
 ```shell
 $ git clone --recurse-submodules https://github.com/Slkoshka/Bottleneko
 ```
-2. Open [`Bottleneko.sln`](Bottleneko.sln) in your favorite .NET IDE ([**Visual Studio**](https://visualstudio.microsoft.com/) and [**JetBrains Rider**](https://www.jetbrains.com/rider/) both work well)
+2. Open [`Bottleneko.slnx`](Bottleneko.sln) in your favorite .NET IDE ([**Visual Studio**](https://visualstudio.microsoft.com/) and [**JetBrains Rider**](https://www.jetbrains.com/rider/) both work well)
 3. Run `Bottleneko.AppHost`
 
 ### Building Docker image
