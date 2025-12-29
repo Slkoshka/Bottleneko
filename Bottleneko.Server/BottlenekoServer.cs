@@ -1,4 +1,5 @@
-﻿using Bottleneko.Database;
+﻿using Bottleneko.Actors;
+using Bottleneko.Database;
 using Bottleneko.Database.Options;
 using Bottleneko.Logging;
 using Bottleneko.Protocols;
@@ -56,6 +57,7 @@ public class BottlenekoServer : IAsyncDisposable
                         break;
 
                     case KeyNotFoundException:
+                    case RouteNotFoundException:
                         context.Response.StatusCode = StatusCodes.Status404NotFound;
                         await context.Response.WriteAsJsonAsync(new NekoController.ErrorResponse(NekoController.ErrorCode.NotFound, errorFeature.Error.Message));
                         break;

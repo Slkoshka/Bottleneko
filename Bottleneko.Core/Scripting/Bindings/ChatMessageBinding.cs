@@ -44,6 +44,6 @@ public class ChatMessageBinding(IActorRef connection, RawChatMessageBinding raw)
 
     public void reply(string text)
     {
-        connection.Tell(new IConnectionsMessage.SimpleReply((long)connectionId, this, text));
+        connection.Tell(new ConnectionMessages.SimpleReply(this, text));
     }
 }

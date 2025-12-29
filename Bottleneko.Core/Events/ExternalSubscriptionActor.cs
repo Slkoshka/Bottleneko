@@ -6,7 +6,7 @@ using Bottleneko.Utils;
 
 namespace Bottleneko.Events;
 
-class ExternalSubscriptionActor(IServiceProvider services, INekoLogger logger, IActorRef eventBus, IEventBusMessage.EventListener handler, IEventBusMessage.SubscribeExternal subscription) : NekoActor(services)
+class ExternalSubscriptionActor(IServiceProvider services, INekoLogger logger, IActorRef eventBus, EventBusMessages.EventListener handler, EventBusMessages.SubscribeExternal subscription) : NekoActor(services)
 {
     record SubscriptionAcquired(object Token);
     record HandlerDone : SingletonMessage<HandlerDone>;
@@ -15,7 +15,7 @@ class ExternalSubscriptionActor(IServiceProvider services, INekoLogger logger, I
 
     public override async Task InitAsync(IActorRef self)
     {
-        _ = eventBus.Ask(new IEventBusMessage.Subscribe(self, subscription.Name, subscription.PayloadType)).PipeTo(self, eventBus, token => new SubscriptionAcquired(token));
+        _ = eventBus.Ask(new EventBusMessages.Subscribe(self, subscription.Name, subscription.PayloadType)).PipeTo(self, eventBus, token => new SubscriptionAcquired(token));
         await base.InitAsync(self);
     }
 
@@ -39,15 +39,15 @@ class ExternalSubscriptionActor(IServiceProvider services, INekoLogger logger, I
     {
         switch (message)
         {
-            case IEventBusMessage.Event @event:
+            case EventBusMessages.Event @event:
                 _ = handler(@event.Name, @event.Payload).PipeTo(Self, Self, () => HandlerDone.Instance);
                 Become(Handling);
                 break;
 
-            case IControlMessage.Shutdown:
+            case ControlMessages.Shutdown:
                 if (_token is not null)
                 {
-                    eventBus.Tell(new IEventBusMessage.Unsubscribe(_token));
+                    eventBus.Tell(new EventBusMessages.Unsubscribe(_token));
                     _token = null;
                 }
                 Context.Stop(Self);
@@ -74,10 +74,10 @@ class ExternalSubscriptionActor(IServiceProvider services, INekoLogger logger, I
                 Become(OnWaiting);
                 break;
 
-            case IControlMessage.Shutdown:
+            case ControlMessages.Shutdown:
                 if (_token is not null)
                 {
-                    eventBus.Tell(new IEventBusMessage.Unsubscribe(_token));
+                    eventBus.Tell(new EventBusMessages.Unsubscribe(_token));
                     _token = null;
                 }
                 Context.Stop(Self);

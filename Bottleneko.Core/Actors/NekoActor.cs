@@ -1,8 +1,10 @@
 ﻿using Akka.Actor;
 using Akka.DependencyInjection;
+using Bottleneko.Logging;
 using Bottleneko.Messages;
 using Bottleneko.Utils;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Bottleneko.Actors;
 
@@ -14,6 +16,9 @@ public abstract class NekoActor(IServiceProvider services) : UntypedActorWithSta
     public IServiceScope Scope { get; } = services.CreateScope();
     public IServiceProvider Services => Scope.ServiceProvider;
     public static DependencyResolver Resolver => DependencyResolver.For(Context.System);
+
+    private readonly INekoLogger _logger = services.GetRequiredService<INekoLogger>();
+
 
     protected sealed override void PreStart()
     {
@@ -46,11 +51,11 @@ public abstract class NekoActor(IServiceProvider services) : UntypedActorWithSta
         {
             switch (msg)
             {
-                case IControlMessage.Ready:
+                case ControlMessages.Ready:
                     Sender.Tell(new Status.Failure(ex));
                     break;
 
-                case IControlMessage.Shutdown:
+                case ControlMessages.Shutdown:
                     Context.Stop(Self);
                     break;
 
@@ -65,8 +70,12 @@ public abstract class NekoActor(IServiceProvider services) : UntypedActorWithSta
     {
         switch (message)
         {
-            case IControlMessage.Ready:
+            case ControlMessages.Ready:
                 Sender.Tell(Status.Success.Instance, Self);
+                break;
+
+            case Status.Failure failure:
+                _logger.LogError("Bottleneko", "An error has occured", failure.Cause);
                 break;
 
             default:
@@ -80,7 +89,7 @@ public abstract class NekoActor(IServiceProvider services) : UntypedActorWithSta
         return Task.CompletedTask;
     }
 
-    protected static IActorRef CreateChild<T>(object?[] args, string? name = null) where T: ActorBase
+    protected static IActorRef CreateChild<T>(object?[] args, string? name = null) where T : ActorBase
     {
         return Context.ActorOf(Resolver.Props<T>(args), name);
     }

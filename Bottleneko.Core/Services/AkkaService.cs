@@ -44,17 +44,17 @@ public class AkkaService(IServiceProvider services, IHostApplicationLifetime lif
         _world = _system.ActorOf(dr.Props<NekoWorld>(), "world");
         _ = _system.WhenTerminated.ContinueWith(_ => lifetime.StopApplication(), CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
 
-        await _world.Ask(IControlMessage.Ready.Instance, cancellationToken);
+        await _world.Ask(ControlMessages.Ready.Instance, cancellationToken);
     }
 
-    public void Tell(object message)
+    public void Tell(Route.RoutedMessage routed)
     {
-        _world!.Tell(message);
+        _world!.Tell(routed.Build());
     }
 
-    public async Task<T> AskAsync<T>(object message)
+    public async Task<T> AskAsync<T>(Route.RoutedMessageWithReply<T> routed)
     {
-        var result = await _world!.Ask<object>(message);
+        var result = await _world!.Ask<object>(routed.Build());
         if (result is Status.Failure failure)
         {
             throw failure.Cause;
@@ -65,22 +65,13 @@ public class AkkaService(IServiceProvider services, IHostApplicationLifetime lif
         }
     }
 
-    public async Task AskAsync(object message)
-    {
-        var result = await _world!.Ask<object>(message);
-        if (result is Status.Failure failure)
-        {
-            throw failure.Cause;
-        }
-    }
-
     public async Task StopAsync(CancellationToken cancellationToken)
     {
         if (_system is null)
         {
             return;
         }
-        Tell(IControlMessage.Shutdown.Instance);
+        _world.Tell(ControlMessages.Shutdown.Instance);
         await _world.WatchAsync(cancellationToken);
         await CoordinatedShutdown.Get(_system).Run(CoordinatedShutdown.ClrExitReason.Instance);
         _system = null;

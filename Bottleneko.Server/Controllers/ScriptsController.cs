@@ -1,4 +1,5 @@
-﻿using Bottleneko.Api.Dtos;
+﻿using Bottleneko.Actors;
+using Bottleneko.Api.Dtos;
 using Bottleneko.Api.Graph;
 using Bottleneko.Database;
 using Bottleneko.Database.Schema;
@@ -13,7 +14,7 @@ namespace Bottleneko.Server.Controllers;
 public class ScriptsController(NekoDbContext db, AkkaService akka) : CrudController<ScriptsController.CreateScriptRequest, ScriptsController.UpdateScriptRequest>
 {
     public record CreateScriptRequest(string Name, string Description, ScriptCode Code);
-    
+
     public override async Task<IActionResult> AddAsync([FromBody] CreateScriptRequest request)
     {
         if (request.Code is GraphScriptCode)
@@ -21,26 +22,38 @@ public class ScriptsController(NekoDbContext db, AkkaService akka) : CrudControl
             return Error(ErrorCode.InternalError, "Not implemented");
         }
 
-        var script = await akka.AskAsync<ScriptEntity>(new IScriptingMessage.Add(request.Name, request.Description, request.Code, true));
+        var script = await akka.AskAsync(new ScriptingMessages.Add(request.Name, request.Description, request.Code, true).ToScripting().WithReply<ScriptEntity>());
         return Ok(new
         {
             Result = script.ToDto(ScriptStatus.Starting),
         });
     }
-    
+
     public override async Task<IActionResult> ListAsync()
     {
         return Ok(new
         {
-            Result = await Task.WhenAll((await db.Scripts.Where(connection => !connection.IsDeleted).ToArrayAsync()).Select(async script => script.ToDto(await akka.AskAsync<ScriptStatus>(new IScriptingMessage.GetStatus(script.Id))))),
+            Result = await Task.WhenAll((await db.Scripts.Where(connection => !connection.IsDeleted).ToArrayAsync()).Select(async script =>
+            {
+                ScriptStatus status;
+                try
+                {
+                    status = await akka.AskAsync(new ScriptingMessages.GetStatus().ToScript(script.Id).WithReply<ScriptStatus>());
+                }
+                catch (RouteNotFoundException)
+                {
+                    status = ScriptStatus.Stopped;
+                }
+                return script.ToDto(status);
+            })),
         });
     }
-    
+
     public override async Task<IActionResult> GetAsync([FromRoute] long id)
     {
         if (await db.Scripts.SingleOrDefaultAsync(s => s.Id == id && !s.IsDeleted) is { } script)
         {
-            return Ok(script.ToDto(await akka.AskAsync<ScriptStatus>(new IScriptingMessage.GetStatus(id))));
+            return Ok(script.ToDto(await akka.AskAsync(new ScriptingMessages.GetStatus().ToScript(id).WithReply<ScriptStatus>())));
         }
         else
         {
@@ -49,15 +62,15 @@ public class ScriptsController(NekoDbContext db, AkkaService akka) : CrudControl
     }
 
     public record UpdateScriptRequest(string? Name, string? Description, ScriptCode? Code, bool? AutoStart);
-    
+
     public override async Task<IActionResult> UpdateAsync([FromRoute] long id, [FromBody] UpdateScriptRequest request)
     {
         try
         {
-            var script = await akka.AskAsync<ScriptEntity>(new IScriptingMessage.Update(id, request.Name, request.Description, request.Code, request.AutoStart));
+            var script = await akka.AskAsync(new ScriptingMessages.Update(id, request.Name, request.Description, request.Code, request.AutoStart).ToScripting().WithReply<ScriptEntity>());
             return Ok(new
             {
-                Result = script.ToDto(await akka.AskAsync<ScriptStatus>(new IScriptingMessage.GetStatus(id))),
+                Result = script.ToDto(await akka.AskAsync(new ScriptingMessages.GetStatus().ToScript(id).WithReply<ScriptStatus>())),
             });
         }
         catch (KeyNotFoundException)
@@ -65,10 +78,10 @@ public class ScriptsController(NekoDbContext db, AkkaService akka) : CrudControl
             return Error(ErrorCode.NotFound, "Script not found");
         }
     }
-    
+
     public override async Task<IActionResult> DeleteAsync([FromRoute] long id)
     {
-        if (await akka.AskAsync<bool>(new IScriptingMessage.Remove(id)))
+        if (await akka.AskAsync(new ScriptingMessages.Remove(id).ToScripting().WithReply<bool>()))
         {
             return Ok(new Success());
         }
@@ -81,21 +94,21 @@ public class ScriptsController(NekoDbContext db, AkkaService akka) : CrudControl
     [HttpPost("{id:long}/start")]
     public IActionResult Start([FromRoute] long id)
     {
-        akka.Tell(new IScriptingMessage.Start(id));
+        akka.Tell(ContainerMessages.Start.Instance.ToScript(id));
         return Ok(new Success());
     }
 
     [HttpPost("{id:long}/stop")]
     public IActionResult Stop([FromRoute] long id)
     {
-        akka.Tell(new IScriptingMessage.Stop(id));
+        akka.Tell(ContainerMessages.Stop.Instance.ToScript(id));
         return Ok(new Success());
     }
 
     [HttpPost("{id:long}/restart")]
     public IActionResult Restart([FromRoute] long id)
     {
-        akka.Tell(new IScriptingMessage.Restart(id));
+        akka.Tell(ContainerMessages.Restart.Instance.ToScript(id));
         return Ok(new Success());
     }
 }

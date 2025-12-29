@@ -8,7 +8,7 @@ using Bottleneko.Scripting.Js;
 
 namespace Bottleneko.Scripting;
 
-class ScriptInstance(IServiceProvider services, INekoLogger logger, ScriptEntity script) : ContainerItem<ScriptEntity, IScriptingMessage.Update>(services, script, script.AutoStart)
+class ScriptInstance(IServiceProvider services, INekoLogger logger, ScriptEntity script) : ContainerItem<ScriptingMessages.Update>(services, script.AutoStart)
 {
     public record FatalScriptError(Exception Exception);
 
@@ -31,12 +31,12 @@ class ScriptInstance(IServiceProvider services, INekoLogger logger, ScriptEntity
     {
         return _code switch
         {
-            JsScriptCode js => CreateChild<JsScriptActor>([LocalLog , Self, _id, _name, js.Source], $"script-instance"),
+            JsScriptCode js => CreateChild<JsScriptActor>([LocalLog, Self, _id, _name, js.Source], $"script-instance"),
             _ => throw new Exception($"Unsupported script engine: {_code}"),
         };
     }
 
-    protected override bool ApplyUpdate(IScriptingMessage.Update update)
+    protected override bool ApplyUpdate(ScriptingMessages.Update update)
     {
         var needRestart = false;
 
@@ -81,11 +81,11 @@ class ScriptInstance(IServiceProvider services, INekoLogger logger, ScriptEntity
     {
         switch (message)
         {
-            case IScriptingMessage.GetStatus:
+            case ScriptingMessages.GetStatus:
                 Sender.Tell(_status);
                 return true;
 
-            case ILoggingMessage.GetLogger:
+            case LoggingMessages.GetLogger:
                 Sender.Tell(LocalLog);
                 return true;
 

@@ -1,6 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
-using Bottleneko.Database.Schema.Protocols.Discord;
+﻿using Bottleneko.Database.Schema.Protocols.Discord;
 using Bottleneko.Database.Schema.Protocols.Telegram;
+using System.ComponentModel.DataAnnotations;
 
 namespace Bottleneko.Database.Schema;
 

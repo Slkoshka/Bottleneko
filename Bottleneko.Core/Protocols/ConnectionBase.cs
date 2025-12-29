@@ -8,7 +8,6 @@ using Bottleneko.Messages;
 using Bottleneko.Scripting.Bindings;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Bottleneko.Protocols;
 
@@ -38,7 +37,7 @@ public abstract class ConnectionBase : IAsyncDisposable
     protected void MessageReceived(ChatMessageEntity entity, ChatMessageBinding binding) => OnMessageReceived?.Invoke(this, (entity, binding));
     protected void Die(Exception exception) => OnDied?.Invoke(this, exception);
 
-    public abstract Task HandleMessageAsync(IActorRef sender, IConnectionsMessage message);
+    public abstract Task HandleMessageAsync(IActorRef sender, IHandledByConnection message);
 
     public abstract ValueTask DisposeAsync();
 }

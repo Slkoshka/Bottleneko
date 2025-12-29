@@ -1,16 +1,15 @@
-﻿using Bottleneko.Actors;
-using Bottleneko.Database.Schema;
+﻿using Akka.Actor;
+using Bottleneko.Actors;
 using Bottleneko.Database;
-using Bottleneko.Messages;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
-using Bottleneko.Api.Dtos;
-using Akka.Actor;
+using Bottleneko.Database.Schema;
 using Bottleneko.Logging;
+using Bottleneko.Messages;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Bottleneko.Connections;
 
-class ConnectionsCat(IServiceProvider services, INekoLogger logger) : ContainerCat<ConnectionInstance, ConnectionEntity, IConnectionsMessage.Add, IConnectionsMessage.Update, IConnectionsMessage.Remove>(services)
+class ConnectionsCat(IServiceProvider services, INekoLogger logger) : ContainerCat<ConnectionInstance, ConnectionEntity, ConnectionMessages.Add, ConnectionMessages.Update, ConnectionMessages.Remove>(services)
 {
     public override async Task InitAsync(IActorRef self)
     {
@@ -24,7 +23,7 @@ class ConnectionsCat(IServiceProvider services, INekoLogger logger) : ContainerC
         await base.InitAsync(self);
     }
 
-    protected override async Task<ConnectionEntity> AddAsync(IConnectionsMessage.Add msg)
+    protected override async Task<ConnectionEntity> AddAsync(ConnectionMessages.Add msg)
     {
         await using var scope = Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<NekoDbContext>();
@@ -43,7 +42,7 @@ class ConnectionsCat(IServiceProvider services, INekoLogger logger) : ContainerC
         return entity;
     }
 
-    protected override async Task<ConnectionEntity> UpdateAsync(IConnectionsMessage.Update msg)
+    protected override async Task<ConnectionEntity> UpdateAsync(ConnectionMessages.Update msg)
     {
         await using var scope = Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<NekoDbContext>();
@@ -85,44 +84,9 @@ class ConnectionsCat(IServiceProvider services, INekoLogger logger) : ContainerC
     {
         switch (message)
         {
-            case IConnectionsMessage.GetStatus getStatus:
-                {
-                    if (GetChild(getStatus.Id) is IActorRef child)
-                    {
-                        child.Forward(message);
-                    }
-                    else
-                    {
-                        Sender.Tell(new ExtendedConnectionStatus(ConnectionStatus.NotConnected));
-                    }
-                    return true;
-                }
-
-            case IConnectionsMessage.Get get:
-            {
-                if (GetChild(get.Id) is IActorRef child)
-                {
-                    child.Forward(message);
-                }
-                else
-                {
-                    Sender.Tell(null);
-                }
+            case LoggingMessages.GetLogger:
+                Sender.Tell(logger);
                 return true;
-            }
-
-            case ILoggingMessage.GetLogger getLogger:
-                {
-                    if (getLogger.Filter is { SourceType: LogSourceType.Connection, SourceId: not null } && GetChild(long.Parse(getLogger.Filter.SourceId)) is IActorRef child)
-                    {
-                        child.Forward(message);
-                    }
-                    else
-                    {
-                        Sender.Tell(logger);
-                    }
-                    return true;
-                }
 
             default:
                 return false;

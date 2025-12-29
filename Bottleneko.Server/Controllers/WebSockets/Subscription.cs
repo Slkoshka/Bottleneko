@@ -1,5 +1,5 @@
-﻿using System.Net.WebSockets;
-using Bottleneko.Api.Packets;
+﻿using Bottleneko.Api.Packets;
+using System.Net.WebSockets;
 
 namespace Bottleneko.Server.Controllers.WebSockets;
 
@@ -52,7 +52,7 @@ public abstract class Subscription(string subscriptionId, WebSocketHandler wsHan
         }
         finally
         {
-            lock(_lock)
+            lock (_lock)
             {
                 _sending = false;
             }

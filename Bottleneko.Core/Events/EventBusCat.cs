@@ -74,17 +74,17 @@ class EventBusCat(IServiceProvider services) : NekoActor(services)
     {
         switch (message)
         {
-            case IEventBusMessage.Subscribe subscribe:
+            case EventBusMessages.Subscribe subscribe:
                 Sender.Tell(AddSubscription(subscribe.Listener, subscribe.Name, subscribe.PayloadType));
                 break;
 
-            case IEventBusMessage.SubscribeExternal external:
+            case EventBusMessages.SubscribeExternal external:
                 _externalSubscriptions[external.Token] = CreateChild<ExternalSubscriptionActor>([Self, external.Listener, external]);
                 break;
 
-            case IEventBusMessage.Publish publish:
+            case EventBusMessages.Publish publish:
                 {
-                    var @event = new IEventBusMessage.Event(publish.Name, publish.Payload);
+                    var @event = new EventBusMessages.Event(publish.Name, publish.Payload);
                     IEnumerable<Subscription> matchingSubs = _genericSubscriptions;
                     if (_exactNameSubscriptions.TryGetValue(publish.Name, out var subs))
                     {
@@ -110,11 +110,11 @@ class EventBusCat(IServiceProvider services) : NekoActor(services)
                     break;
                 }
 
-            case IEventBusMessage.Unsubscribe unsubscribe:
+            case EventBusMessages.Unsubscribe unsubscribe:
                 {
                     if (_externalSubscriptions.Remove(unsubscribe.Token, out var externalActor))
                     {
-                        externalActor.Tell(IControlMessage.Shutdown.Instance);
+                        externalActor.Tell(ControlMessages.Shutdown.Instance);
                     }
                     else
                     {
@@ -124,7 +124,7 @@ class EventBusCat(IServiceProvider services) : NekoActor(services)
                     break;
                 }
 
-            case IControlMessage.Shutdown:
+            case ControlMessages.Shutdown:
                 Context.Stop(Self);
                 break;
 

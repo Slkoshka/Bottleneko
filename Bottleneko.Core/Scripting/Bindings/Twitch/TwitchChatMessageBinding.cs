@@ -37,7 +37,7 @@ public class TwitchChatMessageBinding : RawChatMessageBinding
 
     public string id => Message switch { ChannelChatMessage channelMsg => channelMsg.MessageId, UserWhisperMessage whisperMsg => whisperMsg.WhisperId, _ => throw new Exception() };
     public string text => Message switch { ChannelChatMessage channelMsg => channelMsg.Message.Text, UserWhisperMessage whisperMsg => whisperMsg.Whisper.Text, _ => throw new Exception() };
-    public TwitchChatBadgeBinding[] badges => Message switch { ChannelChatMessage channelMsg => [..channelMsg.Badges.Select(badge => new TwitchChatBadgeBinding(badge))], UserWhisperMessage => [], _ => throw new Exception() };
+    public TwitchChatBadgeBinding[] badges => Message switch { ChannelChatMessage channelMsg => [.. channelMsg.Badges.Select(badge => new TwitchChatBadgeBinding(badge))], UserWhisperMessage => [], _ => throw new Exception() };
     public string? color => Message switch { ChannelChatMessage channelMsg => channelMsg.Color, UserWhisperMessage => null, _ => throw new Exception() };
     public int? cheerBits => Message switch { ChannelChatMessage channelMsg => channelMsg.Cheer?.Bits, UserWhisperMessage => null, _ => throw new Exception() };
     public string? channelPointsCustomRewardId => Message switch { ChannelChatMessage channelMsg => channelMsg.ChannelPointsCustomRewardId, UserWhisperMessage => null, _ => throw new Exception() };

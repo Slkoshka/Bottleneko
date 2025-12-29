@@ -26,7 +26,7 @@ public record StaticProtocolContext<TConfig>(IServiceProvider Services, INekoLog
 
 public record ProtocolDescription(Protocol Id, DynamicConnectionFactory Factory, DynamicConnectionTest Test, ConnectionBindingFactory BindingFactory, Type ConfigType)
 {
-    public static ProtocolDescription Make<TConfig>(Protocol id, StaticConnectionFactory<TConfig> factory, StaticConnectionTest<TConfig> test, ConnectionBindingFactory bindingFactory) where TConfig: ProtocolConfiguration
+    public static ProtocolDescription Make<TConfig>(Protocol id, StaticConnectionFactory<TConfig> factory, StaticConnectionTest<TConfig> test, ConnectionBindingFactory bindingFactory) where TConfig : ProtocolConfiguration
     {
         return new(
             id,

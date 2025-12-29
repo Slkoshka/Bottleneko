@@ -12,6 +12,6 @@ public class DiscordConnectionBinding(long connectionId, IActorRef connection) :
 {
     public Task<ChatBinding?> getChat(BigInteger id)
     {
-        return Connection.Ask<ChatBinding?>(new IDiscordMessage.GetChat(ConnectionId, (ulong)id));
+        return Connection.Ask<ChatBinding?>(new DiscordMessages.GetChat((ulong)id));
     }
 }

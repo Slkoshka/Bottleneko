@@ -1,11 +1,18 @@
 ﻿using Akka.Actor;
-using Bottleneko.Messages;
 using Bottleneko.Connections;
-using Bottleneko.Scripting;
 using Bottleneko.Events;
 using Bottleneko.Logging;
+using Bottleneko.Messages;
+using Bottleneko.Scripting;
 
 namespace Bottleneko.Actors;
+
+public enum CatType
+{
+    Connections,
+    Scripting,
+    EventBus,
+}
 
 public class NekoWorld(IServiceProvider services, INekoLogger logger) : NekoActor(services)
 {
@@ -29,7 +36,7 @@ public class NekoWorld(IServiceProvider services, INekoLogger logger) : NekoActo
 
     public override Task InitAsync(IActorRef self)
     {
-        (logger as LogRouter)!.OnMessage += (_, msg) => _eventBus?.Tell(new IEventBusMessage.Publish("internal/log/message", msg));
+        (logger as LogRouter)!.OnMessage += (_, msg) => _eventBus?.Tell(new EventBusMessages.Publish("internal/log/message", msg));
 
         logger.LogDebug("Bottleneko.NekoWorld", "Creating Neko World...");
 
@@ -53,7 +60,45 @@ public class NekoWorld(IServiceProvider services, INekoLogger logger) : NekoActo
         var step = _startupSequence[++_startupSequenceIndex];
         var cat = step.Handler(this);
         Context.Watch(cat);
-        _ = cat.Ask(IControlMessage.Ready.Instance).PipeTo(Self, cat, () => new CatReady(cat), ex => new CatDied(cat, ex));
+        _ = cat.Ask(ControlMessages.Ready.Instance).PipeTo(Self, cat, () => new CatReady(cat), ex => new CatDied(cat, ex));
+    }
+
+    private void TryRoute(RoutingMessages.ForwardMessage message, bool stashIfNotAvailable)
+    {
+        switch (message)
+        {
+            case RoutingMessages.ForwardToCat forwardToCat:
+                switch (forwardToCat.Cat)
+                {
+                    case CatType.Connections when _connections is not null:
+                        _connections.Forward(forwardToCat.Message);
+                        break;
+
+                    case CatType.Scripting when _scripting is not null:
+                        _scripting.Forward(forwardToCat.Message);
+                        break;
+
+                    case CatType.EventBus when _eventBus is not null:
+                        _eventBus.Forward(forwardToCat.Message);
+                        break;
+
+                    default:
+                        if (stashIfNotAvailable)
+                        {
+                            Stash.Stash();
+                        }
+                        else
+                        {
+                            Sender.Tell(new Status.Failure(new RouteNotFoundException("Routing target is not available")));
+                        }
+                        break;
+                }
+                break;
+
+            case RoutingMessages.ForwardMessage { IsSendAndForget: false }:
+                Sender.Tell(new Status.Failure(new RouteNotFoundException("Invalid route")));
+                break;
+        }
     }
 
     protected override void OnMessage(object message)
@@ -67,52 +112,23 @@ public class NekoWorld(IServiceProvider services, INekoLogger logger) : NekoActo
 
             case CatDied died:
                 logger.LogError("Bottleneko", $"Cat {died.Cat.Path} has failed to start: {died.Exception}");
-                Self.Tell(IControlMessage.Shutdown.Instance);
+                Self.Tell(ControlMessages.Shutdown.Instance);
                 break;
 
-            case IEventBusMessage:
-                if (_eventBus is not null)
-                {
-                    _eventBus.Forward(message);
-                }
-                else
-                {
-                    Stash.Stash();
-                }
+            case RoutingMessages.ForwardMessage forwardMessage:
+                TryRoute(forwardMessage, true);
                 break;
 
-            case IScriptingMessage:
-                if (_scripting is not null)
-                {
-                    _scripting.Forward(message);
-                }
-                else
-                {
-                    Stash.Stash();
-                }
+            case LoggingMessages.GetLogger:
+                Sender.Tell(logger);
                 break;
 
-            case IConnectionsMessage:
-                if (_connections is not null)
-                {
-                    _connections.Forward(message);
-                }
-                else
-                {
-                    Stash.Stash();
-                }
-                break;
-
-            case ILoggingMessage.GetLogger:
-                Stash.Stash();
-                break;
-
-            case IControlMessage.Shutdown:
+            case ControlMessages.Shutdown:
                 logger.LogInfo("Bottleneko", "Shutting down...");
                 _isShuttingDown = true;
-                _connections?.Tell(IControlMessage.Shutdown.Instance);
-                _scripting?.Tell(IControlMessage.Shutdown.Instance);
-                _eventBus?.Tell(IControlMessage.Shutdown.Instance);
+                _connections?.Tell(ControlMessages.Shutdown.Instance);
+                _scripting?.Tell(ControlMessages.Shutdown.Instance);
+                _eventBus?.Tell(ControlMessages.Shutdown.Instance);
                 break;
 
             case Terminated t:
@@ -121,7 +137,7 @@ public class NekoWorld(IServiceProvider services, INekoLogger logger) : NekoActo
                     _connections = null;
                     if (!_isShuttingDown)
                     {
-                        Self.Tell(IControlMessage.Shutdown.Instance);
+                        Self.Tell(ControlMessages.Shutdown.Instance);
                     }
                 }
                 if (t.ActorRef == _scripting)
@@ -129,7 +145,7 @@ public class NekoWorld(IServiceProvider services, INekoLogger logger) : NekoActo
                     _scripting = null;
                     if (!_isShuttingDown)
                     {
-                        Self.Tell(IControlMessage.Shutdown.Instance);
+                        Self.Tell(ControlMessages.Shutdown.Instance);
                     }
                 }
                 if (t.ActorRef == _eventBus)
@@ -137,7 +153,7 @@ public class NekoWorld(IServiceProvider services, INekoLogger logger) : NekoActo
                     _eventBus = null;
                     if (!_isShuttingDown)
                     {
-                        Self.Tell(IControlMessage.Shutdown.Instance);
+                        Self.Tell(ControlMessages.Shutdown.Instance);
                     }
                 }
 
@@ -161,40 +177,19 @@ public class NekoWorld(IServiceProvider services, INekoLogger logger) : NekoActo
     {
         switch (message)
         {
-            case IConnectionsMessage when _connections is not null:
-                _connections.Forward(message);
+            case RoutingMessages.ForwardMessage forwardMessage:
+                TryRoute(forwardMessage, false);
                 break;
 
-            case IScriptingMessage when _scripting is not null:
-                _scripting.Forward(message);
+            case LoggingMessages.GetLogger:
+                Sender.Tell(logger);
                 break;
 
-            case IEventBusMessage when _eventBus is not null:
-                _eventBus.Forward(message);
-                break;
-
-            case ILoggingMessage.GetLogger getLogger:
-                switch (getLogger)
-                {
-                    case { Filter.SourceType: LogSourceType.Connection, Filter.SourceId: not null }:
-                        _connections?.Forward(message);
-                        break;
-
-                    case { Filter.SourceType: LogSourceType.Script, Filter.SourceId: not null }:
-                        _scripting?.Forward(message);
-                        break;
-
-                    default:
-                        Sender.Tell(logger);
-                        break;
-                }
-                break;
-
-            case IControlMessage.Shutdown:
+            case ControlMessages.Shutdown:
                 logger.LogInfo("Bottleneko", "Shutting down...");
-                _connections?.Tell(IControlMessage.Shutdown.Instance);
-                _scripting?.Tell(IControlMessage.Shutdown.Instance);
-                _eventBus?.Tell(IControlMessage.Shutdown.Instance);
+                _connections?.Tell(ControlMessages.Shutdown.Instance);
+                _scripting?.Tell(ControlMessages.Shutdown.Instance);
+                _eventBus?.Tell(ControlMessages.Shutdown.Instance);
                 break;
 
             case Terminated t:

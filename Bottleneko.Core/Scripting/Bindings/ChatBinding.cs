@@ -37,6 +37,6 @@ public class ChatBinding(IActorRef connection, RawChatBinding raw)
 
     public void sendMessage(string text)
     {
-        connection.Tell(new IConnectionsMessage.SendMessage((long)connectionId, this, text));
+        connection.Tell(new ConnectionMessages.SendMessage(this, text));
     }
 }

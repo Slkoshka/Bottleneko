@@ -1,9 +1,10 @@
-﻿using System.Net.WebSockets;
-using System.Runtime.CompilerServices;
+﻿using Bottleneko.Actors;
 using Bottleneko.Api.Packets;
 using Bottleneko.Logging;
 using Bottleneko.Messages;
 using Bottleneko.Services;
+using System.Net.WebSockets;
+using System.Runtime.CompilerServices;
 
 namespace Bottleneko.Server.Controllers.WebSockets;
 
@@ -23,7 +24,7 @@ public class LogSubscription : Subscription
     {
         _akka = services.GetRequiredService<AkkaService>();
         _topic = topic;
-        _akka.Tell(new IEventBusMessage.SubscribeExternal(_eventSubscription, OnNewEventAsync, "internal/log/message"));
+        _akka.Tell(new EventBusMessages.SubscribeExternal(_eventSubscription, OnNewEventAsync, "internal/log/message").ToEventBus());
     }
 
     private Task OnNewEventAsync(object sender, object logEvent)
@@ -33,7 +34,14 @@ public class LogSubscription : Subscription
 
     protected override async IAsyncEnumerable<Letter[]> GetNewMessagesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        _logger ??= await _akka.AskAsync<LogRouter>(new ILoggingMessage.GetLogger(_topic.Filter));
+        _logger ??= _topic.Filter switch
+        {
+            { SourceType: LogSourceType.Connection, SourceId: null } => await _akka.AskAsync(LoggingMessages.GetLogger.Instance.ToConnections().WithReply<LogRouter>()),
+            { SourceType: LogSourceType.Connection } => await _akka.AskAsync(LoggingMessages.GetLogger.Instance.ToConnection(long.Parse(_topic.Filter.SourceId)).WithReply<LogRouter>()),
+            { SourceType: LogSourceType.Script, SourceId: null } => await _akka.AskAsync(LoggingMessages.GetLogger.Instance.ToScripting().WithReply<LogRouter>()),
+            { SourceType: LogSourceType.Script } => await _akka.AskAsync(LoggingMessages.GetLogger.Instance.ToScript(long.Parse(_topic.Filter.SourceId)).WithReply<LogRouter>()),
+            _ => await _akka.AskAsync(LoggingMessages.GetLogger.Instance.ToWorld().WithReply<LogRouter>()),
+        };
 
         var filter = new LogMessageHistoryFilter(_topic.Filter);
         var count = _isInitialSend ? _logger.Buffer.GetLast(_logEventBuffer.AsMemory(), filter) : _logger.Buffer.GetSince(_lastMessageId, _logEventBuffer.AsMemory(), filter);
@@ -61,7 +69,7 @@ public class LogSubscription : Subscription
     public override ValueTask DisposeAsync()
     {
         GC.SuppressFinalize(this);
-        _akka.Tell(new IEventBusMessage.Unsubscribe(_eventSubscription));
+        _akka.Tell(new EventBusMessages.Unsubscribe(_eventSubscription).ToEventBus());
         return base.DisposeAsync();
     }
 }

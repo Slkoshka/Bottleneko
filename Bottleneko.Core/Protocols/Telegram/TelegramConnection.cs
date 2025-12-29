@@ -148,12 +148,12 @@ class TelegramConnection(StaticConnectionCreationData<TelegramProtocolConfigurat
         var telegramChatMessage = await db.TelegramChatMessages.Include(chatMessage => chatMessage.ChatMessage).ThenInclude(chatMessage => chatMessage.Attachments).ThenInclude(attachment => attachment.Telegram).SingleOrDefaultAsync(chatMessage =>
             chatMessage.ChatMessage.ConnectionId == ConnectionId &&
             chatMessage.TelegramId == message.Id) ?? new TelegramChatMessageEntity()
-        {
-            ConnectionId = ConnectionId,
-            TelegramChatId = message.Chat.Id,
-            TelegramId = message.Id,
-            TelegramMediaGroupId = message.MediaGroupId,
-        };
+            {
+                ConnectionId = ConnectionId,
+                TelegramChatId = message.Chat.Id,
+                TelegramId = message.Id,
+                TelegramMediaGroupId = message.MediaGroupId,
+            };
         var msg = new ChatMessageEntity()
         {
             Id = telegramChatMessage.ChatMessageId,
@@ -395,20 +395,20 @@ class TelegramConnection(StaticConnectionCreationData<TelegramProtocolConfigurat
         }
     }
 
-    public override async Task HandleMessageAsync(IActorRef sender, IConnectionsMessage message)
+    public override async Task HandleMessageAsync(IActorRef sender, IHandledByConnection message)
     {
         switch (message)
         {
-            case IConnectionsMessage.ProxyUpdated proxyUpdated:
+            case ConnectionMessages.ProxyUpdated proxyUpdated:
                 {
-                    if (!string.IsNullOrEmpty(Configuration.ProxyId) && long.TryParse(Configuration.ProxyId, out var proxyId) && proxyId == proxyUpdated.Id)
+                    if (!string.IsNullOrEmpty(Configuration.ProxyId) && long.TryParse(Configuration.ProxyId, out var proxyId) && proxyId == proxyUpdated.ProxyId)
                     {
                         RequestRestart(true);
                     }
                     break;
                 }
 
-            case IConnectionsMessage.SimpleReply simpleReply:
+            case ConnectionMessages.SimpleReply simpleReply:
                 {
                     if (simpleReply.ReplyTo.chat.telegram is TelegramChatBinding telegramChat && simpleReply.ReplyTo.telegram is TelegramChatMessageBinding telegramMessage && telegramMessage.Update.Message is not null)
                     {
@@ -421,7 +421,7 @@ class TelegramConnection(StaticConnectionCreationData<TelegramProtocolConfigurat
                     break;
                 }
 
-            case IConnectionsMessage.SendMessage sendMessage:
+            case ConnectionMessages.SendMessage sendMessage:
                 {
                     if (sendMessage.Chat.telegram is TelegramChatBinding telegramChat)
                     {
@@ -434,11 +434,11 @@ class TelegramConnection(StaticConnectionCreationData<TelegramProtocolConfigurat
                     break;
                 }
 
-            case IConnectionsMessage.GetAttachment getAttachment:
+            case ConnectionMessages.GetAttachment getAttachment:
                 {
                     await using var db = NekoDbContext.Get();
                     var attachment = await db.MessageAttachments.Include(attachment => attachment.Telegram).SingleOrDefaultAsync(attachment => attachment.Id == getAttachment.AttachmentId);
-                    if (attachment is null || attachment.Message.ConnectionId != getAttachment.Id || attachment.Telegram is null)
+                    if (attachment is null || attachment.Telegram is null)
                     {
                         sender.Tell(null);
                         break;

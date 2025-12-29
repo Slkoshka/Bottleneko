@@ -1,7 +1,7 @@
-﻿using System.Text.Json.Serialization;
-using Bottleneko.Database.Schema.Protocols.Discord;
+﻿using Bottleneko.Database.Schema.Protocols.Discord;
 using Bottleneko.Database.Schema.Protocols.Telegram;
 using Bottleneko.Database.Schema.Protocols.Twitch;
+using System.Text.Json.Serialization;
 
 namespace Bottleneko.Database.Schema.Protocols;
 

@@ -17,7 +17,7 @@ public record ConnectionCreationData(IActorRef Owner, long ConnectionId)
     }
 }
 
-public record StaticConnectionCreationData<TConfig>(IActorRef Owner, long ConnectionId, StaticProtocolContext<TConfig> Context) : ConnectionCreationData(Owner, ConnectionId) where TConfig: ProtocolConfiguration;
+public record StaticConnectionCreationData<TConfig>(IActorRef Owner, long ConnectionId, StaticProtocolContext<TConfig> Context) : ConnectionCreationData(Owner, ConnectionId) where TConfig : ProtocolConfiguration;
 
 class ConnectionActor(IServiceProvider services, AkkaService akka, INekoLogger logger, IActorRef owner, long id, ProtocolDescription protocol, ProtocolConfiguration configuration) : NekoActor(services)
 {
@@ -39,11 +39,11 @@ class ConnectionActor(IServiceProvider services, AkkaService akka, INekoLogger l
             try
             {
                 _connection.OnConnected += (_, _) => owner.Tell(Connected.Instance);
-                _connection.OnRestartRequested += (_, isImmediate) => owner.Tell(isImmediate ? new IContainerMessage.Restart(id) : ConnectionInstance.DelayedRestart.Instance);
+                _connection.OnRestartRequested += (_, isImmediate) => owner.Tell(isImmediate ? ContainerMessages.Restart.Instance : ConnectionInstance.DelayedRestart.Instance);
                 _connection.OnMessageReceived += (_, msg) =>
                 {
-                    akka.Tell(new IEventBusMessage.Publish("internal/connection/message_received", msg.Entity));
-                    akka.Tell(new IEventBusMessage.Publish("connection/message_received", msg.Binding));
+                    akka.Tell(new EventBusMessages.Publish("internal/connection/message_received", msg.Entity).ToEventBus());
+                    akka.Tell(new EventBusMessages.Publish("connection/message_received", msg.Binding).ToEventBus());
                 };
                 _connection.OnDied += (_, ex) => self.Tell(new ConnectionDied(ex));
 
@@ -77,7 +77,7 @@ class ConnectionActor(IServiceProvider services, AkkaService akka, INekoLogger l
     {
         switch (message)
         {
-            case IControlMessage.Shutdown:
+            case ControlMessages.Shutdown:
                 StopConnection();
                 break;
 
@@ -87,8 +87,8 @@ class ConnectionActor(IServiceProvider services, AkkaService akka, INekoLogger l
                 StopConnection();
                 break;
 
-            case IConnectionsMessage msg:
-                _ = _connection.HandleMessageAsync(Sender, msg).PipeTo(msg is IHasReply ? Sender : Self);
+            case IHandledByConnection msg:
+                _ = _connection.HandleMessageAsync(Sender, msg).PipeTo(Sender);
                 break;
 
             case Status.Failure failure:
@@ -105,7 +105,7 @@ class ConnectionActor(IServiceProvider services, AkkaService akka, INekoLogger l
     {
         switch (message)
         {
-            case IControlMessage.Shutdown:
+            case ControlMessages.Shutdown:
                 break;
 
             case ConnectionStopped:

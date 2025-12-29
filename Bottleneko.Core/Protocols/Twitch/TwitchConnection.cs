@@ -369,12 +369,12 @@ class TwitchConnection(StaticConnectionCreationData<TwitchProtocolConfiguration>
             chatMessage.TwitchChatId == message.BroadcasterUserId &&
             chatMessage.TwitchId == message.MessageId &&
             !chatMessage.IsWhisper) ?? new TwitchChatMessageEntity()
-        {
-            ConnectionId = ConnectionId,
-            TwitchChatId = message.BroadcasterUserId,
-            TwitchId = message.MessageId,
-            IsWhisper = false,
-        };
+            {
+                ConnectionId = ConnectionId,
+                TwitchChatId = message.BroadcasterUserId,
+                TwitchId = message.MessageId,
+                IsWhisper = false,
+            };
         var msg = new ChatMessageEntity()
         {
             Id = twitchChatMessage.ChatMessageId,
@@ -516,12 +516,12 @@ class TwitchConnection(StaticConnectionCreationData<TwitchProtocolConfiguration>
             chatMessage.TwitchChatId == message.FromUserId &&
             chatMessage.TwitchId == message.WhisperId &&
             chatMessage.IsWhisper) ?? new TwitchChatMessageEntity()
-        {
-            ConnectionId = ConnectionId,
-            TwitchChatId = message.FromUserId,
-            TwitchId = message.WhisperId,
-            IsWhisper = true,
-        };
+            {
+                ConnectionId = ConnectionId,
+                TwitchChatId = message.FromUserId,
+                TwitchId = message.WhisperId,
+                IsWhisper = true,
+            };
         var msg = new ChatMessageEntity()
         {
             Id = twitchChatMessage.ChatMessageId,
@@ -746,20 +746,20 @@ class TwitchConnection(StaticConnectionCreationData<TwitchProtocolConfiguration>
         Logger.LogInfo(LogCategory, "Refreshed access token!");
     }
 
-    public override async Task HandleMessageAsync(IActorRef sender, IConnectionsMessage message)
+    public override async Task HandleMessageAsync(IActorRef sender, IHandledByConnection message)
     {
         switch (message)
         {
-            case IConnectionsMessage.ProxyUpdated proxyUpdated:
+            case ConnectionMessages.ProxyUpdated proxyUpdated:
                 {
-                    if (!string.IsNullOrEmpty(Configuration.ProxyId) && long.TryParse(Configuration.ProxyId, out var proxyId) && proxyId == proxyUpdated.Id)
+                    if (!string.IsNullOrEmpty(Configuration.ProxyId) && long.TryParse(Configuration.ProxyId, out var proxyId) && proxyId == proxyUpdated.ProxyId)
                     {
                         RequestRestart(true);
                     }
                     break;
                 }
 
-            case IConnectionsMessage.SimpleReply simpleReply:
+            case ConnectionMessages.SimpleReply simpleReply:
                 {
                     if (simpleReply.ReplyTo.twitch is TwitchChatMessageBinding twitchMessage)
                     {
@@ -787,7 +787,7 @@ class TwitchConnection(StaticConnectionCreationData<TwitchProtocolConfiguration>
                     break;
                 }
 
-            case IConnectionsMessage.SendMessage sendMessage:
+            case ConnectionMessages.SendMessage sendMessage:
                 {
                     if (sendMessage.Chat.twitch is TwitchChatBinding twitchChat)
                     {

@@ -1,4 +1,5 @@
-﻿using Bottleneko.Api.Dtos;
+﻿using Bottleneko.Actors;
+using Bottleneko.Api.Dtos;
 using Bottleneko.Database;
 using Bottleneko.Database.Schema;
 using Bottleneko.Messages;
@@ -43,7 +44,7 @@ public class ProxiesController(AkkaService akka, NekoDbContext db) : CrudControl
             proxy.LastUpdatedAt = DateTime.UtcNow;
             await db.SaveChangesAsync();
 
-            akka.Tell(new IConnectionsMessage.ProxyUpdated(id));
+            akka.Tell(new ConnectionMessages.ProxyUpdated(id).ToAllConnections());
 
             return Ok(new Success());
         }
@@ -97,7 +98,7 @@ public class ProxiesController(AkkaService akka, NekoDbContext db) : CrudControl
 
             if (proxyUpdated)
             {
-                akka.Tell(new IConnectionsMessage.ProxyUpdated(id));
+                akka.Tell(new ConnectionMessages.ProxyUpdated(id).ToAllConnections());
             }
 
             return Ok(new

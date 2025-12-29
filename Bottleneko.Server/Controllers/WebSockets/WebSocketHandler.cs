@@ -1,9 +1,9 @@
-﻿using System.Net.WebSockets;
-using System.Security.Claims;
-using Bottleneko.Api.Packets;
+﻿using Bottleneko.Api.Packets;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using System.Net.WebSockets;
+using System.Security.Claims;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Bottleneko.Server.Controllers.WebSockets;
@@ -12,11 +12,11 @@ public class WebSocketHandler(IServiceProvider services, IOptions<JsonOptions> j
 {
     private readonly byte[] _receiveBuffer = new byte[65536];
     private readonly Dictionary<string, Subscription> _subscriptions = [];
-    
+
     private async Task<Packet?> ReceiveAsync(WebSocket ws, CancellationToken cancellationToken)
     {
         var result = await ws.ReceiveAsync(_receiveBuffer, cancellationToken);
-        
+
         if (!result.EndOfMessage)
         {
             await ws.CloseAsync(WebSocketCloseStatus.MessageTooBig, "Message too big", cancellationToken);
@@ -27,14 +27,14 @@ public class WebSocketHandler(IServiceProvider services, IOptions<JsonOptions> j
         {
             case WebSocketMessageType.Text:
                 return result.CloseStatus.HasValue ? null : JsonSerializer.Deserialize<Packet>(_receiveBuffer.AsSpan(0, result.Count), jsonOptions.Value.JsonSerializerOptions);
-            
+
             case WebSocketMessageType.Binary:
                 await ws.CloseAsync(WebSocketCloseStatus.InvalidMessageType, "Binary messages are not supported", cancellationToken);
                 return null;
-            
+
             case WebSocketMessageType.Close:
                 return null;
-            
+
             default:
                 throw new InvalidOperationException("Unexpected WebSocketMessageType");
         }
@@ -58,7 +58,7 @@ public class WebSocketHandler(IServiceProvider services, IOptions<JsonOptions> j
                 identities.Add(result.ClaimsIdentity);
             }
         }
-        
+
         return new ClaimsPrincipal([.. identities]);
     }
 

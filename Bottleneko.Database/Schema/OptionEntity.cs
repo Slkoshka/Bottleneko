@@ -1,5 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
-using Bottleneko.Database.Options;
+﻿using Bottleneko.Database.Options;
+using System.ComponentModel.DataAnnotations;
 
 namespace Bottleneko.Database.Schema;
 

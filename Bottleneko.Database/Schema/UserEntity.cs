@@ -1,6 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Cryptography;
-using Microsoft.EntityFrameworkCore;
 
 namespace Bottleneko.Database.Schema;
 
@@ -14,7 +14,7 @@ public class UserEntity : Entity
 {
     public const int PasswordLength = 64;
     public const int SaltLength = 64;
-    
+
     // ReSharper disable once EntityFramework.ModelValidation.UnlimitedStringLength
     public required string Login { get; set; }
     // ReSharper disable once EntityFramework.ModelValidation.UnlimitedStringLength
@@ -25,18 +25,18 @@ public class UserEntity : Entity
     [MaxLength(SaltLength)]
     public required byte[] Salt { get; set; }
     public required DateTime LastLogin { get; set; }
-    
+
     public bool CheckPassword(string password)
     {
         var hash = GetPasswordHash(password, Salt);
         return CryptographicOperations.FixedTimeEquals(Password, hash);
     }
-    
+
     private static byte[] GetPasswordHash(string password, byte[] salt)
     {
         return Rfc2898DeriveBytes.Pbkdf2(password, salt, 210000, HashAlgorithmName.SHA512, UserEntity.PasswordLength);
     }
-    
+
     private static byte[] GenerateSalt()
     {
         return RandomNumberGenerator.GetBytes(UserEntity.SaltLength);
@@ -55,7 +55,7 @@ public class UserEntity : Entity
             LastLogin = DateTime.MinValue,
         };
     }
-    
+
     public void Rename(string userName)
     {
         Login = userName.ToLowerInvariant().Trim();

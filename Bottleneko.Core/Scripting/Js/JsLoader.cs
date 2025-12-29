@@ -72,7 +72,7 @@ class JsLoader : DefaultDocumentLoader
         }
         List<string> paths = [string.Join(".", fullPath)];
         paths.Add(paths[0] + ".index");
-        
+
         foreach (var path in paths)
         {
             if (_modules.TryGetValue(path, out var resource))

@@ -5,7 +5,7 @@ public class CircularBuffer<T>(int capacity)
     public int Capacity => _buffer.Length;
     public int Count => _start < _end ? _end - _start : (_start > _end ? _end - _start + Capacity : (_isEmpty ? 0 : Capacity));
     public T this[int index] => _buffer[(_start + index) % Capacity];
-    
+
     private T[] _buffer = new T[capacity];
     private int _start = 0;
     private int _end = 0;
@@ -42,7 +42,7 @@ public class CircularBuffer<T>(int capacity)
         {
             newBuffer[i] = this[i + reduction];
         }
-        
+
         _buffer = newBuffer;
         _start = 0;
         _end = newCount % newSize;

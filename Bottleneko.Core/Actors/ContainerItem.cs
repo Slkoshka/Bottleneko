@@ -1,13 +1,11 @@
 ﻿using Akka.Actor;
-using Bottleneko.Database;
 using Bottleneko.Messages;
 using Bottleneko.Utils;
 
 namespace Bottleneko.Actors;
 
-abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEntity entity, bool autoStart) : NekoActor(services), IWithTimers
-    where TEntity : Entity
-    where TUpdateMsg: IContainerMessage.Update
+abstract class ContainerItem<TUpdateMsg>(IServiceProvider services, bool autoStart) : NekoActor(services), IWithTimers
+    where TUpdateMsg : ContainerMessages.Update
 {
     record Started : SingletonMessage<Started>;
     record FailedToStart(Exception Exception);
@@ -34,7 +32,7 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
     {
         if (autoStart)
         {
-            self.Tell(new IContainerMessage.Start(entity.Id));
+            self.Tell(ContainerMessages.Start.Instance);
         }
         await base.InitAsync(self);
     }
@@ -62,7 +60,7 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
     private void Start()
     {
         _actor = CreateActor();
-        _ = _actor.Ask(IControlMessage.Ready.Instance).PipeTo(Self, Self, result => result switch
+        _ = _actor.Ask(ControlMessages.Ready.Instance).PipeTo(Self, Self, result => result switch
         {
             Status.Success _ => Started.Instance,
             Status.Failure failure => new FailedToStart(failure.Cause),
@@ -74,13 +72,13 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
 
     private void StartDelayed(TimeSpan delay)
     {
-        Timers.StartSingleTimer("delayed-start", new IContainerMessage.Start(entity.Id), delay);
+        Timers.StartSingleTimer("delayed-start", ContainerMessages.Start.Instance, delay);
         Become(WaitingForStart, delay);
     }
 
     private void TerminateAndStart(object? requestedStart = null)
     {
-        _actor.Tell(IControlMessage.Shutdown.Instance);
+        _actor.Tell(ControlMessages.Shutdown.Instance);
         _requestedStart = requestedStart;
         Become(Restarting);
     }
@@ -96,26 +94,26 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
     {
         switch (message)
         {
-            case IContainerMessage.Start:
+            case ContainerMessages.Start:
                 Start();
                 break;
 
-            case IContainerMessage.Restart:
+            case ContainerMessages.Restart:
                 Start();
                 break;
 
-            case IContainerMessage.DelayedRestart delayedRestart:
+            case ContainerMessages.DelayedRestart delayedRestart:
                 StartDelayed(delayedRestart.Delay);
                 break;
 
-            case IContainerMessage.Stop:
+            case ContainerMessages.Stop:
                 break;
 
             case TUpdateMsg update:
                 ApplyUpdate(update);
                 break;
 
-            case IControlMessage.Shutdown:
+            case ControlMessages.Shutdown:
                 Context.Stop(Self);
                 break;
 
@@ -132,18 +130,18 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
     {
         switch (message)
         {
-            case IContainerMessage.Start:
+            case ContainerMessages.Start:
                 break;
 
-            case IContainerMessage.Restart:
+            case ContainerMessages.Restart:
                 _requestedRestart = message;
                 break;
 
-            case IContainerMessage.DelayedRestart:
+            case ContainerMessages.DelayedRestart:
                 _requestedRestart = message;
                 break;
 
-            case IContainerMessage.Stop:
+            case ContainerMessages.Stop:
                 Stash.Stash();
                 break;
 
@@ -152,7 +150,7 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
                 _requestedRestart = true;
                 break;
 
-            case IControlMessage.Shutdown:
+            case ControlMessages.Shutdown:
                 Stash.Stash();
                 break;
 
@@ -180,18 +178,19 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
 
                 switch (_requestedRestart)
                 {
-                    case IContainerMessage.Restart:
+                    case ContainerMessages.Restart:
                         Start();
                         break;
 
-                    case IContainerMessage.DelayedRestart delayedRestart:
+                    case ContainerMessages.DelayedRestart delayedRestart:
                         StartDelayed(delayedRestart.Delay);
                         break;
 
                     default:
                         Become(OnMessage);
                         break;
-                };
+                }
+                ;
                 _requestedRestart = null;
 
                 break;
@@ -219,19 +218,19 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
     {
         switch (message)
         {
-            case IContainerMessage.Start:
+            case ContainerMessages.Start:
                 break;
 
-            case IContainerMessage.Restart:
+            case ContainerMessages.Restart:
                 TerminateAndStart();
                 break;
 
-            case IContainerMessage.DelayedRestart delayedRestart:
+            case ContainerMessages.DelayedRestart delayedRestart:
                 TerminateAndStart(delayedRestart);
                 break;
 
-            case IContainerMessage.Stop:
-                _actor.Tell(IControlMessage.Shutdown.Instance);
+            case ContainerMessages.Stop:
+                _actor.Tell(ControlMessages.Shutdown.Instance);
                 Become(Stopping);
                 break;
 
@@ -242,8 +241,8 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
                 }
                 break;
 
-            case IControlMessage.Shutdown:
-                _actor.Tell(IControlMessage.Shutdown.Instance);
+            case ControlMessages.Shutdown:
+                _actor.Tell(ControlMessages.Shutdown.Instance);
                 Become(ShuttingDown);
                 break;
 
@@ -268,18 +267,18 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
     {
         switch (message)
         {
-            case IContainerMessage.Start:
+            case ContainerMessages.Start:
                 break;
 
-            case IContainerMessage.Restart:
+            case ContainerMessages.Restart:
                 _requestedStart = null;
                 break;
 
-            case IContainerMessage.DelayedRestart delayedRestart:
+            case ContainerMessages.DelayedRestart delayedRestart:
                 _requestedStart = delayedRestart;
                 break;
 
-            case IContainerMessage.Stop:
+            case ContainerMessages.Stop:
                 Stash.UnstashAll();
                 Become(Stopping);
                 break;
@@ -288,7 +287,7 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
                 ApplyUpdate(update);
                 break;
 
-            case IControlMessage.Shutdown:
+            case ControlMessages.Shutdown:
                 Stash.UnstashAll();
                 Become(ShuttingDown);
                 break;
@@ -300,7 +299,7 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
                     Stash.UnstashAll();
                     switch (_requestedStart)
                     {
-                        case IContainerMessage.DelayedRestart delayedRestart:
+                        case ContainerMessages.DelayedRestart delayedRestart:
                             StartDelayed(delayedRestart.Delay);
                             break;
 
@@ -324,21 +323,21 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
     {
         switch (message)
         {
-            case IContainerMessage.Start:
+            case ContainerMessages.Start:
                 Timers.Cancel("delayed-start");
                 Start();
                 break;
 
-            case IContainerMessage.Restart:
+            case ContainerMessages.Restart:
                 Timers.Cancel("delayed-start");
                 Start();
                 break;
 
-            case IContainerMessage.DelayedRestart delayedRestart:
+            case ContainerMessages.DelayedRestart delayedRestart:
                 StartDelayed(delayedRestart.Delay);
                 break;
 
-            case IContainerMessage.Stop:
+            case ContainerMessages.Stop:
                 Timers.Cancel("delayed-start");
                 Become(OnMessage);
                 break;
@@ -347,7 +346,7 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
                 ApplyUpdate(update);
                 break;
 
-            case IControlMessage.Shutdown:
+            case ControlMessages.Shutdown:
                 Context.Stop(Self);
                 break;
 
@@ -364,29 +363,29 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
     {
         switch (message)
         {
-            case IContainerMessage.Start:
+            case ContainerMessages.Start:
                 _requestedStart = null;
                 Become(Restarting);
                 break;
 
-            case IContainerMessage.Restart:
+            case ContainerMessages.Restart:
                 _requestedStart = null;
                 Become(Restarting);
                 break;
 
-            case IContainerMessage.DelayedRestart delayedRestart:
+            case ContainerMessages.DelayedRestart delayedRestart:
                 _requestedStart = delayedRestart;
                 Become(Restarting);
                 break;
 
-            case IContainerMessage.Stop:
+            case ContainerMessages.Stop:
                 break;
 
             case TUpdateMsg update:
                 ApplyUpdate(update);
                 break;
 
-            case IControlMessage.Shutdown:
+            case ControlMessages.Shutdown:
                 Become(ShuttingDown);
                 break;
 
@@ -411,7 +410,7 @@ abstract class ContainerItem<TEntity, TUpdateMsg>(IServiceProvider services, TEn
     {
         switch (message)
         {
-            case IControlMessage.Shutdown:
+            case ControlMessages.Shutdown:
                 break;
 
             case Terminated terminated:

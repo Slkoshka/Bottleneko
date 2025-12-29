@@ -1,7 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
-using Bottleneko.Api.Dtos;
+﻿using Bottleneko.Api.Dtos;
 using Bottleneko.Api.Protocols;
 using Bottleneko.Database.Schema.Protocols;
+using System.ComponentModel.DataAnnotations;
 
 namespace Bottleneko.Database.Schema;
 

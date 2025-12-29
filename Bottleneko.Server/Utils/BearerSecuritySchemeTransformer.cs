@@ -25,7 +25,7 @@ class BearerSecuritySchemeTransformer(IAuthenticationSchemeProvider authenticati
                     BearerFormat = "Json Web Token"
                 }
             };
-            
+
             document.Components ??= new OpenApiComponents();
             document.Components.SecuritySchemes = requirements;
 
@@ -42,7 +42,7 @@ class BearerSecuritySchemeTransformer(IAuthenticationSchemeProvider authenticati
 
                     requireAuth = authMethod || (authController && !anonymousMethod);
                 }
-                
+
                 if (requireAuth)
                 {
                     operation.Security ??= [];

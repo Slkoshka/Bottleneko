@@ -72,7 +72,7 @@ class JsScriptActor(IServiceProvider services, AkkaService akka, INekoLogger log
 
     public void Subscribe(object token, string? @event, Func<string?, object, object> handler)
     {
-        akka.Tell(new IEventBusMessage.SubscribeExternal(token, CallbackAsync, @event));
+        akka.Tell(new EventBusMessages.SubscribeExternal(token, CallbackAsync, @event).ToEventBus());
 
         Task CallbackAsync(string eventName, object arg)
         {
@@ -106,12 +106,12 @@ class JsScriptActor(IServiceProvider services, AkkaService akka, INekoLogger log
 
     public async Task<ConnectionBinding?> GetConnectionAsync(long id)
     {
-        return await akka.AskAsync<ConnectionBinding?>(new IConnectionsMessage.Get(id));
+        return await akka.AskAsync(new ConnectionMessages.GetBinding().ToConnection(id).WithReply<ConnectionBinding?>());
     }
 
     public void Unsubscribe(object token)
     {
-        akka.Tell(new IEventBusMessage.Unsubscribe(token));
+        akka.Tell(new EventBusMessages.Unsubscribe(token).ToEventBus());
     }
 
     private void OnScriptError(Exception ex)
@@ -120,7 +120,7 @@ class JsScriptActor(IServiceProvider services, AkkaService akka, INekoLogger log
         {
             ex = ex.InnerException;
         }
-        
+
         if (ex is ScriptEngineException { ErrorDetails: not null } scriptEngineException)
         {
             // Workaround for ClearScript leaking it's internal script initialization code in error messages
@@ -164,7 +164,7 @@ class JsScriptActor(IServiceProvider services, AkkaService akka, INekoLogger log
                                 {
                                     self.Tell(new ScriptError(result.Exception));
                                     owner.Tell(new ScriptInstance.FatalScriptError(result.Exception));
-                                    self.Tell(IControlMessage.Shutdown.Instance);
+                                    self.Tell(ControlMessages.Shutdown.Instance);
                                 }
                             }, TaskScheduler.Default);
                         }
@@ -173,7 +173,7 @@ class JsScriptActor(IServiceProvider services, AkkaService akka, INekoLogger log
                     {
                         self.Tell(new ScriptError(e));
                         owner.Tell(new ScriptInstance.FatalScriptError(e));
-                        self.Tell(IControlMessage.Shutdown.Instance);
+                        self.Tell(ControlMessages.Shutdown.Instance);
                     }
                 });
                 break;
@@ -186,7 +186,7 @@ class JsScriptActor(IServiceProvider services, AkkaService akka, INekoLogger log
                 OnScriptError(scriptError.Exception);
                 break;
 
-            case IControlMessage.Shutdown:
+            case ControlMessages.Shutdown:
                 _engine.Interrupt();
                 _frame.Continue = false;
                 break;

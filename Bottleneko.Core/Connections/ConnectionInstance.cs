@@ -11,7 +11,7 @@ using Bottleneko.Utils;
 
 namespace Bottleneko.Connections;
 
-class ConnectionInstance(IServiceProvider services, INekoLogger logger, ProtocolRegistry registry, ConnectionEntity connection) : ContainerItem<ConnectionEntity, IConnectionsMessage.Update>(services, connection, connection.AutoStart)
+class ConnectionInstance(IServiceProvider services, INekoLogger logger, ProtocolRegistry registry, ConnectionEntity connection) : ContainerItem<ConnectionMessages.Update>(services, connection.AutoStart)
 {
     public record DelayedRestart : SingletonMessage<DelayedRestart>;
 
@@ -42,7 +42,7 @@ class ConnectionInstance(IServiceProvider services, INekoLogger logger, Protocol
         return CreateChild<ConnectionActor>([Services, LocalLog, Self, _id, registry.GetProtocol(_protocol), _configuration], _protocol.ToString());
     }
 
-    protected override bool ApplyUpdate(IConnectionsMessage.Update update)
+    protected override bool ApplyUpdate(ConnectionMessages.Update update)
     {
         var needRestart = false;
 
@@ -82,13 +82,13 @@ class ConnectionInstance(IServiceProvider services, INekoLogger logger, Protocol
 
     protected override bool CustomMessageHandler(object message)
     {
-        switch(message)
+        switch (message)
         {
-            case IConnectionsMessage.GetStatus:
+            case ConnectionMessages.GetStatus:
                 Sender.Tell(new ExtendedConnectionStatus(_status, _status == ConnectionStatus.DelayedReconnect ? Math.Max(0, (float)(_statusChangeTime - DateTime.UtcNow).TotalSeconds) : 0.0f));
                 return true;
 
-            case IConnectionsMessage.Get:
+            case ConnectionMessages.GetBinding:
                 Sender.Tell(new ConnectionBinding(registry.GetProtocol(_protocol).BindingFactory(_id, Self))
                 {
                     id = _id,
@@ -98,13 +98,13 @@ class ConnectionInstance(IServiceProvider services, INekoLogger logger, Protocol
                 });
                 return true;
 
-            case ILoggingMessage.GetLogger:
+            case LoggingMessages.GetLogger:
                 Sender.Tell(LocalLog);
                 return true;
 
             case DelayedRestart:
                 LocalLog.LogInfo("Bottleneko.Connection", $"Delaying reconnect by {_reconnectDelay.TotalSeconds:N0} seconds");
-                Self.Tell(new IContainerMessage.DelayedRestart(_id, _reconnectDelay));
+                Self.Tell(new ContainerMessages.DelayedRestart(_reconnectDelay));
                 _reconnectDelay = TimeSpan.FromSeconds(Math.Min(_reconnectDelay.TotalSeconds * 2, _maxReconnectDelay.TotalSeconds));
                 return true;
 

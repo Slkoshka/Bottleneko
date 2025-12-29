@@ -1,11 +1,12 @@
-﻿using System.Net.WebSockets;
-using System.Runtime.CompilerServices;
+﻿using Bottleneko.Actors;
 using Bottleneko.Api.Packets;
 using Bottleneko.Database;
 using Bottleneko.Messages;
 using Bottleneko.Server.Utils;
 using Bottleneko.Services;
 using Microsoft.EntityFrameworkCore;
+using System.Net.WebSockets;
+using System.Runtime.CompilerServices;
 
 namespace Bottleneko.Server.Controllers.WebSockets;
 
@@ -15,15 +16,15 @@ public class MessageSubscription : Subscription
     private bool _isInitialSend = true;
     private readonly ChatMessageFilter _filter;
     private long? _lastMessageId = null;
-    
+
     private readonly object _eventSubscription = new();
 
     public MessageSubscription(IServiceProvider services, ChatMessagesSubscriptionTopic topic, string subscriptionId, WebSocketHandler wsHandler, WebSocket ws) : base(subscriptionId, wsHandler, ws)
     {
         _akka = services.GetRequiredService<AkkaService>();
         _filter = topic.Filter;
-        
-        _akka.Tell(new IEventBusMessage.SubscribeExternal(_eventSubscription, OnNewEventAsync, "internal/connection/message_received"));
+
+        _akka.Tell(new EventBusMessages.SubscribeExternal(_eventSubscription, OnNewEventAsync, "internal/connection/message_received").ToEventBus());
     }
 
     private Task OnNewEventAsync(string name, object @event)
@@ -51,7 +52,7 @@ public class MessageSubscription : Subscription
     public override ValueTask DisposeAsync()
     {
         GC.SuppressFinalize(this);
-        _akka.Tell(new IEventBusMessage.Unsubscribe(_eventSubscription));
+        _akka.Tell(new EventBusMessages.Unsubscribe(_eventSubscription).ToEventBus());
         return base.DisposeAsync();
     }
 }

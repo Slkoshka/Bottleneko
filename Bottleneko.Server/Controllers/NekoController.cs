@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Bottleneko.Server.Utils;
+using Microsoft.AspNetCore.Mvc;
 using System.Text.Json.Serialization;
-using Bottleneko.Server.Utils;
 
 namespace Bottleneko.Server.Controllers;
 

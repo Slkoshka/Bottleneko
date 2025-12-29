@@ -43,11 +43,11 @@ class Program
             {
                 type = type.GetGenericArguments()[0];
                 isTask = true;
-                
+
             }
             if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
             {
-                type = type.GetGenericArguments()[0];   
+                type = type.GetGenericArguments()[0];
                 isOptional = true;
             }
             if (type.IsArray)

@@ -1,6 +1,5 @@
 ﻿using Akka.Actor;
 using Bottleneko.Actors;
-using Bottleneko.Api.Dtos;
 using Bottleneko.Database;
 using Bottleneko.Database.Schema;
 using Bottleneko.Logging;
@@ -10,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Bottleneko.Scripting;
 
-class ScriptingCat(IServiceProvider services, INekoLogger logger) : ContainerCat<ScriptInstance, ScriptEntity, IScriptingMessage.Add, IScriptingMessage.Update, IScriptingMessage.Remove>(services)
+class ScriptingCat(IServiceProvider services, INekoLogger logger) : ContainerCat<ScriptInstance, ScriptEntity, ScriptingMessages.Add, ScriptingMessages.Update, ScriptingMessages.Remove>(services)
 {
     public override async Task InitAsync(IActorRef self)
     {
@@ -24,7 +23,7 @@ class ScriptingCat(IServiceProvider services, INekoLogger logger) : ContainerCat
         await base.InitAsync(self);
     }
 
-    protected override async Task<ScriptEntity> AddAsync(IScriptingMessage.Add msg)
+    protected override async Task<ScriptEntity> AddAsync(ScriptingMessages.Add msg)
     {
         await using var scope = Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<NekoDbContext>();
@@ -43,7 +42,7 @@ class ScriptingCat(IServiceProvider services, INekoLogger logger) : ContainerCat
         return entity;
     }
 
-    protected override async Task<ScriptEntity> UpdateAsync(IScriptingMessage.Update msg)
+    protected override async Task<ScriptEntity> UpdateAsync(ScriptingMessages.Update msg)
     {
         await using var scope = Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<NekoDbContext>();
@@ -87,31 +86,9 @@ class ScriptingCat(IServiceProvider services, INekoLogger logger) : ContainerCat
     {
         switch (message)
         {
-            case IScriptingMessage.GetStatus getStatus:
-                {
-                    if (GetChild(getStatus.Id) is IActorRef child)
-                    {
-                        child.Forward(message);
-                    }
-                    else
-                    {
-                        Sender.Tell(ScriptStatus.Stopped);
-                    }
-                    return true;
-                }
-
-            case ILoggingMessage.GetLogger getLogger:
-                {
-                    if (getLogger.Filter is { SourceType: LogSourceType.Script, SourceId: not null } && GetChild(long.Parse(getLogger.Filter.SourceId)) is IActorRef child)
-                    {
-                        child.Forward(message);
-                    }
-                    else
-                    {
-                        Sender.Tell(logger);
-                    }
-                    return true;
-                }
+            case LoggingMessages.GetLogger:
+                Sender.Tell(logger);
+                return true;
 
             default:
                 return false;

@@ -1,18 +1,19 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Bottleneko.Actors;
+using Bottleneko.Api.Dtos;
+using Bottleneko.Api.Protocols;
+using Bottleneko.Database;
+using Bottleneko.Database.Schema;
+using Bottleneko.Logging;
+using Bottleneko.Messages;
+using Bottleneko.Protocols;
+using Bottleneko.Server.Utils;
+using Bottleneko.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Diagnostics;
 using System.Text.Json;
-using Bottleneko.Database;
-using Bottleneko.Database.Schema;
-using Bottleneko.Protocols;
-using Microsoft.EntityFrameworkCore;
-using Bottleneko.Api.Dtos;
-using Bottleneko.Server.Utils;
-using Bottleneko.Api.Protocols;
-using Bottleneko.Services;
-using Bottleneko.Messages;
-using Bottleneko.Logging;
 
 namespace Bottleneko.Server.Controllers;
 
@@ -23,7 +24,19 @@ public class ConnectionsController(IServiceProvider services, IOptions<JsonOptio
     {
         return Ok(new
         {
-            Result = await Task.WhenAll((await db.Connections.Where(connection => !connection.IsDeleted).ToArrayAsync()).Select(async connection => connection.ToDto(await akka.AskAsync<ExtendedConnectionStatus>(new IConnectionsMessage.GetStatus(connection.Id))))),
+            Result = await Task.WhenAll((await db.Connections.Where(connection => !connection.IsDeleted).ToArrayAsync()).Select(async connection =>
+            {
+                ExtendedConnectionStatus status;
+                try
+                {
+                    status = await akka.AskAsync(ConnectionMessages.GetStatus.Instance.ToConnection(connection.Id).WithReply<ExtendedConnectionStatus>());
+                }
+                catch (RouteNotFoundException)
+                {
+                    status = new ExtendedConnectionStatus(ConnectionStatus.NotConnected);
+                }
+                return connection.ToDto(status);
+            })),
         });
     }
 
@@ -77,7 +90,7 @@ public class ConnectionsController(IServiceProvider services, IOptions<JsonOptio
 
         var config = request.Config.Deserialize(connectionType.ConfigType, jsonOptions.Value.JsonSerializerOptions) as ProtocolConfiguration ?? throw new ArgumentException("Empty Connection configs are not supported");
 
-        var connection = await akka.AskAsync<ConnectionEntity>(new IConnectionsMessage.Add(request.Name, request.Protocol, true, config));
+        var connection = await akka.AskAsync(new ConnectionMessages.Add(request.Name, request.Protocol, true, config).ToConnections().WithReply<ConnectionEntity>());
 
         return Ok(new
         {
@@ -87,7 +100,7 @@ public class ConnectionsController(IServiceProvider services, IOptions<JsonOptio
 
     public override async Task<IActionResult> DeleteAsync([FromRoute] long id)
     {
-        if (await akka.AskAsync<bool>(new IConnectionsMessage.Remove(id)))
+        if (await akka.AskAsync(new ConnectionMessages.Remove(id).ToConnections().WithReply<bool>()))
         {
             return Ok(new Success());
         }
@@ -101,7 +114,7 @@ public class ConnectionsController(IServiceProvider services, IOptions<JsonOptio
     {
         if (await db.Connections.SingleOrDefaultAsync(connection => connection.Id == id && !connection.IsDeleted) is ConnectionEntity connection)
         {
-            return Ok(connection.ToDto(await akka.AskAsync<ExtendedConnectionStatus>(new IConnectionsMessage.GetStatus(id))));
+            return Ok(connection.ToDto(await akka.AskAsync(ConnectionMessages.GetStatus.Instance.ToConnection(id).WithReply<ExtendedConnectionStatus>())));
         }
         else
         {
@@ -115,10 +128,10 @@ public class ConnectionsController(IServiceProvider services, IOptions<JsonOptio
     {
         try
         {
-            var connection = await akka.AskAsync<ConnectionEntity>(new IConnectionsMessage.Update(id, request.Name, request.AutoStart, request.Config));
+            var connection = await akka.AskAsync(new ConnectionMessages.Update(id, request.Name, request.AutoStart, request.Config).ToConnections().WithReply<ConnectionEntity>());
             return Ok(new
             {
-                Result = connection.ToDto(await akka.AskAsync<ExtendedConnectionStatus>(new IConnectionsMessage.GetStatus(id))),
+                Result = connection.ToDto(await akka.AskAsync(ConnectionMessages.GetStatus.Instance.ToConnection(id).WithReply<ExtendedConnectionStatus>())),
             });
         }
         catch (KeyNotFoundException)
@@ -141,7 +154,7 @@ public class ConnectionsController(IServiceProvider services, IOptions<JsonOptio
             return RedirectPermanent(attachment.Url);
         }
 
-        return await akka.AskAsync<object>(new IConnectionsMessage.GetAttachment(id, attachmentId)) switch
+        return await akka.AskAsync(new ConnectionMessages.GetAttachment(attachmentId).ToConnection(id).WithReply<object>()) switch
         {
             string url => Redirect(url),
             _ => Error(ErrorCode.NotFound, "Attachment not found"),
@@ -151,21 +164,21 @@ public class ConnectionsController(IServiceProvider services, IOptions<JsonOptio
     [HttpPost("{id:long}/start")]
     public IActionResult Start([FromRoute] long id)
     {
-        akka.Tell(new IConnectionsMessage.Start(id));
+        akka.Tell(ContainerMessages.Start.Instance.ToConnection(id));
         return Ok(new Success());
     }
 
     [HttpPost("{id:long}/stop")]
     public IActionResult Stop([FromRoute] long id)
     {
-        akka.Tell(new IConnectionsMessage.Stop(id));
+        akka.Tell(ContainerMessages.Stop.Instance.ToConnection(id));
         return Ok(new Success());
     }
 
     [HttpPost("{id:long}/restart")]
     public IActionResult Restart([FromRoute] long id)
     {
-        akka.Tell(new IConnectionsMessage.Restart(id));
+        akka.Tell(ContainerMessages.Restart.Instance.ToConnection(id));
         return Ok(new Success());
     }
 }

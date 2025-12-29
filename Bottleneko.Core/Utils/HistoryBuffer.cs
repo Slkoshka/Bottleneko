@@ -11,8 +11,8 @@ public interface IHistoryItem
 }
 
 public abstract class HistoryBuffer<TItem, TFilter>(int capacity)
-    where TItem: IHistoryItem
-    where TFilter: IHistoryFilter<TItem>
+    where TItem : IHistoryItem
+    where TFilter : IHistoryFilter<TItem>
 {
     private readonly Lock _lock = new Lock();
     private readonly CircularBuffer<TItem> _buffer = new(capacity);
@@ -73,7 +73,7 @@ public abstract class HistoryBuffer<TItem, TFilter>(int capacity)
             }
 
             var current = start;
-            
+
             while (written < target.Length && current < _buffer.Count)
             {
                 if (filter.Matches(_buffer[current]))

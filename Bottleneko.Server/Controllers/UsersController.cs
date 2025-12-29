@@ -1,14 +1,14 @@
-﻿using System.Data;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using Bottleneko.Database;
+﻿using Bottleneko.Database;
 using Bottleneko.Database.Options;
 using Bottleneko.Database.Schema;
-using Microsoft.EntityFrameworkCore;
 using Bottleneko.Server.Utils;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Data;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace Bottleneko.Server.Controllers;
 
@@ -30,7 +30,7 @@ public class UsersController(NekoDbContext db) : CrudController<UsersController.
             new Claim(ClaimsIdentity.DefaultRoleClaimType, user.Role.ToString()),
         ], "Token", ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType);
     }
-    
+
     public record LoginRequest(string Login, string Password);
 
     [HttpPost("login")]
@@ -70,7 +70,7 @@ public class UsersController(NekoDbContext db) : CrudController<UsersController.
     }
 
     public record CreateUserRequest(string Login, string Password);
-    
+
     public override async Task<IActionResult> AddAsync([FromBody] CreateUserRequest request)
     {
         try
@@ -89,7 +89,7 @@ public class UsersController(NekoDbContext db) : CrudController<UsersController.
             throw new DuplicateNameException($"User with the name '{request.Login}' already exists");
         }
     }
-    
+
     public override async Task<IActionResult> ListAsync()
     {
         return Ok(new
@@ -97,7 +97,7 @@ public class UsersController(NekoDbContext db) : CrudController<UsersController.
             Result = await db.Users.Where(u => !u.IsDeleted).Select(user => user.ToDto()).ToArrayAsync(),
         });
     }
-    
+
     public override async Task<IActionResult> GetAsync([FromRoute] long id)
     {
         if (await db.Users.SingleOrDefaultAsync(u => u.Id == id && !u.IsDeleted) is { } user)
@@ -111,10 +111,10 @@ public class UsersController(NekoDbContext db) : CrudController<UsersController.
     }
 
     public record UpdateUserRequest(string? Login, string? Password);
-    
+
     public override async Task<IActionResult> UpdateAsync([FromRoute] long id, [FromBody] UpdateUserRequest request)
     {
-        if (await db.Users.SingleOrDefaultAsync(u => u.Id == id) is {  } user)
+        if (await db.Users.SingleOrDefaultAsync(u => u.Id == id) is { } user)
         {
             if (request.Login is not null)
             {
@@ -143,7 +143,7 @@ public class UsersController(NekoDbContext db) : CrudController<UsersController.
             return Error(ErrorCode.NotFound, "User not found");
         }
     }
-    
+
     public override async Task<IActionResult> DeleteAsync([FromRoute] long id)
     {
         var user = await db.Users.SingleOrDefaultAsync(u => u.Id == id);
@@ -156,7 +156,7 @@ public class UsersController(NekoDbContext db) : CrudController<UsersController.
         {
             return Error(ErrorCode.InvalidOperation, "Cannot delete current user");
         }
-        
+
         user.Delete();
         await db.SaveChangesAsync();
         return Ok(new Success());

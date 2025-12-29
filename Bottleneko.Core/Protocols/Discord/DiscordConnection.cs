@@ -1,26 +1,26 @@
-﻿using System.Net.WebSockets;
+﻿using Akka.Actor;
+using Bottleneko.Api.Dtos;
+using Bottleneko.Api.Protocols;
+using Bottleneko.Connections;
 using Bottleneko.Database;
 using Bottleneko.Database.Schema;
+using Bottleneko.Database.Schema.Protocols.Discord;
 using Bottleneko.Logging;
+using Bottleneko.Messages;
+using Bottleneko.Scripting.Bindings;
+using Bottleneko.Scripting.Bindings.Discord;
 using Bottleneko.Utils;
 using Discord;
 using Discord.Net;
+using Discord.Net.Rest;
+using Discord.Net.WebSockets;
 using Discord.Rest;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
-using NekoLogSeverity = Bottleneko.Logging.LogSeverity;
+using System.Net.WebSockets;
 using DiscordLogSeverity = Discord.LogSeverity;
 using MessageType = Discord.MessageType;
-using Bottleneko.Api.Protocols;
-using Bottleneko.Api.Dtos;
-using Bottleneko.Scripting.Bindings;
-using Bottleneko.Connections;
-using Bottleneko.Scripting.Bindings.Discord;
-using Akka.Actor;
-using Bottleneko.Messages;
-using Bottleneko.Database.Schema.Protocols.Discord;
-using Discord.Net.Rest;
-using Discord.Net.WebSockets;
+using NekoLogSeverity = Bottleneko.Logging.LogSeverity;
 
 namespace Bottleneko.Protocols.Discord;
 
@@ -175,12 +175,12 @@ class DiscordConnection(StaticConnectionCreationData<DiscordProtocolConfiguratio
             chatMessage.DiscordGuildId == guildId &&
             chatMessage.DiscordChannelId == message.Channel.Id &&
             chatMessage.DiscordMessageId == message.Id) ?? new DiscordChatMessageEntity()
-        {
-            ConnectionId = ConnectionId,
-            DiscordGuildId = guildId,
-            DiscordChannelId = message.Channel.Id,
-            DiscordMessageId = message.Id,
-        };
+            {
+                ConnectionId = ConnectionId,
+                DiscordGuildId = guildId,
+                DiscordChannelId = message.Channel.Id,
+                DiscordMessageId = message.Id,
+            };
         var replyTo = message.Type == MessageType.Reply ? await message.Channel.GetMessageAsync(message.Reference.MessageId.Value, CacheMode.AllowDownload) : null;
         var chatMessage = new ChatMessageEntity()
         {
@@ -412,20 +412,20 @@ class DiscordConnection(StaticConnectionCreationData<DiscordProtocolConfiguratio
         }
     }
 
-    public override async Task HandleMessageAsync(IActorRef sender, IConnectionsMessage message)
+    public override async Task HandleMessageAsync(IActorRef sender, IHandledByConnection message)
     {
         switch (message)
         {
-            case IConnectionsMessage.ProxyUpdated proxyUpdated:
+            case ConnectionMessages.ProxyUpdated proxyUpdated:
                 {
-                    if (!string.IsNullOrEmpty(Configuration.ProxyId) && long.TryParse(Configuration.ProxyId, out var proxyId) && proxyId == proxyUpdated.Id)
+                    if (!string.IsNullOrEmpty(Configuration.ProxyId) && long.TryParse(Configuration.ProxyId, out var proxyId) && proxyId == proxyUpdated.ProxyId)
                     {
                         RequestRestart(true);
                     }
                     break;
                 }
 
-            case IConnectionsMessage.SimpleReply simpleReply:
+            case ConnectionMessages.SimpleReply simpleReply:
                 {
                     try
                     {
@@ -445,7 +445,7 @@ class DiscordConnection(StaticConnectionCreationData<DiscordProtocolConfiguratio
                     break;
                 }
 
-            case IConnectionsMessage.SendMessage sendMessage:
+            case ConnectionMessages.SendMessage sendMessage:
                 {
                     try
                     {
@@ -462,14 +462,14 @@ class DiscordConnection(StaticConnectionCreationData<DiscordProtocolConfiguratio
                     {
                         Logger.LogError(LogCategory, "Failed to send message", ex);
                     }
-                break;
+                    break;
                 }
 
-            case IConnectionsMessage.GetAttachment getAttachment:
+            case ConnectionMessages.GetAttachment getAttachment:
                 {
                     await using var db = NekoDbContext.Get();
                     var attachment = await db.MessageAttachments.Include(attachment => attachment.Discord).Include(attachment => attachment.Message.Discord).SingleOrDefaultAsync(attachment => attachment.Id == getAttachment.AttachmentId);
-                    if (attachment is null || attachment.Message.ConnectionId != getAttachment.Id || attachment.Discord is null || attachment.Message.Discord is null)
+                    if (attachment is null || attachment.Discord is null || attachment.Message.Discord is null)
                     {
                         sender.Tell(null);
                         break;
@@ -488,7 +488,7 @@ class DiscordConnection(StaticConnectionCreationData<DiscordProtocolConfiguratio
                     break;
                 }
 
-            case IDiscordMessage.GetChat getChat:
+            case DiscordMessages.GetChat getChat:
                 {
                     try
                     {

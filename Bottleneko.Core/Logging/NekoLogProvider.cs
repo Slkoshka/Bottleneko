@@ -5,12 +5,12 @@ namespace Bottleneko.Logging;
 public class NekoLogProvider(INekoLogger? nekoLogger = null) : ILoggerProvider, INekoLogger
 {
     public INekoLogger? Logger { get; set; } = nekoLogger;
-    
+
     public ILogger CreateLogger(string categoryName)
     {
         return new NekoLogAdapter(this, categoryName);
     }
-    
+
     public void Dispose()
     {
         GC.SuppressFinalize(this);

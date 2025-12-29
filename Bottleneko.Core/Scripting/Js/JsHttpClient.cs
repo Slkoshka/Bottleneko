@@ -103,7 +103,7 @@ public class JsHttpResponse
             default:
                 throw new Exception("Invalid Content-Type header");
         }
-        
+
     }
 }
 

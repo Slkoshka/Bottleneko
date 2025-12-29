@@ -1,7 +1,4 @@
-﻿using System.Security.Cryptography;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using Bottleneko.Api.Dtos;
+﻿using Bottleneko.Api.Dtos;
 using Bottleneko.Api.Protocols;
 using Bottleneko.Database.Options;
 using Bottleneko.Database.Schema;
@@ -17,12 +14,15 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.DependencyInjection;
+using System.Security.Cryptography;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Bottleneko.Database;
 
 static class JsonOptions
 {
-    public static JsonSerializerOptions JsonSerializerOptions { get; }= new()
+    public static JsonSerializerOptions JsonSerializerOptions { get; } = new()
     {
         AllowOutOfOrderMetadataProperties = true,
         Converters = { new JsonStringEnumConverter() },
@@ -50,14 +50,14 @@ public class NekoDbContextFactory : IDesignTimeDbContextFactory<NekoDbContext>
 public class NekoDbContext(DbContextOptions options) : DbContext(options)
 {
     public static string DatabasePath { get; private set; } = "bottleneko.db";
-    
+
     public DbSet<OptionEntity> Options { get; set; }
     public DbSet<ConnectionEntity> Connections { get; set; }
     public DbSet<ChatEntity> Chats { get; set; }
     public DbSet<DiscordChatEntity> DiscordChats { get; set; }
     public DbSet<TelegramChatEntity> TelegramChats { get; set; }
     public DbSet<TwitchChatEntity> TwitchChats { get; set; }
-    public DbSet<ChatterEntity> Chatters  { get; set; }
+    public DbSet<ChatterEntity> Chatters { get; set; }
     public DbSet<DiscordChatterEntity> DiscordChatters { get; set; }
     public DbSet<TelegramChatterEntity> TelegramChatters { get; set; }
     public DbSet<TwitchChatterEntity> TwitchChatters { get; set; }
@@ -71,7 +71,7 @@ public class NekoDbContext(DbContextOptions options) : DbContext(options)
     public DbSet<ScriptEntity> Scripts { get; set; }
     public DbSet<UserEntity> Users { get; set; }
     public DbSet<ProxyEntity> Proxies { get; set; }
-    
+
     public static JsonSerializerOptions JsonSerializerOptions { get; } = new()
     {
         AllowOutOfOrderMetadataProperties = true,
@@ -180,12 +180,12 @@ public class NekoDbContext(DbContextOptions options) : DbContext(options)
             .Entity<ConnectionEntity>()
             .Property(e => e.Configuration)
             .HasConversion(new JsonValueConverter<ProtocolConfiguration>());
-        
+
         model
             .Entity<ScriptEntity>()
             .Property(e => e.Code)
             .HasConversion(new JsonValueConverter<ScriptCode>());
-        
+
         foreach (var entityType in model.Model.GetEntityTypes())
         {
             foreach (var property in entityType.GetProperties())

@@ -4,9 +4,9 @@ using Bottleneko.Messages;
 namespace Bottleneko.Actors;
 
 abstract class ContainerCat<TChild, TEntity, TAddMsg, TUpdateMsg, TRemoveMsg>(IServiceProvider services) : NekoActor(services)
-    where TAddMsg: IContainerMessage.Add
-    where TUpdateMsg : IContainerMessage.Update
-    where TRemoveMsg : IContainerMessage.Remove
+    where TAddMsg : ContainerMessages.Add
+    where TUpdateMsg : ContainerMessages.Update
+    where TRemoveMsg : ContainerMessages.Remove
     where TChild : ActorBase
     where TEntity : Entity
 {
@@ -86,30 +86,34 @@ abstract class ContainerCat<TChild, TEntity, TAddMsg, TUpdateMsg, TRemoveMsg>(IS
                 {
                     if (_children.Remove(destroyChildActor.Id, out var child))
                     {
-                        child.Tell(IControlMessage.Shutdown.Instance);
+                        child.Tell(ControlMessages.Shutdown.Instance);
                     }
                     break;
                 }
 
-            case IContainerMessage.BroadcastItemMessage msg:
+            case RoutingMessages.ForwardToItem forwardToItem:
+                if (_children.TryGetValue(forwardToItem.Id, out var item))
+                {
+                    item.Forward(forwardToItem.Message);
+                }
+                else if (!forwardToItem.IsSendAndForget)
+                {
+                    Sender.Tell(new Status.Failure(new RouteNotFoundException($"Child with id {forwardToItem.Id} not found")));
+                }
+                break;
+
+            case RoutingMessages.Broadcast broadcast:
                 foreach (var child in _children.Values)
                 {
-                    child.Forward(msg);
+                    child.Forward(broadcast.Message);
                 }
                 break;
 
-            case IContainerMessage.ContainerItemMessage msg:
-                if (_children.TryGetValue(msg.Id, out var item))
-                {
-                    item.Forward(message);
-                }
-                else if (msg is IHasReply)
-                {
-                    Sender.Tell(new Status.Failure(new Exception($"Child with id {msg.Id} not found")));
-                }
+            case RoutingMessages.ForwardMessage { IsSendAndForget: false }:
+                Sender.Tell(new Status.Failure(new RouteNotFoundException("Invalid route")));
                 break;
 
-            case IControlMessage.Shutdown:
+            case ControlMessages.Shutdown:
                 _waitingForShutdown = true;
                 if (_children.Count == 0)
                 {
@@ -117,7 +121,7 @@ abstract class ContainerCat<TChild, TEntity, TAddMsg, TUpdateMsg, TRemoveMsg>(IS
                 }
                 foreach (var child in _children.Values)
                 {
-                    child.Tell(IControlMessage.Shutdown.Instance);
+                    child.Tell(ControlMessages.Shutdown.Instance);
                 }
                 break;
 
