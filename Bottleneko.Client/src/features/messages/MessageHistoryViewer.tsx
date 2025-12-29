@@ -71,7 +71,7 @@ export default function MessageHistoryViewer({ className, connectionId }: { clas
     });
 
     return (
-        <div className="h-100" style={{ padding: '0.5em' }}>
+        <div className="h-100">
             <ScrollableTable
                 columns={columns}
                 render={renderRow}

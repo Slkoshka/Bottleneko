@@ -86,7 +86,7 @@ export default function ScriptList({ onDelete }: { onDelete: (script: ScriptStat
     }), [navigate, onDelete]);
 
     return (
-        <div className="h-100" style={{ padding: '0.5em' }}>
+        <div className="h-100">
             <ScrollableTable<ScriptState>
                 columns={columns}
                 render={renderRow}

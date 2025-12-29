@@ -30,19 +30,22 @@ export default function ScrollableTable<T>({ columns, data, render, title, highl
         );
     };
 
+    const startHeaderExtras = (headerExtra as ReactElement<HeaderExtraProps>[]).filter(item => item.props.position === 'start');
+    const endHeaderExtras = (headerExtra as ReactElement<HeaderExtraProps>[]).filter(item => item.props.position === 'end');
+
     return (
         <Card className={`scrollable-table-card h-100 ${className ?? ''}`}>
             {
                 !!title || headerExtra.length > 0
                     ? (
-                            <Card.Header className={`info-card-header ${highlightHeader ? 'highlight' : ''}`} style={{ display: 'grid', gap: '0.6em', gridTemplateColumns: '0fr 1fr 0fr' }}>
-                                <div>{(headerExtra as ReactElement<HeaderExtraProps>[]).filter(item => item.props.position === 'start')}</div>
+                            <Card.Header className={`info-card-header ${highlightHeader ? 'highlight' : ''}`} style={{ display: 'grid', gridTemplateColumns: '0fr 1fr 0fr' }}>
+                                <div style={{ paddingRight: startHeaderExtras.length > 0 ? '0.6em' : '0' }}>{startHeaderExtras}</div>
                                 <div className="flex-grow-1 text-truncate">
                                     <span className="fs-5">
                                         {title}
                                     </span>
                                 </div>
-                                <div>{(headerExtra as ReactElement<HeaderExtraProps>[]).filter(item => item.props.position === 'end')}</div>
+                                <div style={{ paddingLeft: endHeaderExtras.length > 0 ? '0.6em' : '0' }}>{endHeaderExtras}</div>
                             </Card.Header>
                         )
                     : <></>

@@ -74,7 +74,7 @@ export default function ConnectionList({ onDelete }: { onDelete: (connection: Co
     }), [navigate, onDelete]);
 
     return (
-        <div className="connection-list h-100" style={{ padding: '0.5em' }}>
+        <div className="connection-list h-100">
             <ScrollableTable<ConnectionState>
                 columns={columns}
                 render={renderRow}

@@ -74,7 +74,7 @@ export default function UsersView() {
         <View title="Users" loading={!users?.state} fillScreen>
             {dialog}
 
-            <div className="user-list h-100" style={{ padding: '0.5em' }}>
+            <div className="user-list h-100">
                 <ScrollableTable<UserState>
                     columns={columns}
                     render={renderRow}

@@ -10,7 +10,7 @@ export default function ConnectionsView() {
     return (
         <View
             title={(
-                <div className="d-flex" style={{ gap: '0.5rem' }}>
+                <div className="d-flex">
                     <span className="flex-grow-1">
                         Connections
                     </span>
