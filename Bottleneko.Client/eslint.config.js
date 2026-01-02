@@ -17,7 +17,7 @@ export default tsESLint.config(
             'import/resolver': {
                 typescript: {
                     alwaysTryTypes: true,
-                    project: ['./tsconfig.node.json', './tsconfig.app.json'],
+                    project: './tsconfig.json',
                 },
             },
         },

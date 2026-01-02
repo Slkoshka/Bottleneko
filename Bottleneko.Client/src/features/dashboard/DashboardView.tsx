@@ -9,7 +9,7 @@ import ActivityHistoryGraphCard from './cards/ActivityHistoryGraphCard';
 const fetchInfo = (signal: AbortSignal) => api.system.getInfo(signal);
 
 export default function DashboardView() {
-    const [systemInfo] = useFetchData(fetchInfo, true, 3000);
+    const { data: systemInfo, timestamp } = useFetchData(fetchInfo, true, 3000);
 
     return (
         <View title="Dashboard">
@@ -17,8 +17,8 @@ export default function DashboardView() {
                 <ActivityHistoryGraphCard />
 
                 <div className="d-flex flex-wrap justify-content-start align-items-stretch" style={{ gap: '30px' }}>
-                    <BotDashboardCard systemInfo={systemInfo ?? undefined} />
-                    <SystemDashboardCard systemInfo={systemInfo ?? undefined} />
+                    <BotDashboardCard systemInfo={systemInfo ?? undefined} timestamp={timestamp} />
+                    <SystemDashboardCard systemInfo={systemInfo ?? undefined} timestamp={timestamp} />
                     <ConnectionsDashboardCard />
                 </div>
             </div>

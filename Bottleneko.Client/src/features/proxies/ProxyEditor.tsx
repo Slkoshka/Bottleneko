@@ -1,5 +1,5 @@
 import * as yup from 'yup';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Form } from 'react-bootstrap';
 import { Formik } from 'formik';
 import ModalDialog from '../../components/modal-dialog/ModalDialog';
@@ -22,22 +22,22 @@ const schema = yup.object().shape({
     }),
 });
 
-type ProxyEditorStage =
-    { id: 'select-type'; type: ProxyType } |
-    { id: 'edit'; proxy: ProxyDto; isNew: boolean };
+type ProxyEditorStage
+    = { id: 'select-type'; type: ProxyType }
+        | { id: 'edit'; proxy: ProxyDto; isNew: boolean };
 
 export default function ProxyEditor({ show, proxy, onSuccess, onCancel }: { show: boolean; proxy: ProxyDto | null; onSuccess: (proxy: ProxyDto) => void; onCancel: () => void }) {
     const [stage, setStage] = useState<ProxyEditorStage>({ id: 'select-type', type: ProxyType.Http });
 
     const formRef = useRef<HTMLFormElement>(null);
 
-    const oldShowRef = useRef(false);
-    useEffect(() => {
-        if (show && !oldShowRef.current) {
+    const [oldShow, setOldShow] = useState(false);
+    if (oldShow !== show) {
+        if (show && !oldShow) {
             setStage(proxy ? { id: 'edit', proxy, isNew: false } : { id: 'select-type', type: ProxyType.Http });
         }
-        oldShowRef.current = show;
-    }, [stage, show, proxy]);
+        setOldShow(show);
+    }
 
     switch (stage.id) {
         case 'select-type':

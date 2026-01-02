@@ -1,4 +1,4 @@
-import { LegacyRef } from 'react';
+import { Ref } from 'react';
 import { Protocol, ProtocolConfiguration } from '../api/dtos.gen';
 import DiscordConfigEditor from './discord/DiscordConfigEditor';
 import TelegramConfigEditor from './telegram/TelegramConfigEditor';
@@ -12,7 +12,7 @@ export interface ConnectionDefinition {
 export interface ProtocolInfo {
     name: string;
     icon: string | null;
-    configEditor: React.ComponentType<{ definition: ConnectionDefinition | null; disabled?: boolean; onValidated: (definition: ConnectionDefinition) => void; ref?: LegacyRef<HTMLFormElement> }>;
+    configEditor: React.ComponentType<{ definition: ConnectionDefinition | null; disabled?: boolean; onValidated: (definition: ConnectionDefinition) => void; ref?: Ref<HTMLFormElement> }>;
 }
 
 export const protocols: Record<Protocol, ProtocolInfo> = {

@@ -10,14 +10,14 @@ import { NekoNodeBase } from '../../nodes/NekoNodeBase';
 import { deserializeNode } from '../../serialization';
 import { Item } from '.';
 
-export type ContextMenuExtra =
-    RenderSignal<'contextmenu', {
+export type ContextMenuExtra
+    = RenderSignal<'contextmenu', {
         items: Item[];
         itemsByCategory: Item[];
         onHide(): void;
         searchBar?: boolean;
-    }> |
-    { type: 'hidecontextmenu' };
+    }>
+    | { type: 'hidecontextmenu' };
 
 export type Produces = { type: 'nodechanged'; node: NekoNode } | { type: 'noderefresh'; node: NekoNode };
 export interface SocketData {
@@ -26,15 +26,15 @@ export interface SocketData {
     side: 'input' | 'output';
 }
 
-type Requires =
-    { type: 'contextmenu'; data: { event: MouseEvent; context: 'root' | NekoNode | NekoConnection; autoConnectTo?: SocketData } } |
-    { type: 'unmount'; data: { element: HTMLElement } } |
-    { type: 'pointerdown'; data: { position: Position; event: PointerEvent } } |
-    { type: 'pointermove'; data: { position: Position; event: PointerEvent } } |
-    { type: 'nodedragged'; data: NekoNode } |
-    { type: 'nodepicked'; data: { id: string } } |
-    { type: 'connectioncreated'; data: NekoConnection } |
-    { type: 'connectionremoved'; data: NekoConnection };
+type Requires
+    = { type: 'contextmenu'; data: { event: MouseEvent; context: 'root' | NekoNode | NekoConnection; autoConnectTo?: SocketData } }
+        | { type: 'unmount'; data: { element: HTMLElement } }
+        | { type: 'pointerdown'; data: { position: Position; event: PointerEvent } }
+        | { type: 'pointermove'; data: { position: Position; event: PointerEvent } }
+        | { type: 'nodedragged'; data: NekoNode }
+        | { type: 'nodepicked'; data: { id: string } }
+        | { type: 'connectioncreated'; data: NekoConnection }
+        | { type: 'connectionremoved'; data: NekoConnection };
 
 const makeNode = (editor: NodeEditor<Schemes>, area: BaseAreaPlugin<Schemes, unknown>, node: NekoNodeConstructor) => {
     return node.default({

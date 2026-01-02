@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ItemInfoProperty } from '../components/DeleteConfirmationDialog';
 import { useFetchData } from './hooks';
 
@@ -113,13 +113,12 @@ export function useEntityProvider<Type extends EntityConfig>(name: string, api: 
         deleted(id);
     }, [api, deleted]);
 
-    const [remoteList] = useFetchData(useCallback(() => api.list(), [api]), true, 3000);
-
-    useEffect(() => {
-        if (remoteList) {
-            setList(remoteList.result.map(entity => factory(entity, listUpdated)));
+    const onDataReceived = useCallback((data: { result: Type['Entity'][] } | null) => {
+        if (data !== null) {
+            setList(data.result.map(entity => factory(entity, listUpdated)));
         }
-    }, [factory, remoteList, listUpdated]);
+    }, [factory, listUpdated]);
+    useFetchData(useCallback(() => api.list(), [api]), true, 3000, onDataReceived);
 
     return {
         data: {

@@ -144,12 +144,20 @@ public class Generator
 
                 case UnionDefinition unionDefinition:
                     generatedTypes.AppendLine();
-                    generatedTypes.AppendLine($"export type {unionDefinition.Name} =");
-                    foreach (var subType in unionDefinition.Types.Take(unionDefinition.Types.Length - 1))
+                    generatedTypes.AppendLine($"export type {unionDefinition.Name}");
+                    if (unionDefinition.Types.Length > 1)
                     {
-                        generatedTypes.AppendLine($"    {GetType(destTypes, subType.Type).Name} |");
+                        generatedTypes.AppendLine($"    = {GetType(destTypes, unionDefinition.Types.First().Type).Name}");
+                        foreach (var subType in unionDefinition.Types.Skip(1).Take(unionDefinition.Types.Length - 2))
+                        {
+                            generatedTypes.AppendLine($"        | {GetType(destTypes, subType.Type).Name}");
+                        }
+                        generatedTypes.AppendLine($"        | {GetType(destTypes, unionDefinition.Types.Last().Type).Name};");
                     }
-                    generatedTypes.AppendLine($"    {GetType(destTypes, unionDefinition.Types.Last().Type).Name};");
+                    else
+                    {
+                        generatedTypes.AppendLine($"    = {GetType(destTypes, unionDefinition.Types.First().Type).Name};");
+                    }
                     break;
             }
         }

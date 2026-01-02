@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import deepEqual from 'deep-equal';
 import { useEventListener } from '../events/context';
 import { ChatMessageFilter, LogFilter, Packet } from '../api/dtos.gen';
+import { useIfDeepChanged } from '../../app/hooks';
 import { useWebSocketDispatch } from './context';
 
 export interface LogSubscription {
@@ -19,24 +20,24 @@ type Subscription = LogSubscription | ChatMessageSubscription;
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export function useSubscription<EventType>({ subscription, maxEvents }: { subscription: Subscription; maxEvents?: number }) {
-    const ws = useWebSocketDispatch();
-    const wsRef = useRef(ws);
-    const subscriptionId = useRef(uuidv4());
-    const subscriptionRef = useRef<Subscription | null>(subscription);
     const [events, setEvents] = useState<EventType[] | null>(null);
+
+    useIfDeepChanged(subscription, () => {
+        setEvents(null);
+    });
+
+    const ws = useWebSocketDispatch();
+    const subscriptionRef = useRef<Subscription | null>(subscription);
+    const subscriptionId = useRef(uuidv4());
     const eventsRef = useRef<EventType[]>([]);
     const initialReceiveRef = useRef<boolean>(true);
-
-    useEffect(() => {
-        wsRef.current = ws;
-    }, [ws]);
 
     useEffect(() => {
         if (!subscriptionRef.current) {
             return;
         }
 
-        wsRef.current?.({
+        ws?.({
             action: `subscribeTo${subscriptionRef.current.type}`, payload: {
                 id: subscriptionId.current,
                 filter: subscriptionRef.current.filter,
@@ -44,12 +45,12 @@ export function useSubscription<EventType>({ subscription, maxEvents }: { subscr
         });
 
         return () => {
-            wsRef.current?.({ action: 'unsubscribe', payload: { id: subscriptionId.current } });
+            ws?.({ action: 'unsubscribe', payload: { id: subscriptionId.current } });
             eventsRef.current = [];
             initialReceiveRef.current = true;
             setEvents(null);
         };
-    }, []);
+    }, [ws]);
 
     useEffect(() => {
         if (!deepEqual(subscriptionRef.current, subscription)) {
@@ -58,7 +59,6 @@ export function useSubscription<EventType>({ subscription, maxEvents }: { subscr
             subscriptionId.current = uuidv4();
             eventsRef.current = [];
             initialReceiveRef.current = true;
-            setEvents(null);
             ws?.({
                 action: `subscribeTo${subscription.type}`, payload: {
                     id: subscriptionId.current,
@@ -75,7 +75,7 @@ export function useSubscription<EventType>({ subscription, maxEvents }: { subscr
                 filter: subscription.filter,
             } as never,
         });
-    }, [subscriptionId, subscription]);
+    }, [ws, subscription]);
 
     useEventListener('websocket/packet', (packet: Packet) => {
         if (packet.$type !== 'Mail' || packet.subscriptionId !== subscriptionId.current) {
@@ -91,7 +91,7 @@ export function useSubscription<EventType>({ subscription, maxEvents }: { subscr
             setEvents(eventsRef.current);
             initialReceiveRef.current = false;
         }
-    }, [subscription]);
+    }, [ws, subscription]);
 
     return {
         events,

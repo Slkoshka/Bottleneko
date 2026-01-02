@@ -16,7 +16,7 @@ export default function NotFoundPage() {
                 Page not found
             </p>
 
-            <FullscreenPage.Button action={() => { navigate('/'); }}>
+            <FullscreenPage.Button action={() => { void navigate('/'); }}>
                 Return
             </FullscreenPage.Button>
         </FullscreenPage>

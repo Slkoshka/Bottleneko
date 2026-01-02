@@ -24,7 +24,7 @@ export default function ConnectionList({ onDelete }: { onDelete: (connection: Co
 
     const renderRow = useCallback((connection: ConnectionState): TableRow => ({
         id: connection.data.id,
-        onClick: () => { navigate(`/connections/${connection.data.id}`); },
+        onClick: () => { void navigate(`/connections/${connection.data.id}`); },
         columns: {
             name: {
                 content: (

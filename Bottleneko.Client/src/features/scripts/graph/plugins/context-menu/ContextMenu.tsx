@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Form } from 'react-bootstrap';
-import { useOnce } from '../../../../../app/hooks';
+import { useOnceEffect } from '../../../../../app/hooks';
 import { ContextMenuItem } from './ContextMenuItem';
 import { SocketData } from './ContextMenuPlugin';
 import { Item } from '.';
@@ -39,7 +39,7 @@ export function ContextMenu(props: ContextMenuProps) {
             setTimeout(setFocus, 50);
         }
     };
-    useOnce(() => {
+    useOnceEffect(() => {
         setFocus();
     });
 

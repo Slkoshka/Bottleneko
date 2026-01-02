@@ -25,7 +25,7 @@ export default function ScriptList({ onDelete }: { onDelete: (script: ScriptStat
 
     const renderRow = useCallback((script: ScriptState): TableRow => ({
         id: script.data.id,
-        onClick: () => { navigate(`/scripts/${script.data.id}`); },
+        onClick: () => { void navigate(`/scripts/${script.data.id}`); },
         columns: {
             name: {
                 content: script.data.name,

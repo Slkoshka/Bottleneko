@@ -16,7 +16,7 @@ export default function ScriptView() {
     const scripts = useScripts();
     const navigate = useNavigate();
     const { deleteEntity, dialog } = useEntityDeletion<ScriptEntityConfig>(scripts, () => {
-        navigate('/scripts');
+        void navigate('/scripts');
     });
     const { state, fetch, notFound } = useEntityEditor<ScriptEntityConfig>(id, api.scripts, scripts);
 

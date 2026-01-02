@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Highlight from 'react-highlight';
 import { ConnectionDefinition } from '..';
-import { useAsync, useOnce } from '../../../app/hooks';
+import { useAsync, useOnceEffect } from '../../../app/hooks';
 import { useConnections } from '../context';
 import { WizardNavigation } from '../../../components/WizardNavigation';
 import { ErrorMetadata, extractErrorInfo } from '../../../app/utils';
@@ -25,10 +25,10 @@ export default function AddConnectionFinish({ definition, setStage }: { protocol
         }
 
         const newConnection = (await connections.actions.add({ name: definition.name, config: definition.config })).result;
-        navigate(`/connections/${newConnection.id}`);
+        await navigate(`/connections/${newConnection.id}`);
     }, [definition, connections, navigate]));
 
-    useOnce(() => {
+    useOnceEffect(() => {
         addConnection().catch(onError);
     });
 

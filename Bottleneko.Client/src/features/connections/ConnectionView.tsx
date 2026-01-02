@@ -20,7 +20,7 @@ export default function ConnectionView() {
     const connections = useConnections();
     const navigate = useNavigate();
     const { deleteEntity, dialog } = useEntityDeletion<ConnectionEntityConfig>(connections, () => {
-        navigate('/connections');
+        void navigate('/connections');
     });
     const { state, notFound, save, isSaving } = useEntityEditor<ConnectionEntityConfig>(id, api.connections, connections);
 
@@ -35,6 +35,8 @@ export default function ConnectionView() {
 
     let editor = <></>;
     if (state && !state.isLoading) {
+        // this is a valid use case for refs
+        // eslint-disable-next-line react-hooks/refs
         editor = createElement(protocols[state.data.protocol].configEditor, { definition: state.data, disabled: isSaving, onValidated: (definition) => {
             setSavedDefinition(definition);
             setShowSaveConfirmation(true);

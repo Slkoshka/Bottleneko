@@ -1,7 +1,7 @@
 ﻿import { useCallback, useState } from 'react';
 import Highlight from 'react-highlight';
 import FullscreenPage from '../../components/fullscreen-page/FullscreenPage';
-import { useAsync, useOnce } from '../../app/hooks';
+import { useAsync, useOnceEffect } from '../../app/hooks';
 import api from '../api';
 import LoadingBanner from '../../components/LoadingBanner';
 import { saveAccessToken } from '../auth';
@@ -22,7 +22,7 @@ export default function SetupPageInitialization({ progress, account, setStage }:
         setStage({ stage: 'finish' });
     }, [account.login, account.password, setStage]));
 
-    useOnce(() => {
+    useOnceEffect(() => {
         void setup().catch(onError);
     });
 

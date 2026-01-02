@@ -10,7 +10,7 @@ export const EditedUserSchema = yup.object().shape({
 
 export type EditedUser = yup.InferType<typeof EditedUserSchema>;
 
-export default function UserEditor({ user, loading = false, newUser, onValidated }: { user?: UserDto; newUser: boolean; loading: boolean; onValidated?: (formData: EditedUser) => void }) {
+export default function UserEditor({ user, loading = false, newUser, onValidated }: { user?: UserDto; newUser: boolean; loading?: boolean; onValidated?: (formData: EditedUser) => void }) {
     return (
         <Formik validationSchema={EditedUserSchema} onSubmit={onValidated ?? ((_) => { void _; })} initialValues={user ? { login: user.displayName, password: '' } : EditedUserSchema.getDefault()} validateOnChange={false}>
             {({ handleSubmit, handleChange, values, errors }) => (

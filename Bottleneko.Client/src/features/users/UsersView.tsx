@@ -29,7 +29,7 @@ export default function UsersView() {
     const renderRow = useCallback((user: UserState): TableRow => ({
         id: user.data.id,
         className: 'user-list-row',
-        onClick: () => { navigate(`/users/${user.data.id}`); },
+        onClick: () => { void navigate(`/users/${user.data.id}`); },
         columns: {
             id: {
                 content: user.data.id,
@@ -52,7 +52,7 @@ export default function UsersView() {
                         <Dropdown>
                             <Dropdown.Toggle as={HamburgerMenu} />
                             <Dropdown.Menu>
-                                <Dropdown.Item as="button" onClick={() => { navigate(`/users/${user.data.id}`); }}>
+                                <Dropdown.Item as="button" onClick={() => { void navigate(`/users/${user.data.id}`); }}>
                                     <InlineIcon icon="gear-fill" style={{ marginRight: '0.5em' }} />
                                     Edit
                                 </Dropdown.Item>

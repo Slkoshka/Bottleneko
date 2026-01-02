@@ -1,28 +1,28 @@
 import { OverlayTrigger, Table, Tooltip } from 'react-bootstrap';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import LoadingBanner from '../../../components/LoadingBanner';
 import { formatDuration } from '../../../app/utils';
-import { useInterval } from '../../../app/hooks';
+import { useIfDeepChanged, useInterval } from '../../../app/hooks';
 import { EnvironmentInfoDto } from '../../api/dtos.gen';
 import { branding } from '../../../props';
 import CopyableLabel from '../../../components/CopyableLabel';
 import DashboardCard from './DashboardCard';
 
-export default function BotDashboardCard({ systemInfo }: { systemInfo?: EnvironmentInfoDto }) {
-    const [updateInfoTime, setUpdateInfoTime] = useState(0);
+export default function BotDashboardCard({ systemInfo, timestamp }: { systemInfo?: EnvironmentInfoDto; timestamp: number | null }) {
     const [botUptime, setBotUptime] = useState('');
 
-    useEffect(() => {
-        setUpdateInfoTime(Date.now());
-    }, [systemInfo]);
+    useIfDeepChanged(systemInfo, (systemInfo) => {
+        if (systemInfo) {
+            setBotUptime(formatDuration(systemInfo.neko.uptime));
+        }
+    }, true);
 
     const updateTimers = useCallback(() => {
-        if (systemInfo) {
-            setBotUptime(formatDuration(systemInfo.neko.uptime + (Date.now() - updateInfoTime) / 1000));
+        if (systemInfo && timestamp !== null) {
+            setBotUptime(formatDuration(systemInfo.neko.uptime + (Date.now() - timestamp) / 1000));
         }
-    }, [systemInfo, updateInfoTime]);
+    }, [systemInfo, timestamp]);
 
-    useEffect(updateTimers, [updateTimers]);
     useInterval(updateTimers, 500);
 
     const renderTooltip = useCallback((props: object) => (

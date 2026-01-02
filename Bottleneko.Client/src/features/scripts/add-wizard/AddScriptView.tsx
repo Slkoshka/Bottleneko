@@ -14,7 +14,7 @@ export default function AddScriptView() {
     const navigate = useNavigate();
 
     const onSaved = useCallback((script: ScriptDto) => {
-        navigate(`/scripts/${script.id}`);
+        void navigate(`/scripts/${script.id}`);
     }, [navigate]);
 
     let stageView = <></>;

@@ -15,45 +15,45 @@ export function nodeSelection(area: NekoAreaPlugin, core: Selectable) {
 
     let state: { type: 'node_drag'; nodeId: NodeId; withModifier: boolean; distance: number } | { type: 'viewport_drag'; distance: number } | null = null;
 
-    function selectNode(node: Schemes['Node']) {
+    async function selectNode(node: Schemes['Node']) {
         if (!node.selected) {
             node.selected = true;
-            void area.update('node', node.id);
+            await area.update('node', node.id);
         }
     }
 
-    function unselectNode(node: Schemes['Node']) {
+    async function unselectNode(node: Schemes['Node']) {
         if (node.selected) {
             node.selected = false;
-            void area.update('node', node.id);
+            await area.update('node', node.id);
         }
     }
 
-    function add(nodeId: NodeId, accumulate: boolean) {
+    async function add(nodeId: NodeId, accumulate: boolean) {
         const node = getEditor().getNode(nodeId);
 
         if (!node) return;
 
-        core.add({
+        await core.add({
             label: 'node',
             id: node.id,
-            translate(dx, dy) {
+            async translate(dx, dy) {
                 const view = area.nodeViews.get(node.id);
                 const current = view?.position;
 
                 if (current) {
-                    void view.translate(current.x + dx, current.y + dy);
+                    await view.translate(current.x + dx, current.y + dy);
                 }
             },
-            unselect() {
-                unselectNode(node);
+            async unselect() {
+                await unselectNode(node);
             },
         }, accumulate);
-        selectNode(node);
+        await selectNode(node);
     }
 
-    function remove(nodeId: NodeId) {
-        core.remove({ id: nodeId, label: 'node' });
+    async function remove(nodeId: NodeId) {
+        await core.remove({ id: nodeId, label: 'node' });
     }
 
     function onKeyDown(e: KeyboardEvent) {
@@ -76,13 +76,13 @@ export function nodeSelection(area: NekoAreaPlugin, core: Selectable) {
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('keyup', onKeyUp);
 
-    area.addPipe((context) => {
+    area.addPipe(async (context) => {
         if (context.type === 'nodepicked') {
             const pickedId = context.data.id;
 
             core.pick({ id: pickedId, label: 'node' });
             state = { type: 'node_drag', nodeId: pickedId, withModifier: holdingModifier, distance: 0 };
-            add(pickedId, core.isSelected({ id: pickedId, label: 'node' }) || holdingModifier);
+            await add(pickedId, core.isSelected({ id: pickedId, label: 'node' }) || holdingModifier);
         }
         else if (context.type === 'nodetranslated') {
             if (state?.type === 'node_drag') {
@@ -92,7 +92,7 @@ export function nodeSelection(area: NekoAreaPlugin, core: Selectable) {
 
                 if (core.isPicked({ id, label: 'node' })) {
                     state.distance += Math.abs(dx + dy);
-                    core.translate(dx, dy);
+                    await core.translate(dx, dy);
                 }
             }
         }
@@ -108,14 +108,14 @@ export function nodeSelection(area: NekoAreaPlugin, core: Selectable) {
             switch (state?.type) {
                 case 'viewport_drag':
                     if (state.distance < 4) {
-                        core.unselectAll();
+                        await core.unselectAll();
                     }
                     break;
 
                 case 'node_drag':
                     if (state.distance < 4 && !state.withModifier) {
-                        core.unselectAll();
-                        add(state.nodeId, false);
+                        await core.unselectAll();
+                        await add(state.nodeId, false);
                     }
                     break;
             }
@@ -124,10 +124,10 @@ export function nodeSelection(area: NekoAreaPlugin, core: Selectable) {
         else if (context.type === 'refreshselection') {
             for (const node of getEditor().getNodes()) {
                 if (node.selected) {
-                    add(node.id, true);
+                    await add(node.id, true);
                 }
                 else {
-                    remove(node.id);
+                    await remove(node.id);
                 }
             }
         }

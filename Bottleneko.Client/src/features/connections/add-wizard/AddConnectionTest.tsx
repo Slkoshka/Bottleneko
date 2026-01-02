@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import Highlight from 'react-highlight';
 import { ConnectionDefinition } from '..';
 import api from '../../api';
-import { useAsync, useOnce } from '../../../app/hooks';
+import { useAsync, useOnceEffect } from '../../../app/hooks';
 import { WizardNavigation } from '../../../components/WizardNavigation';
 import { ErrorMetadata, extractErrorInfo } from '../../../app/utils';
 import { Protocol } from '../../api/dtos.gen';
@@ -21,7 +21,7 @@ export default function AddConnectionTest({ definition, setStage }: { protocol: 
         setExtra((await api.connections.test(definition.config)).extra);
     }, [definition.config]));
 
-    useOnce(() => {
+    useOnceEffect(() => {
         void testConfig().catch(onError);
     });
 

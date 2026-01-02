@@ -71,7 +71,7 @@ export default function SidePanel({ className = '', style = {}, props }: { class
                                 onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    navigate('/connections/add');
+                                    void navigate('/connections/add');
                                 }}
                             />
                         </Nav.Link>
@@ -91,7 +91,7 @@ export default function SidePanel({ className = '', style = {}, props }: { class
                                 onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    navigate('/scripts/add');
+                                    void navigate('/scripts/add');
                                 }}
                             />
                         </Nav.Link>
@@ -111,7 +111,7 @@ export default function SidePanel({ className = '', style = {}, props }: { class
                                 onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    navigate('/users/add');
+                                    void navigate('/users/add');
                                 }}
                             />
                         </Nav.Link>

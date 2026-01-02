@@ -1,25 +1,29 @@
-﻿import { Editor, OnMount, Monaco } from '@monaco-editor/react';
+﻿import { Editor, OnMount } from '@monaco-editor/react';
 import { editor } from 'monaco-editor';
 import { useRef } from 'react';
 import { Card } from 'react-bootstrap';
+import * as monaco from 'monaco-editor';
 import { ScriptCode } from '../../api/dtos.gen';
 import typeDefs from '../api/typeDefs';
+
+// Workaround for https://github.com/suren-atoyan/monaco-react/issues/771
+type Monaco = typeof monaco;
 
 export default function JsScriptEditor({ initialCode, onChange, props, className }: { initialCode?: string; onChange: (code: ScriptCode) => void; props?: object; className?: string }) {
     const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
 
     const onEditorWillMount = (monaco: Monaco) => {
-        monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+        monaco.typescript.javascriptDefaults.setDiagnosticsOptions({
             noSemanticValidation: true,
             noSyntaxValidation: false,
         });
 
-        monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
-            target: monaco.languages.typescript.ScriptTarget.Latest,
+        monaco.typescript.javascriptDefaults.setCompilerOptions({
+            target: monaco.typescript.ScriptTarget.Latest,
             lib: ['esnext'],
             allowNonTsExtensions: true,
-            module: monaco.languages.typescript.ModuleKind.ESNext,
-            moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
+            module: monaco.typescript.ModuleKind.ESNext,
+            moduleResolution: monaco.typescript.ModuleResolutionKind.NodeJs,
             typeRoots: ['file:///node_modules/@types'],
         });
 
@@ -36,7 +40,7 @@ export default function JsScriptEditor({ initialCode, onChange, props, className
             }
         };
 
-        const libs: Parameters<typeof monaco.languages.typescript.javascriptDefaults.setExtraLibs>[0] = [];
+        const libs: Parameters<typeof monaco.typescript.javascriptDefaults.setExtraLibs>[0] = [];
 
         for (const typeDef of typeDefs) {
             if (typeDef.path === 'bottleneko.gen.d.ts') {
@@ -57,7 +61,7 @@ export default function JsScriptEditor({ initialCode, onChange, props, className
         const packageJson = `{\n  "dependencies": {\n${packages}\n  }\n}`;
         libs.push({ content: packageJson, filePath: 'file:///package.json' });
 
-        monaco.languages.typescript.javascriptDefaults.setExtraLibs(libs);
+        monaco.typescript.javascriptDefaults.setExtraLibs(libs);
     };
 
     const onEditorMount: OnMount = (editor) => {

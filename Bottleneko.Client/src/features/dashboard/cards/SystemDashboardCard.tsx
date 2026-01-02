@@ -1,30 +1,31 @@
 import { OverlayTrigger, Table, Tooltip } from 'react-bootstrap';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import dateFormat from 'dateformat';
 import LoadingBanner from '../../../components/LoadingBanner';
 import { formatDuration } from '../../../app/utils';
 import { EnvironmentInfoDto } from '../../api/dtos.gen';
-import { useInterval } from '../../../app/hooks';
+import { useIfDeepChanged, useInterval } from '../../../app/hooks';
 import CopyableLabel from '../../../components/CopyableLabel';
 import DashboardCard from './DashboardCard';
 
-export default function SystemDashboardCard({ systemInfo }: { systemInfo?: EnvironmentInfoDto }) {
-    const [updateInfoTime, setUpdateInfoTime] = useState(0);
+export default function SystemDashboardCard({ systemInfo, timestamp }: { systemInfo?: EnvironmentInfoDto; timestamp: number | null }) {
     const [systemUptime, setSystemUptime] = useState('');
     const [serverTime, setServerTime] = useState<Date>(new Date());
 
-    useEffect(() => {
-        setUpdateInfoTime(Date.now());
-    }, [systemInfo]);
+    useIfDeepChanged(systemInfo, (systemInfo) => {
+        if (systemInfo) {
+            setSystemUptime(formatDuration(systemInfo.system.uptime));
+            setServerTime(new Date(systemInfo.system.currentTime));
+        }
+    }, true);
 
     const updateTimers = useCallback(() => {
-        if (systemInfo) {
-            setSystemUptime(formatDuration(systemInfo.system.uptime + (Date.now() - updateInfoTime) / 1000));
-            setServerTime(new Date(new Date(systemInfo.system.currentTime).getTime() + (Date.now() - updateInfoTime)));
+        if (systemInfo && timestamp !== null) {
+            setSystemUptime(formatDuration(systemInfo.system.uptime + (Date.now() - timestamp) / 1000));
+            setServerTime(new Date(new Date(systemInfo.system.currentTime).getTime() + (Date.now() - timestamp)));
         }
-    }, [systemInfo, updateInfoTime]);
+    }, [systemInfo, timestamp]);
     useInterval(updateTimers, 500);
-    useEffect(updateTimers, [updateTimers]);
 
     const systemVersion = systemInfo ? `${systemInfo.system.operatingSystem} (${systemInfo.system.arch})` : '';
     const renderTooltip = useCallback((props: object) => (

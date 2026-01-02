@@ -20,7 +20,7 @@ export default function AddUserView() {
             return;
         }
         await users.actions.add({ login: formData.login, password: formData.password });
-        navigate('/users');
+        await navigate('/users');
     }, [navigate, users]));
 
     const onValidated = useCallback((formData: EditedUser) => {

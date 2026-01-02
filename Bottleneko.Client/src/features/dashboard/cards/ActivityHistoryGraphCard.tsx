@@ -53,7 +53,7 @@ export default function ActivityHistoryGraphCard() {
 
     const [period, setPeriod] = useState(getPeriod('last-day', 'total-messages'));
 
-    const [stats, , refresh] = useFetchData(period.fetch, true, 60000);
+    const { data: stats, refresh } = useFetchData(period.fetch, true, 60000);
     let content: ReactNode = <LoadingBanner />;
 
     if (stats) {

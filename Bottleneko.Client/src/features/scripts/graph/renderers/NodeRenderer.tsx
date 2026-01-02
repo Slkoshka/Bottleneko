@@ -23,7 +23,7 @@ interface Props<Scheme extends ClassicScheme> {
 }
 
 export type NodeComponent<Scheme extends ClassicScheme> = (
-    props: Props<Scheme>
+    props: Props<Scheme>,
 ) => JSX.Element;
 
 export function NodeRenderer<Scheme extends ClassicScheme>({ data, styles, emit }: Props<Scheme>) {

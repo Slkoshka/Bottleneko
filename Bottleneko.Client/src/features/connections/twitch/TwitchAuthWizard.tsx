@@ -34,12 +34,12 @@ interface TwitchAuthSuccess {
     token_type: string;
 }
 
-type TwitchAuthStage =
-    { id: 'start'; config?: TwitchAuthConfig } |
-    { id: 'requesting-verification'; config: TwitchAuthConfig } |
-    { id: 'ready-for-authorization'; config: TwitchAuthConfig; verification: TwitchVerification } |
-    { id: 'loading-user-data'; config: TwitchAuthConfig } |
-    { id: 'authorization-failed'; config: TwitchAuthConfig };
+type TwitchAuthStage
+    = { id: 'start'; config?: TwitchAuthConfig }
+        | { id: 'requesting-verification'; config: TwitchAuthConfig }
+        | { id: 'ready-for-authorization'; config: TwitchAuthConfig; verification: TwitchVerification }
+        | { id: 'loading-user-data'; config: TwitchAuthConfig }
+        | { id: 'authorization-failed'; config: TwitchAuthConfig };
 
 export default function TwitchAuthWizard({ show, onSuccess, onCancel }: { show: boolean; onSuccess: (auth: TwitchAuth) => void; onCancel: () => void }) {
     const [stage, setStage] = useState<TwitchAuthStage>({ id: 'start' });

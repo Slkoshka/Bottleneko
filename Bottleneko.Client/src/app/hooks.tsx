@@ -1,10 +1,11 @@
 import { EffectCallback, ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import deepEqual from 'deep-equal';
 import { RequestError } from '../features/api/errors';
 import { ErrorCode } from '../features/api/responses';
 import DeleteConfirmationDialog from '../components/DeleteConfirmationDialog';
 import { EntityApi, EntityConfig, EntityContextData } from './EntityProvider';
 
-export function useOnce(effect: EffectCallback) {
+export function useOnceEffect(effect: EffectCallback) {
     const initialized = useRef(false);
 
     useEffect(() => {
@@ -13,6 +14,25 @@ export function useOnce(effect: EffectCallback) {
             effect();
         }
     });
+}
+
+export function useOnce(callback: () => void) {
+    const [isInitialized, setIsInitialized] = useState(false);
+
+    if (!isInitialized) {
+        setIsInitialized(true);
+        callback();
+    }
+}
+
+export function useIfDeepChanged<T>(value: T, callback: (value: T) => void, alwaysInit = false) {
+    const [oldValue, setOldValue] = useState<T>(value);
+    const [isInitialized, setIsInitialized] = useState(false);
+    if (!deepEqual(oldValue, value) || (alwaysInit && !isInitialized)) {
+        setOldValue(value);
+        setIsInitialized(true);
+        callback(value);
+    }
 }
 
 export function useInterval(callback: () => void, delay: number | null) {
@@ -53,52 +73,72 @@ export function useAsync<T extends unknown[]>(callback: (...args: T) => Promise<
     return [call, isLoading];
 }
 
-export function useFetchData<T>(api: (signal: AbortSignal) => Promise<T>, keepStale = false, autoRefresh: number | null = null): [T | null, boolean, () => void, boolean] {
-    const [refreshToken, setRefreshToken] = useState({ });
-    const [loading, setIsLoading] = useState(true);
+export function useFetchData<T>(api: (signal: AbortSignal) => Promise<T>, keepStale = false, autoRefresh: number | null = null, onNewData: ((data: T | null) => void) | null = null):
+{
+    data: T | null;
+    isLoading: boolean;
+    refresh: () => void;
+    notFound: boolean;
+    timestamp: number | null;
+} {
+    const [isLoading, setIsLoading] = useState(true);
+    const [refreshTimestamp, setRefreshTimestamp] = useState<number | null>(null);
     const [data, setData] = useState<T | null>(null);
     const [notFound, setNotFound] = useState(false);
-    const abortRef = useRef<AbortController | null>(null);
+    const [initialAbortController] = useState(new AbortController());
+    const abortRef = useRef<AbortController>(initialAbortController);
 
-    useEffect(() => {
-        abortRef.current?.abort();
-        abortRef.current = new AbortController();
+    const changeData = useCallback((data: T | null) => {
+        setRefreshTimestamp(Date.now());
+        onNewData?.(data);
+        setData(data);
+    }, [onNewData]);
 
-        setIsLoading(true);
+    const cleanup = useCallback(() => {
+        abortRef.current.abort();
         if (!keepStale) {
-            setData(null);
+            changeData(null);
         }
+        setIsLoading(true);
+    }, [keepStale, changeData]);
 
-        void api(abortRef.current.signal).then((data) => {
+    const fetch = useCallback((signal: AbortSignal) => {
+        void api(signal).then((data) => {
             setNotFound(false);
-            setData(data);
+            changeData(data);
             setIsLoading(false);
         }).catch((err: unknown) => {
             if (err instanceof RequestError && err.code === ErrorCode.NotFound) {
                 setNotFound(true);
             }
         });
+    }, [api, changeData]);
 
-        return () => {
-            if (!keepStale) {
-                setData(null);
-            }
-            setIsLoading(true);
-        };
-    }, [api, refreshToken, keepStale]);
+    const refresh = useCallback(() => {
+        abortRef.current.abort();
+        abortRef.current = new AbortController();
+        setIsLoading(true);
+        if (!keepStale) {
+            changeData(null);
+        }
 
-    useInterval(() => {
-        setRefreshToken({});
-    }, autoRefresh);
+        fetch(abortRef.current.signal);
+    }, [keepStale, fetch, changeData]);
 
-    return [
+    useEffect(() => {
+        fetch(initialAbortController.signal);
+        return cleanup;
+    }, [cleanup, fetch, initialAbortController.signal]);
+
+    useInterval(refresh, autoRefresh);
+
+    return {
         data,
-        loading,
-        () => {
-            setRefreshToken({});
-        },
+        isLoading,
+        refresh,
         notFound,
-    ];
+        timestamp: refreshTimestamp,
+    };
 }
 
 export function useEntityEditor<Type extends EntityConfig>(id: string | undefined, api: EntityApi<Type['Entity'], Type['EntityUpdate']>, context: (EntityContextData<Type>) | null):
@@ -118,8 +158,7 @@ export function useEntityEditor<Type extends EntityConfig>(id: string | undefine
         }
     }, [id, api]);
 
-    const [state, setState] = useState<Type['State'] | undefined>(undefined);
-    const [notFound, setNotFound] = useState(false);
+    const entity = context?.state.list?.find(c => c.data.id === id) ?? undefined;
 
     const [save, isSaving] = useAsync(useCallback(async (update: Type['EntityUpdate']) => {
         if (!id) {
@@ -130,18 +169,10 @@ export function useEntityEditor<Type extends EntityConfig>(id: string | undefine
         context?.actions.updated(updated.result);
     }, [id, api, context?.actions]));
 
-    useEffect(() => {
-        if (context?.state.list) {
-            const newEntity = context.state.list.find(c => c.data.id === id) ?? null;
-            setState(newEntity ?? undefined);
-            setNotFound(!newEntity);
-        }
-    }, [id, context?.state.list]);
-
     return {
-        state,
+        state: entity,
         fetch,
-        notFound,
+        notFound: !entity,
         save,
         isSaving,
     };
@@ -180,7 +211,11 @@ export function useDebounce(callback: () => void, timeout: number): [execute: ()
     ];
 }
 
-export function useEntityDeletion<Type extends EntityConfig>(context: EntityContextData<Type> | null, onDeleted?: () => Promise<void> | void): { deleteEntity: (entity?: Type['State']) => void; dialog: ReactNode } {
+export function useEntityDeletion<Type extends EntityConfig>(context: EntityContextData<Type> | null, onDeleted?: () => Promise<void> | void):
+{
+    deleteEntity: (entity?: Type['State']) => void;
+    dialog: ReactNode;
+} {
     const [deletingEntity, setDeletingEntity] = useState<Type['State'] | undefined>(undefined);
 
     const [doDelete] = useAsync(useCallback(async () => {

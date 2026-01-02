@@ -3,15 +3,16 @@ import api from '../api';
 import { RequestError } from '../api/errors';
 import { ErrorCode } from '../api/responses';
 import { UserDto } from '../api/dtos.gen';
+import { useOnce } from '../../app/hooks';
 import { AppStatus, AuthContext } from './context';
 import { storageAccessTokenKey } from '.';
 
 const AuthProvider = ({ children }: { children?: ReactNode | undefined }) => {
     const [status, setStatus] = useState<AppStatus>('loading');
-    const [accessToken, setAccessToken] = useState<string | null>(null);
+    const [accessToken, setAccessToken] = useState<string | null>(localStorage.getItem(storageAccessTokenKey));
     const [me, setMe] = useState<UserDto | null>(null);
 
-    const refreshMe = useCallback(async () => {
+    const refreshMe = async () => {
         try {
             setMe(await api.users.getMe());
             setStatus('logged-in');
@@ -36,12 +37,9 @@ const AuthProvider = ({ children }: { children?: ReactNode | undefined }) => {
                 setStatus('error');
             }
         }
-    }, []);
+    };
 
-    useEffect(() => {
-        setAccessToken(localStorage.getItem(storageAccessTokenKey));
-        void refreshMe();
-    }, [refreshMe]);
+    useOnce(() => void refreshMe());
 
     useEffect(() => {
         if (accessToken) {

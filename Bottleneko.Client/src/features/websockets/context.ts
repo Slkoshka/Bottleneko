@@ -11,12 +11,12 @@ export interface WSChatMessageSubscription {
     filter: ChatMessageFilter;
 }
 
-export type WebSocketAction =
-    { action: 'send'; payload: Packet } |
-    { action: 'subscribeToLogs'; payload: WSLogSubscription } |
-    { action: 'subscribeToChatMessages'; payload: WSChatMessageSubscription } |
-    { action: 'unsubscribe'; payload: { id: string } } |
-    { action: 'disconnect' };
+export type WebSocketAction
+    = { action: 'send'; payload: Packet }
+        | { action: 'subscribeToLogs'; payload: WSLogSubscription }
+        | { action: 'subscribeToChatMessages'; payload: WSChatMessageSubscription }
+        | { action: 'unsubscribe'; payload: { id: string } }
+        | { action: 'disconnect' };
 
 export const WebSocketDispatchContext = createContext<Dispatch<WebSocketAction> | null>(null);
 

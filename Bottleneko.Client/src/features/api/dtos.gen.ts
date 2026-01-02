@@ -10,10 +10,10 @@ export interface DiscordProtocolConfiguration {
     proxyId: string | null;
 }
 
-export type ProtocolConfiguration =
-    DiscordProtocolConfiguration |
-    TelegramProtocolConfiguration |
-    TwitchProtocolConfiguration;
+export type ProtocolConfiguration
+    = DiscordProtocolConfiguration
+        | TelegramProtocolConfiguration
+        | TwitchProtocolConfiguration;
 
 export interface TelegramProtocolConfiguration {
     $type: 'Telegram';
@@ -196,9 +196,9 @@ export interface ChatMessageLetter {
     content: ChatMessageDto;
 }
 
-export type Letter =
-    LogLetter |
-    ChatMessageLetter;
+export type Letter
+    = LogLetter
+        | ChatMessageLetter;
 
 export interface MailPacket {
     $type: 'Mail';
@@ -206,11 +206,11 @@ export interface MailPacket {
     letters: Letter[];
 }
 
-export type Packet =
-    AuthenticatePacket |
-    SubscribePacket |
-    MailPacket |
-    UnsubscribePacket;
+export type Packet
+    = AuthenticatePacket
+        | SubscribePacket
+        | MailPacket
+        | UnsubscribePacket;
 
 export interface SubscribePacket {
     $type: 'Subscribe';
@@ -240,9 +240,9 @@ export interface ChatMessagesSubscriptionTopic {
     filter: ChatMessageFilter;
 }
 
-export type SubscriptionTopic =
-    LogsSubscriptionTopic |
-    ChatMessagesSubscriptionTopic;
+export type SubscriptionTopic
+    = LogsSubscriptionTopic
+        | ChatMessagesSubscriptionTopic;
 
 export interface UnsubscribePacket {
     $type: 'Unsubscribe';
@@ -403,37 +403,37 @@ export interface GraphSplitStructureNodeData {
     inputType: GraphSocketType | null;
 }
 
-export type GraphNodeData =
-    GraphIfNodeData |
-    GraphIfValidNodeData |
-    GraphSwitchNodeData |
-    GraphMessageReceivedNodeData |
-    GraphAddNodeData |
-    GraphAverageNodeData |
-    GraphCeilNodeData |
-    GraphCheckNumberNodeData |
-    GraphDivideNodeData |
-    GraphFloorNodeData |
-    GraphLog2NodeData |
-    GraphLog10NodeData |
-    GraphLogNodeData |
-    GraphMaxNodeData |
-    GraphMinNodeData |
-    GraphMultiplyNodeData |
-    GraphNegateNodeData |
-    GraphPowerNodeData |
-    GraphRandomNumberNodeData |
-    GraphRandomRangeNodeData |
-    GraphRemainderNodeData |
-    GraphRoundNodeData |
-    GraphSignNodeData |
-    GraphSqrtNodeData |
-    GraphSubtractNodeData |
-    GraphSwitchOnSignNodeData |
-    GraphConcatNodeData |
-    GraphFormatTextNodeData |
-    GraphLogMessageNodeData |
-    GraphSplitStructureNodeData;
+export type GraphNodeData
+    = GraphIfNodeData
+        | GraphIfValidNodeData
+        | GraphSwitchNodeData
+        | GraphMessageReceivedNodeData
+        | GraphAddNodeData
+        | GraphAverageNodeData
+        | GraphCeilNodeData
+        | GraphCheckNumberNodeData
+        | GraphDivideNodeData
+        | GraphFloorNodeData
+        | GraphLog2NodeData
+        | GraphLog10NodeData
+        | GraphLogNodeData
+        | GraphMaxNodeData
+        | GraphMinNodeData
+        | GraphMultiplyNodeData
+        | GraphNegateNodeData
+        | GraphPowerNodeData
+        | GraphRandomNumberNodeData
+        | GraphRandomRangeNodeData
+        | GraphRemainderNodeData
+        | GraphRoundNodeData
+        | GraphSignNodeData
+        | GraphSqrtNodeData
+        | GraphSubtractNodeData
+        | GraphSwitchOnSignNodeData
+        | GraphConcatNodeData
+        | GraphFormatTextNodeData
+        | GraphLogMessageNodeData
+        | GraphSplitStructureNodeData;
 
 export interface GraphInvalidSocketType {
     $type: 'invalid';
@@ -496,22 +496,22 @@ export interface GraphOptionalSocketType {
     innerType: GraphSocketType;
 }
 
-export type GraphSocketType =
-    GraphInvalidSocketType |
-    GraphExecSocketType |
-    GraphBooleanSocketType |
-    GraphNumberSocketType |
-    GraphStringSocketType |
-    GraphIdSocketType |
-    GraphProtocolSocketType |
-    GraphTimestampSocketType |
-    GraphChatSocketType |
-    GraphChatMessageSocketType |
-    GraphChatterSocketType |
-    GraphAnyStructureInputSocketType |
-    GraphAnyEnumInputSocketType |
-    GraphAnyOptionalInputSocketType |
-    GraphOptionalSocketType;
+export type GraphSocketType
+    = GraphInvalidSocketType
+        | GraphExecSocketType
+        | GraphBooleanSocketType
+        | GraphNumberSocketType
+        | GraphStringSocketType
+        | GraphIdSocketType
+        | GraphProtocolSocketType
+        | GraphTimestampSocketType
+        | GraphChatSocketType
+        | GraphChatMessageSocketType
+        | GraphChatterSocketType
+        | GraphAnyStructureInputSocketType
+        | GraphAnyEnumInputSocketType
+        | GraphAnyOptionalInputSocketType
+        | GraphOptionalSocketType;
 
 export interface AttachmentDto {
     id: string;
@@ -629,9 +629,9 @@ export enum ScriptStatus {
     Error = 'Error',
 }
 
-export type ScriptCode =
-    JsScriptCode |
-    GraphScriptCode;
+export type ScriptCode
+    = JsScriptCode
+        | GraphScriptCode;
 
 export interface JsScriptCode {
     $type: 'JavaScript';

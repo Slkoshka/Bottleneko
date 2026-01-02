@@ -1,4 +1,4 @@
-import { CSSProperties, useEffect, useRef, useState } from 'react';
+import { CSSProperties, useRef, useState } from 'react';
 import { Form } from 'react-bootstrap';
 import { Drag } from 'rete-react-plugin';
 import { OptionListInputControl } from '../controls/OptionListInputControl';
@@ -13,9 +13,9 @@ export function ControlRenderer({ data, styles }: { data: NekoControl; styles?: 
 
     Drag.useNoDrag(ref);
 
-    useEffect(() => {
+    if (value !== data.value) {
         setValue(data.value);
-    }, [data.value]);
+    }
 
     if (data instanceof TextInputControl || data instanceof NumberInputControl) {
         return (
