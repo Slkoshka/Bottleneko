@@ -17,11 +17,11 @@ RUN dotnet restore
 COPY . .
 ENV VERSION_SUFFIX=$VERSION_SUFFIX
 RUN set -eux; \
-    dpkgArch="$(dpkg --print-architecture)"; \
-	case "${dpkgArch##*-}" in \
-        amd64) dotnetArch='linux-x64' ;; \
-        arm64) dotnetArch='linux-arm64' ;; \
-        *) echo "Unsupported architecture: ${dpkgArch##*-}"; exit 1 ;; \
+    kernelArch="$(uname -m)"; \
+    case "${kernelArch##*-}" in \
+        x86_64) dotnetArch='linux-x64' ;; \
+        aarch64) dotnetArch='linux-arm64' ;; \
+        *) echo "Unsupported architecture: ${kernelArch##*-}"; exit 1 ;; \
     esac; \
     dotnet publish ./Bottleneko.Server/Bottleneko.Server.csproj -c Release -r ${dotnetArch} /p:VersionSuffix=${VERSION_SUFFIX} /p:WarningLevel=0 -o /app
 
