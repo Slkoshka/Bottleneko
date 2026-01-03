@@ -6,6 +6,9 @@ on:
     - dev
     tags:
     - "v*.*.*"
+  workflow_dispatch:
+  repository_dispatch:
+    types: [build-docker-image]
 
 jobs:
   docker:
