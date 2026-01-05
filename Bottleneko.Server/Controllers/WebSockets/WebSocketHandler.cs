@@ -64,9 +64,10 @@ public class WebSocketHandler(IServiceProvider services, IOptions<JsonOptions> j
 
     public async Task HandleConnectionAsync(WebSocket ws, CancellationToken cancellationToken)
     {
+        try
         {
             using var authTimeoutCts = new CancellationTokenSource();
-            authTimeoutCts.CancelAfter(TimeSpan.FromSeconds(3));
+            authTimeoutCts.CancelAfter(TimeSpan.FromSeconds(5.0));
             using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, authTimeoutCts.Token);
             var firstPacket = await ReceiveAsync(ws, combinedCts.Token);
             if (firstPacket is AuthenticatePacket authPacket)
@@ -83,6 +84,10 @@ public class WebSocketHandler(IServiceProvider services, IOptions<JsonOptions> j
                 await ws.CloseAsync(WebSocketCloseStatus.InvalidMessageType, "Authentication message required", cancellationToken);
                 return;
             }
+        }
+        catch (OperationCanceledException)
+        {
+            return;
         }
 
         try
