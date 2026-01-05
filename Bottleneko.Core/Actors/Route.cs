@@ -24,7 +24,7 @@ public static class Route
         {
         }
 
-        internal override object Build() => Factory(false);
+        internal override object Build() => Factory(true);
     }
 
     public class RoutedMessageNoReply : RoutedMessageReplyUnavailable
@@ -42,7 +42,7 @@ public static class Route
         {
         }
 
-        internal override object Build() => Factory(true);
+        internal override object Build() => Factory(false);
     }
 
     public static RoutedMessageNoReply ToWorld(this object message) => new(isSendAndForget => message);
