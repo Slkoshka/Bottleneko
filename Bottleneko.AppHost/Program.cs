@@ -7,14 +7,14 @@ var server = builder.AddProject<Projects.Bottleneko_Server>("bottleneko-server",
         options.ExcludeLaunchProfile = true;
     })
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
-    .WithHttpEndpoint(0)
+    .WithHttpEndpoint(51511)
     .WithUrlForEndpoint("http", annotation => annotation.Url += "/swagger/")
     .WithExternalHttpEndpoints();
 
 var npmApp = builder.AddJavaScriptApp("bottleneko-client", "../Bottleneko.Client")
     .WithReference(server)
     .WithEnvironment("BROWSER", "none")
-    .WithHttpEndpoint(env: "VITE_PORT")
+    .WithHttpEndpoint(51510, env: "VITE_PORT")
     .WithExternalHttpEndpoints();
 
 // Uncomment to test on other devices in your local network
