@@ -65,7 +65,7 @@ export default function ScrollableTable<T>({ columns, data, render, title, highl
                         <tbody style={{ height: '100%' }}>
                             {
                                 data === null || data === undefined
-                                    ? <tr className=".placeholder"><td colSpan={columns.length}><LoadingBanner size="xl" /></td></tr>
+                                    ? <tr className="placeholder"><td colSpan={columns.length}><LoadingBanner size="xl" /></td></tr>
                                     : data.length === 0 ? <tr className="table-placeholder"><td colSpan={columns.length} className="text-center align-middle">{placeholder?.()}</td></tr> : data.map(renderRow)
                             }
                         </tbody>
