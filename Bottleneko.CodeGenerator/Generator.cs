@@ -119,12 +119,36 @@ public class Generator
 
                 case EnumDefinition enumDefinition:
                     generatedTypes.AppendLine();
-                    generatedTypes.AppendLine($"export enum {enumDefinition.Name} {{");
-                    foreach (var value in enumDefinition.Values)
+                    if (enumDefinition.Values.Length == 0)
                     {
-                        generatedTypes.AppendLine($"    {value} = '{value}',");
+                        generatedTypes.AppendLine($"export type {enumDefinition.Name} = never;");
+                        generatedTypes.AppendLine($"export const {enumDefinition.Name}Values : {enumDefinition.Name}[] = [];");
                     }
-                    generatedTypes.AppendLine("}");
+                    else
+                    {
+                        if (enumDefinition.Values.Length == 1)
+                        {
+                            generatedTypes.AppendLine($"export type {enumDefinition.Name} = {enumDefinition.Values[0]};");
+                        }
+                        else
+                        {
+                            generatedTypes.AppendLine();
+                            generatedTypes.AppendLine($"export type {enumDefinition.Name}");
+                            generatedTypes.AppendLine($"    = '{enumDefinition.Values[0]}'");
+                            foreach (var value in enumDefinition.Values.Skip(1).Take(enumDefinition.Values.Length - 2))
+                            {
+                                generatedTypes.AppendLine($"        | '{value}'");
+                            }
+                            generatedTypes.AppendLine($"        | '{enumDefinition.Values[^1]}';");
+                        }
+
+                        generatedTypes.AppendLine($"export const {enumDefinition.Name}Values : {enumDefinition.Name}[] = [");
+                        foreach (var value in enumDefinition.Values)
+                        {
+                            generatedTypes.AppendLine($"    '{value}',");
+                        }
+                        generatedTypes.AppendLine($"];");
+                    }
                     break;
 
                 case StructDefinition structDefinition:

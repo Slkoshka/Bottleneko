@@ -12,7 +12,7 @@ namespace Bottleneko.Server.Controllers;
 
 public class ProxiesController(AkkaService akka, NekoDbContext db) : CrudController<ProxiesController.AddProxyRequest, ProxiesController.UpdateProxyRequest>
 {
-    public record AddProxyRequest(string Name, ProxyType Type, string Hostname, int Port, bool IsAuthRequired, string Username, string Password);
+    public record AddProxyRequest(string Name, ProxyType Type, string Hostname, int Port, bool IsAuthRequired, string? Username, string? Password);
 
     public override async Task<IActionResult> AddAsync([FromBody] AddProxyRequest request)
     {

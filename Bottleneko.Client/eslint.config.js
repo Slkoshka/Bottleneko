@@ -1,64 +1,58 @@
-import js from '@eslint/js'
-import globals from 'globals'
-import react from 'eslint-plugin-react'
-import reactHooks from 'eslint-plugin-react-hooks'
-import reactRefresh from 'eslint-plugin-react-refresh'
-import tsESLint from 'typescript-eslint'
-import stylistic from '@stylistic/eslint-plugin'
-import importPlugin from 'eslint-plugin-import';
+import prettier from 'eslint-config-prettier';
+import { fileURLToPath } from 'node:url';
+import { includeIgnoreFile } from '@eslint/compat';
+import js from '@eslint/js';
+import svelte from 'eslint-plugin-svelte';
+import { defineConfig } from 'eslint/config';
+import globals from 'globals';
+import ts from 'typescript-eslint';
+import svelteConfig from './svelte.config.js';
 
-export default tsESLint.config(
+const gitignorePath = fileURLToPath(new URL('./.gitignore', import.meta.url));
+
+export default defineConfig(
+    includeIgnoreFile(gitignorePath),
     {
-        settings: {
-            react: { version: '18.3' },
-            'import/parsers': {
-                '@typescript-eslint/parser': ['.ts', '.tsx'],
-            },
-            'import/resolver': {
-                typescript: {
-                    alwaysTryTypes: true,
-                    project: './tsconfig.json',
-                },
-            },
-        },
-        extends: [
-            js.configs.recommended,
-            ...tsESLint.configs.strictTypeChecked,
-            ...tsESLint.configs.stylisticTypeChecked,
-            importPlugin.flatConfigs.recommended,
-            importPlugin.flatConfigs.typescript,
-            stylistic.configs.customize({
-                indent: 4,
-                quotes: 'single',
-                semi: true,
-            }),
+        ignores: [
+            '*.config.js',
+            '*.config.ts',
+            'src/lib/scriptApi/**/*.d.ts',
+            'src/lib/features/scripts/templates/**/*.js',
         ],
-        files: ['**/*.{ts,tsx}'],
-        ignores: ['dist', 'src/features/scripts/api/**/*.d.ts'],
+    },
+    js.configs.recommended,
+    ...ts.configs.strictTypeChecked,
+    ...svelte.configs.recommended,
+    prettier,
+    ...svelte.configs.prettier,
+    {
+        files: ['**/*.svelte', '**/*.svelte.ts'],
+
         languageOptions: {
-            ecmaVersion: 2020,
-            globals: globals.browser,
             parserOptions: {
-                project: ['./tsconfig.node.json', './tsconfig.app.json'],
-                tsconfigRootDir: import.meta.dirname,
+                projectService: true,
+                extraFileExtensions: ['.svelte'],
+                parser: ts.parser,
+                svelteConfig,
             },
-        },
-        plugins: {
-            react,
-            'react-hooks': reactHooks,
-            'react-refresh': reactRefresh,
-            '@stylistic': stylistic,
-        },
-        rules: {
-            ...react.configs.recommended.rules,
-            ...react.configs['jsx-runtime'].rules,
-            ...reactHooks.configs.recommended.rules,
-            'react-refresh/only-export-components': [
-                'warn',
-                { allowConstantExport: true },
-            ],
-            'import/order': 'error', 
-            'import/extensions': ['error', 'never'],
         },
     },
-)
+    {
+        languageOptions: {
+            parserOptions: {
+                projectService: true,
+            },
+            globals: {
+                ...globals.browser,
+            },
+        },
+
+        rules: {
+            // typescript-eslint strongly recommend that you do not use the no-undef lint rule on TypeScript projects.
+            // see: https://typescript-eslint.io/troubleshooting/faqs/eslint/#i-get-errors-from-the-no-undef-rule-about-global-variables-not-being-defined-even-though-there-are-no-typescript-errors
+            'no-undef': 'off',
+            'svelte/no-at-html-tags': 'off',
+            '@typescript-eslint/strict-boolean-expressions': 'error',
+        },
+    },
+);

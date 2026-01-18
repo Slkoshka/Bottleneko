@@ -16,15 +16,15 @@ Step("Cleaning up files from previous runs", () =>
 Step("Generating bindings", () =>
 {
     Directory.CreateDirectory("./Bottleneko.Core/Scripting/Js/API");
-    Directory.CreateDirectory("./Bottleneko.Client/src/features/scripts/api");
+    Directory.CreateDirectory("./Bottleneko.Client/src/lib/scriptApi");
 
-    Step("Generating API bindings", () => Generator.GenerateAPI("./Bottleneko.Client/src/features/api/dtos.gen.ts"));
-    Step("Generating script bindings", () => Generator.GenerateScriptBindings("./Bottleneko.Client/src/features/scripts/api/bottleneko.gen.d.ts"));
+    Step("Generating API bindings", () => Generator.GenerateAPI("./Bottleneko.Client/src/lib/api/dtos.gen.ts"));
+    Step("Generating script bindings", () => Generator.GenerateScriptBindings("./Bottleneko.Client/src/lib/scriptApi/bottleneko.gen.d.ts"));
 });
 
 Step("Generating type definitions", () =>
 {
-    File.Copy("./Bottleneko.Client/src/features/scripts/api/bottleneko.gen.d.ts", "./Bottleneko.ScriptAPI/src/typeDefs/bottleneko.gen.d.ts", overwrite: true);
+    File.Copy("./Bottleneko.Client/src/lib/scriptApi/bottleneko.gen.d.ts", "./Bottleneko.ScriptAPI/src/typeDefs/bottleneko.gen.d.ts", overwrite: true);
 
     Run("npm", ["install"], workingDir: "./Bottleneko.ScriptAPI", description: "Bottleneko.ScriptAPI: npm install");
     Run("npm", ["run", "build", "--", "--declaration", "--outDir", "./dist"], workingDir: "./Bottleneko.ScriptAPI", description: "Bottleneko.ScriptAPI: npm run build");
@@ -33,25 +33,24 @@ Step("Generating type definitions", () =>
     {
         CopyFiles("./Bottleneko.ScriptAPI/src/typeDefs", "./Bottleneko.ScriptAPI/dist", "*.d.ts", recursive: true);
         CopyFiles("./Bottleneko.ScriptAPI/dist", "./Bottleneko.Core/Scripting/Js/API", "*.js", recursive: true);
-        CopyFiles("./Bottleneko.ScriptAPI/dist", "./Bottleneko.Client/src/features/scripts/api", "*.ts", recursive: true, exclude: file => Path.GetFileName(file).StartsWith('_'));
+        CopyFiles("./Bottleneko.ScriptAPI/dist", "./Bottleneko.Client/src/lib/scriptApi", "*.ts", recursive: true, exclude: file => Path.GetFileName(file).StartsWith('_'));
     });
 
     Step("Generating typeDefs.ts", () =>
     {
-        var files = Directory.GetFiles("./Bottleneko.Client/src/features/scripts/api", "*.d.ts", new EnumerationOptions() { RecurseSubdirectories = true });
+        var files = Directory.GetFiles("./Bottleneko.Client/src/lib/scriptApi", "*.d.ts", new EnumerationOptions() { RecurseSubdirectories = true });
         var imports = files.Select((file, idx) =>
         {
-            var relativePath = Path.GetRelativePath("./Bottleneko.Client/src/features/scripts/api", Path.Join(Path.GetDirectoryName(file), Path.GetFileNameWithoutExtension(file))).Replace('\\', '/');
+            var relativePath = Path.GetRelativePath("./Bottleneko.Client/src/lib/scriptApi", Path.Join(Path.GetDirectoryName(file), Path.GetFileNameWithoutExtension(file))).Replace('\\', '/');
             return $"import typeDef{idx} from './{relativePath}?raw';";
         });
         var exports = files.Select((file, idx) =>
         {
-            var relativePath = Path.GetRelativePath("./Bottleneko.Client/src/features/scripts/api", file).Replace('\\', '/');
+            var relativePath = Path.GetRelativePath("./Bottleneko.Client/src/lib/scriptApi", file).Replace('\\', '/');
             return $"    {{ src: typeDef{idx}, path: '{relativePath}' }},";
         });
 
         var sb = new StringBuilder();
-        sb.AppendLine("/* eslint-disable import/default */");
         foreach (var line in imports)
         {
             sb.AppendLine(line);
@@ -64,6 +63,6 @@ Step("Generating type definitions", () =>
         }
         sb.AppendLine("];");
 
-        File.WriteAllText("./Bottleneko.Client/src/features/scripts/api/typeDefs.ts", sb.ToString());
+        File.WriteAllText("./Bottleneko.Client/src/lib/scriptApi/typeDefs.ts", sb.ToString());
     });
 });

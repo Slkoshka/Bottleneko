@@ -15,7 +15,7 @@ namespace Bottleneko.Database.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.2");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.1");
 
             modelBuilder.Entity("Bottleneko.Database.Schema.ChatEntity", b =>
                 {
@@ -577,7 +577,6 @@ namespace Bottleneko.Database.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Password")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Port")
@@ -588,7 +587,6 @@ namespace Bottleneko.Database.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Username")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");

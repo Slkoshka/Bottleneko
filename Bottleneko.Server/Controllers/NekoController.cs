@@ -18,6 +18,7 @@ public class NekoController : ControllerBase
         Timeout = 1002,
         InvalidOperation = 1003,
         SetupRequired = 1004,
+        InvalidValue = 1005,
     }
 
     public record Success();

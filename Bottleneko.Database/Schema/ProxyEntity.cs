@@ -9,8 +9,8 @@ public class ProxyEntity : NamedEntity
     public required string Hostname { get; set; }
     public required int Port { get; set; }
     public required bool IsAuthRequired { get; set; }
-    public required string Username { get; set; }
-    public required string Password { get; set; }
+    public string? Username { get; set; } = null;
+    public string? Password { get; set; } = null;
 
     public IWebProxy CreateProxy()
     {

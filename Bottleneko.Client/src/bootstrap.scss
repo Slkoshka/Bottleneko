@@ -1,13 +1,28 @@
 $accordion-button-active-bg: #333;
 $accordion-button-active-color: white;
-$accordion-button-focus-box-shadow: inset 0 calc(-1 * var(--bs-accordion-border-width)) 0 var(--bs-accordion-border-color);;
-$accordion-icon-color: white;
-$accordion-icon-active-color: white;
+$accordion-button-focus-box-shadow: inset 0 calc(-1 * var(--bs-accordion-border-width)) 0
+    var(--bs-accordion-border-color);
+$body-color-dark: #f0f0f0;
 
 @import './vars.scss';
 @import '../node_modules/bootstrap/scss/bootstrap';
 
-// Overriding $accordion-icon-color doesn't seem to work for some reason
+.accordion {
+    background-color: #333;
+
+    .accordion-button {
+        font-size: 1.25rem;
+
+        &.collapsed {
+            background-color: var(--bs-body-bg);
+        }
+    }
+
+    .accordion-body {
+        background-color: var(--bs-body-bg);
+    }
+}
+
 .accordion-button::after {
     background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-linecap='round' stroke-linejoin='round'><path d='m2 5 6 6 6-6'/></svg>") !important;
 }
@@ -15,4 +30,3 @@ $accordion-icon-active-color: white;
 .accordion-button::after:not(.collapsed) {
     background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-linecap='round' stroke-linejoin='round'><path d='m2 5 6 6 6-6'/></svg>") !important;
 }
-

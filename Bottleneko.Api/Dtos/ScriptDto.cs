@@ -1,5 +1,4 @@
-﻿using Bottleneko.Api.Graph;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Bottleneko.Api.Dtos;
 
@@ -15,7 +14,6 @@ public enum ScriptStatus
 }
 
 [JsonDerivedType(typeof(JsScriptCode), "JavaScript")]
-[JsonDerivedType(typeof(GraphScriptCode), "Graph")]
 [SerializeAsJson]
 public abstract record ScriptCode();
 

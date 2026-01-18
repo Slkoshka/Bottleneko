@@ -73,6 +73,15 @@ public class UsersController(NekoDbContext db) : CrudController<UsersController.
 
     public override async Task<IActionResult> AddAsync([FromBody] CreateUserRequest request)
     {
+        if (string.IsNullOrWhiteSpace(request.Login))
+        {
+            return Error(ErrorCode.InvalidValue, "Username cannot be empty");
+        }
+        else if (string.IsNullOrEmpty(request.Password))
+        {
+            return Error(ErrorCode.InvalidValue, "Passwordcannot be empty");
+        }
+
         try
         {
             var user = UserEntity.Create(request.Login, request.Password, UserRole.Administrator);

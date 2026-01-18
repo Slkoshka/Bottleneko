@@ -1,23 +1,22 @@
-﻿@import './vars.scss';
+@import './vars.scss';
 
 hr {
     z-index: -1;
+    width: 100%;
 }
 
-.branding {
-    span {
-        display: block;
-        float: left;
-    }
-
-    .branding-highlight {
-        color: $primary;
-        transform: translateY(0.1em);
-    }
+body {
+    min-height: 100dvh;
+    background-color: #17171c;
+    caret-color: transparent;
 }
 
-.main-page {
-    height: 100dvh;
+input {
+    caret-color: #f0f0f0;
+}
+
+.sidebar-button {
+    display: none;
 }
 
 main {
@@ -25,17 +24,18 @@ main {
     height: 100%;
 }
 
-aside {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 25rem;
-    height: 100dvh;
-    overflow-y: auto;
-}
+.small-page-content {
+    max-width: 1000px;
+    width: 100%;
 
-.sidebar-button {
-    display: none;
+    @media only screen and (max-width: $small-screen-width) {
+        max-width: 800px;
+    }
+
+    @media only screen and (max-width: $mobile-view-width) {
+        width: 100%;
+        max-width: 100%;
+    }
 }
 
 @media only screen and (max-width: $small-screen-width) {
@@ -45,10 +45,6 @@ aside {
 
     main {
         padding: 1.5rem 1.5rem 1.5rem calc(1.5rem + max(20rem, 20vw));
-    }
-
-    aside {
-        width: max(20rem, 20vw);
     }
 }
 
@@ -63,14 +59,6 @@ aside {
 
     main {
         padding: 5.5rem 0.5rem 1.5rem 0.5rem;
-    }
-
-    aside {
-        width: 100dvw;
-        height: 5rem;
-        z-index: 100;
-        overflow-y: hidden;
-        overscroll-behavior-y: contain;
     }
 
     body.sidebar-shown {
@@ -97,7 +85,9 @@ aside {
     margin-bottom: 0.5em;
 }
 
-.monaco-editor { position: absolute !important; }
+.monaco-editor {
+    position: absolute !important;
+}
 
 table.sticky-header th {
     position: sticky;

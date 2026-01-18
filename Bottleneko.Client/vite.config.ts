@@ -1,18 +1,13 @@
-import { URL, fileURLToPath } from 'node:url';
+import devtoolsJson from 'vite-plugin-devtools-json';
+import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig, loadEnv } from 'vite';
-import plugin from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), '');
     const bottlenekoServer = process.env['services__bottleneko-server__http__0'];
 
     return {
-        plugins: [plugin()],
-        resolve: {
-            alias: {
-                '@': fileURLToPath(new URL('./src', import.meta.url)),
-            },
-        },
+        plugins: [sveltekit(), devtoolsJson()],
         css: {
             preprocessorOptions: {
                 scss: {
@@ -35,13 +30,6 @@ export default defineConfig(({ mode }) => {
                 },
             },
             port: parseInt(env.VITE_PORT),
-        },
-        build: {
-            chunkSizeWarningLimit: 10 * 1024 * 1024,
-            outDir: 'dist',
-            rollupOptions: {
-                input: 'index.html',
-            },
         },
     };
 });

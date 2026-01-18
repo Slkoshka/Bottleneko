@@ -1,6 +1,5 @@
 ﻿using Bottleneko.Actors;
 using Bottleneko.Api.Dtos;
-using Bottleneko.Api.Graph;
 using Bottleneko.Database;
 using Bottleneko.Database.Schema;
 using Bottleneko.Messages;
@@ -17,11 +16,6 @@ public class ScriptsController(NekoDbContext db, AkkaService akka) : CrudControl
 
     public override async Task<IActionResult> AddAsync([FromBody] CreateScriptRequest request)
     {
-        if (request.Code is GraphScriptCode)
-        {
-            return Error(ErrorCode.InternalError, "Not implemented");
-        }
-
         var script = await akka.AskAsync(new ScriptingMessages.Add(request.Name, request.Description, request.Code, true).ToScripting().WithReply<ScriptEntity>());
         return Ok(new
         {
