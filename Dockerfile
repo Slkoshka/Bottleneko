@@ -35,12 +35,12 @@ RUN npm install
 
 # Publish
 COPY ./Bottleneko.Client/ .
-RUN npm run build -- --outDir /app/ --emptyOutDir
+RUN rm -rf ./build && npm run build
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
 COPY --from=build-dotnet /app .
-COPY --from=build-node /app ./wwwroot
+COPY --from=build-node /src/build ./wwwroot
 RUN mkdir /data
 
 ENTRYPOINT ["dotnet", "Bottleneko.Server.dll", "--bind", "http://0.0.0.0:5000", "--db", "/data/bottleneko.db"]
