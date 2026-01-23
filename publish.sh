@@ -1,3 +1,3 @@
 #!/bin/sh
 
-dotnet run --file ./scripts/Publish.cs --no-cache
+dotnet run --file ./scripts/Publish.cs --no-cache -- "$@"

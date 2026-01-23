@@ -48,6 +48,7 @@ Now that the installation is complete, you can start the initial setup wizard by
 For development:
 * .NET SDK 10.0
 * Node.js and npm
+* Deno
 
 ## Useful links
 
