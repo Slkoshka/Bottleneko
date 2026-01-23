@@ -1,10 +1,19 @@
 #!/usr/bin/dotnet run
 #:project ../Bottleneko.CliHelpers/Bottleneko.CliHelpers.csproj
 #:project ../Bottleneko.CodeGenerator/Bottleneko.CodeGenerator.csproj
+#:property PublishAot=false
 
 using System.Text;
 using Bottleneko.CodeGenerator;
 using static Bottleneko.CliHelpers.Helpers;
+
+Step("Checking prerequisites", () =>
+{
+    if (!File.Exists("Bottleneko.slnx"))
+    {
+        throw new Exception("This script must be run from the root directory of the project");
+    }
+});
 
 Step("Cleaning up files from previous runs", () =>
 {

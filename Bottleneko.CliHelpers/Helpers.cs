@@ -48,6 +48,10 @@ public static class Helpers
         try
         {
             result = action();
+            if (result is Task task)
+            {
+                task.Wait();
+            }
         }
         catch (Exception e)
         {
@@ -76,14 +80,11 @@ public static class Helpers
     {
         if (File.Exists(path))
         {
-            if (File.GetAttributes(path).HasFlag(FileAttributes.Directory))
-            {
-                Directory.Delete(path, recursive);
-            }
-            else
-            {
-                File.Delete(path);
-            }
+            File.Delete(path);
+        }
+        else if (Directory.Exists(path))
+        {
+            Directory.Delete(path, recursive);
         }
     }
 
