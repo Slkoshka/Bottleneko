@@ -1,5 +1,5 @@
 import { request, type MutationRequestProperties, type RequestProperties } from '../utils';
-import type { ScriptDto } from '../dtos.gen';
+import type { ScriptDto } from '../bottleneko.gen';
 
 export interface ListScriptsResponse {
     result: ScriptDto[];

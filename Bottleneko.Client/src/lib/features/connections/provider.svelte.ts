@@ -1,4 +1,4 @@
-import { type ConnectionDto, type ProtocolConfiguration } from '../../api/dtos.gen';
+import { type ConnectionDto, type ProtocolConfiguration } from '../../api/bottleneko.gen';
 import api from '$lib/api';
 import { EntityProvider, LocalEntity } from '$lib/provider.svelte';
 import type { RequestProperties } from '$lib/api/utils';

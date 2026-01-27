@@ -1,11 +1,11 @@
-using System.Numerics;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Bottleneko.Api.Packets;
 using Bottleneko.Logging;
-using Bottleneko.Scripting;
+using Bottleneko.Api.Rpc;
+using Bottleneko.Api;
 
 namespace Bottleneko.CodeGenerator;
 
@@ -55,7 +55,6 @@ public class Generator
 
     private static TypeDefinition GetType(Dictionary<Type, TypeDefinition> types, Type type)
     {
-
         if (types.TryGetValue(type, out var typeDefinition))
         {
             return typeDefinition;
@@ -66,8 +65,10 @@ public class Generator
         }
     }
 
-    public static void GenerateAPI(string output)
+    public static void GenerateApi(string definitionsOutput, string? rpcOutput, bool includeImportExtensions)
     {
+        var destRpcs = new Dictionary<RpcService, List<(string MethodName, string RequestType, string ResponseType)>>();
+
         var destTypes = new Dictionary<Type, TypeDefinition>()
         {
             { typeof(bool), new BuiltinTypeDefinition("boolean") },
@@ -83,11 +84,13 @@ public class Generator
             { typeof(DateTime), new BuiltinTypeDefinition("string") },
         };
 
-        foreach (var type in new[] {
-                typeof(Packet),
-                typeof(LogSeverity),
-            }.Select(type => type.Assembly).Distinct().SelectMany(assembly => assembly.GetTypes().Where(type => type.IsPublic)))
+        void ProcessType(Type type)
         {
+            if (type.GetCustomAttribute<HiddenAttribute>() is not null)
+            {
+                return;
+            }
+
             if (type is { IsEnum: true })
             {
                 destTypes.Add(type, new EnumDefinition(type.Name, Enum.GetNames(type)));
@@ -101,10 +104,36 @@ public class Generator
                 destTypes.Add(type, new StructDefinition(type.Name,
                     [.. type
                         .GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                        .Where(property => property is { CanRead: true, IsSpecialName: false })
+                        .Where(property => property is { CanRead: true, IsSpecialName: false } && property.GetCustomAttribute<HiddenAttribute>() is null)
                         .Select(property => ExtractField(property.Name, property.PropertyType, new NullabilityInfoContext().Create(property)))
                     ], []));
             }
+            else if (type is { IsInterface: true, IsGenericType: false })
+            {
+                if (type.GetCustomAttribute<RpcServiceAttribute>() is { } attr)
+                {
+                    foreach (var method in (type.GetMethod("GetMethods", BindingFlags.Public | BindingFlags.Static)?.Invoke(null, null) as RpcMethod[]) ?? [])
+                    {
+                        if (!destRpcs.TryGetValue(method.Service, out var methodList))
+                        {
+                            methodList = destRpcs[method.Service] = [];
+                        }
+                        methodList.Add((method.MethodName, method.RequestType.Name, method.ResponseType.Name));
+                    }
+                }
+                foreach (var subType in type.GetNestedTypes().Where(type => type.IsNestedPublic))
+                {
+                    ProcessType(subType);
+                }
+            }
+        }
+
+        foreach (var type in new[] {
+                typeof(Packet),
+                typeof(LogSeverity),
+            }.Select(type => type.Assembly).Distinct().SelectMany(assembly => assembly.GetTypes().Where(type => type.IsPublic)))
+        {
+            ProcessType(type);
         }
 
         var generatedTypes = new StringBuilder();
@@ -128,7 +157,7 @@ public class Generator
                     {
                         if (enumDefinition.Values.Length == 1)
                         {
-                            generatedTypes.AppendLine($"export type {enumDefinition.Name} = {enumDefinition.Values[0]};");
+                            generatedTypes.AppendLine($"export type {enumDefinition.Name} = '{enumDefinition.Values[0]}';");
                         }
                         else
                         {
@@ -186,150 +215,40 @@ public class Generator
             }
         }
 
-        File.WriteAllText(output, generatedTypes.ToString());
-    }
+        File.WriteAllText(definitionsOutput, generatedTypes.ToString());
 
-    public static void GenerateScriptBindings(string output)
-    {
-        static string SimplifyTypeName(Type type)
+        if (rpcOutput is not null)
         {
-            return type.Name.EndsWith("Binding") ? type.Name[..^"Binding".Length] : type.Name;
-        }
-
-        static StructDefinition ProcessStruct(Type type)
-        {
-            return new StructDefinition(SimplifyTypeName(type),
-                [.. type
-                    .GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                    .Where(property => property is { CanRead: true, IsSpecialName: false })
-                    .Select(property => ExtractField(property.Name, property.PropertyType, new NullabilityInfoContext().Create(property)))
-                ],
-                [.. type
-                    .GetMethods(BindingFlags.Instance | BindingFlags.Public)
-                    .Where(method => method is { IsSpecialName: false, IsGenericMethod: false, IsAbstract: false, IsStatic: false, IsConstructor: false } && method.Name != "GetType" && method.Name != "Equals" && method.Name != "GetHashCode")
-                    .Select(method =>
-                        new MethodDefinition(
-                            method.Name,
-                            ExtractField("", method.ReturnType, new NullabilityInfoContext().Create(method.ReturnParameter)),
-                            [.. method.GetParameters().Select(parameter => ExtractField(parameter.Name!, parameter.ParameterType, new NullabilityInfoContext().Create(parameter)))]
-                        ))
-                ]);
-        }
-
-        static string RenderFieldType(FieldDefinition field, TypeDefinition type)
-        {
-            return type is UnionDefinition union ? string.Join(" | ", union.Types.Select(t => t.Discriminator)) : $"{(field.IsTask ? "Promise<" : "")}{(type is EnumDefinition ? $"EnumValue<{type.Name}>" : type.Name)}{(field.IsArray ? "[]" : "")}{(field.IsOptional ? " | null" : "")}{(field.IsTask ? ">" : "")}";
-        }
-
-        static string RenderMethodType(Dictionary<Type, TypeDefinition> destTypes, MethodDefinition method)
-        {
-            return $"({string.Join(", ", method.Arguments.Select(arg => $"{arg.Name}: {RenderFieldType(arg, GetType(destTypes, arg.Type))}"))}) => {RenderFieldType(method.Return, GetType(destTypes, method.Return.Type))}";
-        }
-
-        var destTypes = new Dictionary<Type, TypeDefinition>()
-        {
-            { typeof(void), new BuiltinTypeDefinition("void") },
-            { typeof(object), new BuiltinTypeDefinition("never") },
-            { typeof(Task), new BuiltinTypeDefinition("Promise") },
-            { typeof(bool), new BuiltinTypeDefinition("boolean") },
-            { typeof(BigInteger), new BuiltinTypeDefinition("bigint") },
-            { typeof(long), new BuiltinTypeDefinition("bigint") },
-            { typeof(ulong), new BuiltinTypeDefinition("bigint") },
-            { typeof(int), new BuiltinTypeDefinition("number") },
-            { typeof(uint), new BuiltinTypeDefinition("number") },
-            { typeof(short), new BuiltinTypeDefinition("number") },
-            { typeof(ushort), new BuiltinTypeDefinition("number") },
-            { typeof(byte), new BuiltinTypeDefinition("number") },
-            { typeof(sbyte), new BuiltinTypeDefinition("number") },
-            { typeof(float), new BuiltinTypeDefinition("number") },
-            { typeof(double), new BuiltinTypeDefinition("number") },
-            { typeof(string), new BuiltinTypeDefinition("string") },
-            { typeof(DateTime), new BuiltinTypeDefinition("string") },
-        };
-        foreach (var type in new[] {
-                typeof(Packet),
-                typeof(LogSeverity),
-                typeof(NekoSettings),
-            }.Select(type => type.Assembly).Distinct().SelectMany(assembly => assembly.GetTypes().Where(type => type.IsPublic && type.GetCustomAttribute<ExposeToScriptsAttribute>() is ExposeToScriptsAttribute { IsInternal: false })))
-        {
-            if (type is { IsEnum: true })
+            var generatedRpc = new StringBuilder();
+            generatedRpc.AppendLine("// Generated by Bottleneko.CodeGenerator");
+            generatedRpc.AppendLine();
+            generatedRpc.AppendLine($"import type * as bottleneko from './bottleneko.gen{(includeImportExtensions ? ".ts" : "")}';");
+            generatedRpc.AppendLine();
+            generatedRpc.AppendLine("export type ResultType<T, Default> = 'result' extends keyof T ? T['result'] : Default;");
+            generatedRpc.AppendLine();
+            generatedRpc.AppendLine("export default abstract class AbstractRpc {");
+            foreach (var service in destRpcs)
             {
-                destTypes.Add(type, new EnumDefinition(SimplifyTypeName(type), Enum.GetNames(type)));
+                generatedRpc.AppendLine($"    {JsonNamingPolicy.CamelCase.ConvertName(service.Key.ToString())} = {{");
+                foreach (var (MethodName, RequestType, ResponseType) in service.Value)
+                {
+                    generatedRpc.AppendLine($"        {JsonNamingPolicy.CamelCase.ConvertName(MethodName)}(args: Omit<bottleneko.{RequestType}, '$type'>) {{ return (this as unknown as AbstractRpc).call<bottleneko.{ResponseType}>({{ $type: '{service.Key}/{MethodName}', ...args }}); }},");
+                }
+                generatedRpc.AppendLine("    };");
             }
-            else if (type is { IsClass: true, IsAbstract: true, IsSealed: false, IsGenericType: false } or { IsInterface: true } && !type.IsAssignableTo(typeof(Attribute)) && type.GetCustomAttributes<ExposeToScriptsAttribute>().Single() is { DerivedTypes.Length: > 0, IsInternal: false } attr)
+            generatedRpc.AppendLine();
+            generatedRpc.AppendLine("    constructor() {");
+            foreach (var service in destRpcs)
             {
-                destTypes.Add(type, new UnionDefinition(SimplifyTypeName(type), [.. attr.DerivedTypes.Select(derived => new UnionSubTypeDefinition(derived, SimplifyTypeName(derived)))]));
+                var name = JsonNamingPolicy.CamelCase.ConvertName(service.Key.ToString());
+                generatedRpc.AppendLine($"        this.{name} = Object.fromEntries(Object.entries(this.{name}).map(([name, method]) => [name, method.bind(this)])) as typeof this.{name};");
             }
-            else if (type is { IsClass: true, IsAbstract: false, IsGenericType: false } && !type.IsAssignableTo(typeof(Attribute)) && type.GetCustomAttribute<ExposeToScriptsAttribute>() is ExposeToScriptsAttribute { IsInternal: false })
-            {
-                destTypes.Add(type, ProcessStruct(type));
-            }
+            generatedRpc.AppendLine("    }");
+            generatedRpc.AppendLine();
+            generatedRpc.AppendLine($"    abstract call<T extends bottleneko.RpcResponse>(request: bottleneko.RpcRequest): Promise<ResultType<T, void>>;");
+            generatedRpc.AppendLine("};");
+
+            File.WriteAllText(rpcOutput, generatedRpc.ToString());
         }
-
-        var generatedTypes = new StringBuilder();
-        generatedTypes.AppendLine("// Generated by Bottleneko.CodeGenerator");
-
-
-        generatedTypes.AppendLine();
-        generatedTypes.AppendLine("// eslint-disable-next-line @typescript-eslint/no-unused-vars");
-        generatedTypes.AppendLine("interface EnumValue<T> { ToString: () => string }");
-
-        foreach (var type in destTypes)
-        {
-            switch (type.Value)
-            {
-                case BuiltinTypeDefinition:
-                    break;
-
-                case EnumDefinition enumDefinition:
-                    generatedTypes.AppendLine();
-                    generatedTypes.AppendLine($"declare interface {enumDefinition.Name} {{");
-                    foreach (var value in enumDefinition.Values)
-                    {
-                        generatedTypes.AppendLine($"    {value}: EnumValue<{enumDefinition.Name}>;");
-                    }
-                    generatedTypes.AppendLine("}");
-                    break;
-
-                case StructDefinition structDefinition:
-                    generatedTypes.AppendLine();
-                    generatedTypes.AppendLine($"declare interface {structDefinition.Name} {{");
-                    foreach (var field in structDefinition.Fields)
-                    {
-                        generatedTypes.AppendLine($"    {field.Name}: {RenderFieldType(field, GetType(destTypes, field.Type))};");
-                    }
-                    if (structDefinition.Methods.Length > 0)
-                    {
-                        if (structDefinition.Fields.Length > 0)
-                        {
-                            generatedTypes.AppendLine();
-                        }
-                        foreach (var methodGroup in structDefinition.Methods.GroupBy(m => m.Name))
-                        {
-                            var count = methodGroup.Count();
-                            if (count > 1)
-                            {
-                                generatedTypes.AppendLine($"    {methodGroup.Key}:");
-                                foreach (var (index, method) in methodGroup.Index())
-                                {
-                                    generatedTypes.AppendLine($"        ({RenderMethodType(destTypes, method)}){(index == count - 1 ? ";" : " &")}");
-                                }
-                            }
-                            else
-                            {
-                                var method = methodGroup.Single();
-                                generatedTypes.AppendLine($"    {method.Name}: {RenderMethodType(destTypes, method)};");
-                            }
-                        }
-                    }
-                    generatedTypes.AppendLine("}");
-                    break;
-
-                case UnionDefinition:
-                    break;
-            }
-        }
-
-        File.WriteAllText(output, generatedTypes.ToString());
     }
 }

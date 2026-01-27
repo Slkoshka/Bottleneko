@@ -1,5 +1,5 @@
 import api from '$lib/api';
-import type { ActivityStatsItemDto } from '$lib/api/dtos.gen';
+import type { ActivityStatsItemDto } from '$lib/api/bottleneko.gen';
 
 export const getPeriod = (
     period: 'last-year' | 'last-month' | 'last-day' | 'last-hour',

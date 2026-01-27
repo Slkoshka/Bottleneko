@@ -1,4 +1,4 @@
-import type { ExtendedConnectionStatus } from '$lib/api/dtos.gen';
+import type { ExtendedConnectionStatus } from '$lib/api/bottleneko.gen';
 
 export interface Props {
     status: ExtendedConnectionStatus;

@@ -14,7 +14,7 @@
     import type { Props, ConnectionDefinition } from '..';
     import { FormState } from '$lib/FormState.svelte';
     import { Proxies } from '$lib/features/proxies';
-    import type { DiscordProtocolConfiguration } from '$lib/api/dtos.gen';
+    import type { DiscordProtocolConfiguration } from '$lib/api/bottleneko.gen';
     import { FormSchema } from './DiscordConfigEditor';
 
     const { disabled = false, ...props }: Props = $props();

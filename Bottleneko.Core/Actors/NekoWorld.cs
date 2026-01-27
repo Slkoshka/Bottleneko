@@ -3,6 +3,7 @@ using Bottleneko.Connections;
 using Bottleneko.Events;
 using Bottleneko.Logging;
 using Bottleneko.Messages;
+using Bottleneko.Rpc;
 using Bottleneko.Scripting;
 
 namespace Bottleneko.Actors;
@@ -11,6 +12,7 @@ public enum CatType
 {
     Connections,
     Scripting,
+    Rpc,
     EventBus,
 }
 
@@ -23,20 +25,19 @@ public class NekoWorld(IServiceProvider services, INekoLogger logger) : NekoActo
 
     private static readonly CatStartup[] _startupSequence =
     [
-        new(world => world._eventBus = CreateChild<EventBusCat>([], "event-bus")),
-        new(world => world._scripting = CreateChild<ScriptingCat>([], "scripting")),
-        new(world => world._connections = CreateChild<ConnectionsCat>([], "connections")),
+        new(world => world._cats[CatType.EventBus] = CreateChild<EventBusCat>([], "event-bus")),
+        new(world => world._cats[CatType.Rpc] = CreateChild<RpcCat>([], "rpc")),
+        new(world => world._cats[CatType.Scripting] = CreateChild<ScriptingCat>([], "scripting")),
+        new(world => world._cats[CatType.Connections] = CreateChild<ConnectionsCat>([], "connections")),
     ];
     private int _startupSequenceIndex = -1;
     private bool _isShuttingDown = false;
 
-    private IActorRef? _eventBus = null;
-    private IActorRef? _connections = null;
-    private IActorRef? _scripting = null;
+    private readonly Dictionary<CatType, IActorRef> _cats = [];
 
     public override Task InitAsync(IActorRef self)
     {
-        (logger as LogRouter)!.OnMessage += (_, msg) => _eventBus?.Tell(new EventBusMessages.Publish("internal/log/message", msg));
+        (logger as LogRouter)!.OnMessage += (_, msg) => _cats.GetValueOrDefault(CatType.EventBus)?.Tell(new EventBusMessages.Publish("internal/log/message", msg));
 
         logger.LogDebug("Bottleneko.NekoWorld", "Creating Neko World...");
 
@@ -68,30 +69,17 @@ public class NekoWorld(IServiceProvider services, INekoLogger logger) : NekoActo
         switch (message)
         {
             case RoutingMessages.ForwardToCat forwardToCat:
-                switch (forwardToCat.Cat)
+                if (_cats.TryGetValue(forwardToCat.Cat, out var actor))
                 {
-                    case CatType.Connections when _connections is not null:
-                        _connections.Forward(forwardToCat.Message);
-                        break;
-
-                    case CatType.Scripting when _scripting is not null:
-                        _scripting.Forward(forwardToCat.Message);
-                        break;
-
-                    case CatType.EventBus when _eventBus is not null:
-                        _eventBus.Forward(forwardToCat.Message);
-                        break;
-
-                    default:
-                        if (stashIfNotAvailable)
-                        {
-                            Stash.Stash();
-                        }
-                        else
-                        {
-                            Sender.Tell(new Status.Failure(new RouteNotFoundException("Routing target is not available")));
-                        }
-                        break;
+                    actor.Forward(forwardToCat.Message);
+                }
+                else if (stashIfNotAvailable)
+                {
+                    Stash.Stash();
+                }
+                else
+                {
+                    Sender.Tell(new Status.Failure(new RouteNotFoundException("Routing target is not available")));
                 }
                 break;
 
@@ -107,7 +95,10 @@ public class NekoWorld(IServiceProvider services, INekoLogger logger) : NekoActo
         {
             case CatReady:
                 Stash.UnstashAll();
-                StartNextCat();
+                if (!_isShuttingDown)
+                {
+                    StartNextCat();
+                }
                 break;
 
             case CatDied died:
@@ -126,38 +117,27 @@ public class NekoWorld(IServiceProvider services, INekoLogger logger) : NekoActo
             case ControlMessages.Shutdown:
                 logger.LogInfo("Bottleneko", "Shutting down...");
                 _isShuttingDown = true;
-                _connections?.Tell(ControlMessages.Shutdown.Instance);
-                _scripting?.Tell(ControlMessages.Shutdown.Instance);
-                _eventBus?.Tell(ControlMessages.Shutdown.Instance);
+                foreach (var cat in _cats.Values)
+                {
+                    cat.Tell(ControlMessages.Shutdown.Instance);
+                }
                 break;
 
             case Terminated t:
-                if (t.ActorRef == _connections)
+                foreach (var (catType, cat) in _cats)
                 {
-                    _connections = null;
-                    if (!_isShuttingDown)
+                    if (t.ActorRef == cat)
                     {
-                        Self.Tell(ControlMessages.Shutdown.Instance);
+                        _cats.Remove(catType);
+                        if (!_isShuttingDown)
+                        {
+                            Self.Tell(ControlMessages.Shutdown.Instance);
+                        }
+                        break;
                     }
                 }
-                if (t.ActorRef == _scripting)
-                {
-                    _scripting = null;
-                    if (!_isShuttingDown)
-                    {
-                        Self.Tell(ControlMessages.Shutdown.Instance);
-                    }
-                }
-                if (t.ActorRef == _eventBus)
-                {
-                    _eventBus = null;
-                    if (!_isShuttingDown)
-                    {
-                        Self.Tell(ControlMessages.Shutdown.Instance);
-                    }
-                }
-
-                if (_connections is null && _scripting is null && _eventBus is null)
+                
+                if (_cats.Count == 0)
                 {
                     if (_isShuttingDown)
                     {
@@ -187,30 +167,33 @@ public class NekoWorld(IServiceProvider services, INekoLogger logger) : NekoActo
 
             case ControlMessages.Shutdown:
                 logger.LogInfo("Bottleneko", "Shutting down...");
-                _connections?.Tell(ControlMessages.Shutdown.Instance);
-                _scripting?.Tell(ControlMessages.Shutdown.Instance);
-                _eventBus?.Tell(ControlMessages.Shutdown.Instance);
+                _isShuttingDown = true;
+                foreach (var cat in _cats.Values)
+                {
+                    cat.Tell(ControlMessages.Shutdown.Instance);
+                }
                 break;
 
             case Terminated t:
-                if (t.ActorRef == _connections)
+                foreach (var (catType, cat) in _cats)
                 {
-                    logger.LogVerbose("Bottleneko", "Connections have shut down");
-                    _connections = null;
+                    if (t.ActorRef == cat)
+                    {
+                        _cats.Remove(catType);
+                        if (!_isShuttingDown)
+                        {
+                            Self.Tell(ControlMessages.Shutdown.Instance);
+                        }
+                        break;
+                    }
                 }
-                if (t.ActorRef == _scripting)
+                
+                if (_cats.Count == 0)
                 {
-                    logger.LogVerbose("Bottleneko", "Scripts have shut down");
-                    _scripting = null;
-                }
-                if (t.ActorRef == _eventBus)
-                {
-                    logger.LogVerbose("Bottleneko", "EventBus has shut down");
-                    _eventBus = null;
-                }
-                if (_connections is null && _scripting is null && _eventBus is null)
-                {
-                    logger.LogVerbose("Bottleneko", "Bye!");
+                    if (_isShuttingDown)
+                    {
+                        logger.LogVerbose("Bottleneko", "Bye!");
+                    }
                     Context.Stop(Self);
                 }
                 break;

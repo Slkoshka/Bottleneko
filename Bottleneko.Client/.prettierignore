@@ -9,5 +9,4 @@ bun.lockb
 /static/
 
 # Generated code
-/src/lib/scriptApi/
-/src/lib/api/dtos.gen.ts
+/src/lib/api/*.gen.ts

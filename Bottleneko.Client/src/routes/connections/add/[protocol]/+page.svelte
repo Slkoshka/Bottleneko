@@ -5,7 +5,7 @@
     import AddConnectionConfig from './AddConnectionConfig.svelte';
     import AddConnectionTest from './AddConnectionTest.svelte';
     import { page } from '$app/state';
-    import { type Protocol } from '$lib/api/dtos.gen';
+    import { type Protocol } from '$lib/api/bottleneko.gen';
     import { goto } from '$app/navigation';
     import { resolve } from '$app/paths';
     import AddConnectionFinish from './AddConnectionFinish.svelte';

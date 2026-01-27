@@ -1,4 +1,4 @@
-import type { LogSourceType } from '$lib/api/dtos.gen';
+import type { LogSourceType } from '$lib/api/bottleneko.gen';
 
 export interface Props {
     sourceType: LogSourceType;

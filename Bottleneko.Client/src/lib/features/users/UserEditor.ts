@@ -1,4 +1,4 @@
-import type { UserDto } from '$lib/api/dtos.gen';
+import type { UserDto } from '$lib/api/bottleneko.gen';
 import type { UsersProvider } from './provider.svelte';
 
 export interface Props {

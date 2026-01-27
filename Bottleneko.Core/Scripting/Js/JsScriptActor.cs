@@ -204,5 +204,7 @@ class JsScriptActor(IServiceProvider services, AkkaService akka, INekoLogger log
         _thread.Join();
         _jsApi.Dispose();
         _engine.Dispose();
+
+        base.PostStop();
     }
 }

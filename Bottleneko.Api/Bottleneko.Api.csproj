@@ -1,9 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)\Generated</CompilerGeneratedFilesOutputPath>
+  </PropertyGroup>
+
   <Import Project="$(MSBuildProjectDirectory)\..\Bottleneko.Common.props" />
 
   <ItemGroup>
     <ProjectReference Include="..\Bottleneko.Common\Bottleneko.Common.csproj" />
+    <ProjectReference Include="..\Bottleneko.SourceGenerator\Bottleneko.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

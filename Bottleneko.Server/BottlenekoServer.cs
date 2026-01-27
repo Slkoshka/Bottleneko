@@ -1,8 +1,10 @@
 ﻿using Bottleneko.Actors;
 using Bottleneko.Database;
 using Bottleneko.Database.Options;
+using Bottleneko.Helpers;
 using Bottleneko.Logging;
 using Bottleneko.Protocols;
+using Bottleneko.Scripting.Deno;
 using Bottleneko.Server.Controllers;
 using Bottleneko.Server.Controllers.WebSockets;
 using Bottleneko.Services;
@@ -76,7 +78,7 @@ public class BottlenekoServer : IAsyncDisposable
         });
     }
 
-    private WebApplication Build(ILoggerProvider logProvider, string dbFile, string[] bindAddresses)
+    private WebApplication Build(ILoggerProvider logProvider, NekoEnvironment environment, string[] bindAddresses)
     {
         var builder = WebApplication.CreateBuilder();
         builder.Logging.AddProvider(logProvider);
@@ -145,31 +147,38 @@ public class BottlenekoServer : IAsyncDisposable
             options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
         });
 
-        builder.Services.AddSingleton(new NekoSettings()
-        {
-            DatabasePath = dbFile,
-        });
+        builder.Services.AddSingleton(environment);
         builder.Services.AddSingleton<INekoLogger>(provider => new LogRouter(LogSourceType.System, "System"));
 
         builder.Services.AddSingleton<ProtocolRegistry>();
         builder.Services.AddScoped(_ => NekoDbContext.Get());
         builder.Services.AddSingleton<AkkaService>();
         builder.Services.AddHostedService(services => services.GetRequiredService<AkkaService>());
+        builder.Services.AddSingleton(new DenoScriptEngine(environment));
 
         builder.Services.AddSingleton(this);
 
         return builder.Build();
     }
 
-    private WebApplication SetupApplication(string dbFile, string[] bindAddresses)
+    private async Task<WebApplication> SetupApplicationAsync(string? dataDir, string[] bindAddresses)
     {
+        dataDir ??= FileSystem.GetDataDirectory("bottleneko");
+        Directory.CreateDirectory(dataDir);
+        var environment = new NekoEnvironment()
+        {
+            DataPath = dataDir,
+            DatabasePath = Path.Combine(dataDir, "bottleneko.db"),
+        };
+
         var nekoLogProvider = new NekoLogProvider();
-        var app = Build(nekoLogProvider, dbFile, bindAddresses);
+        var app = Build(nekoLogProvider, environment, bindAddresses);
 
         nekoLogProvider.Logger = app.Services.GetService<INekoLogger>();
 
-        NekoDbContext.Initialize(app.Services.GetRequiredService<INekoLogger>(), dbFile);
+        NekoDbContext.Initialize(app.Services.GetRequiredService<INekoLogger>(), environment.DatabasePath);
         NekoOptions.Initialize();
+        await app.Services.GetRequiredService<DenoScriptEngine>().InitializeAsync();
 
         app.UseExceptionHandler(HandleExceptionsMiddleware);
         app.Use(BlockUntilSetupMiddlewareAsync);
@@ -197,10 +206,10 @@ public class BottlenekoServer : IAsyncDisposable
         return app;
     }
 
-    public async Task<int> StartAsync(string dbFile, string[] bindAddresses, CancellationToken cancellationToken = default)
+    public async Task<int> StartAsync(string? dataDir, string[] bindAddresses, CancellationToken cancellationToken = default)
     {
         SystemController.Startup();
-        _app = SetupApplication(dbFile, bindAddresses);
+        _app = await SetupApplicationAsync(dataDir, bindAddresses);
         await _app.RunAsync();
         return ExitCode;
     }

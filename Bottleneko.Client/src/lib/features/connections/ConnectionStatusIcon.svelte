@@ -1,6 +1,6 @@
 <script lang="ts">
     import { Timer } from '$lib';
-    import { type ConnectionStatus, type ExtendedConnectionStatus } from '$lib/api/dtos.gen';
+    import { type ConnectionStatus, type ExtendedConnectionStatus } from '$lib/api/bottleneko.gen';
     import { Tooltip } from '@sveltestrap/sveltestrap';
     import type { Snippet } from 'svelte';
     import type { Props } from './ConnectionStatusIcon';

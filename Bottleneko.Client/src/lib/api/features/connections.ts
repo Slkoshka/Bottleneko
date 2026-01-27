@@ -1,4 +1,4 @@
-import type { ConnectionDto, ProtocolConfiguration } from '../dtos.gen';
+import type { ConnectionDto, ProtocolConfiguration } from '../bottleneko.gen';
 import { request, type MutationRequestProperties, type RequestProperties } from '../utils';
 
 export interface ListConnectionsResponse {

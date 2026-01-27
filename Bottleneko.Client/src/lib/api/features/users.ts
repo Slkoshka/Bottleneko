@@ -1,5 +1,5 @@
 import { request, type MutationRequestProperties, type RequestProperties } from '../utils';
-import type { UserDto } from '../dtos.gen';
+import type { UserDto } from '../bottleneko.gen';
 
 export interface ListUsersResponse {
     result: UserDto[];

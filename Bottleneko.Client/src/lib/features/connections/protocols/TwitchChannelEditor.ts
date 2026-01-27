@@ -1,4 +1,4 @@
-import type { TwitchProtocolChannel } from '$lib/api/dtos.gen';
+import type { TwitchProtocolChannel } from '$lib/api/bottleneko.gen';
 
 export interface Props {
     show: boolean;

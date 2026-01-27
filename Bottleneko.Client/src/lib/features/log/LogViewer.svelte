@@ -1,6 +1,6 @@
 <script lang="ts">
     import './styles.scss';
-    import { type LogSeverity, type LogLetter } from '$lib/api/dtos.gen';
+    import { type LogSeverity, type LogLetter } from '$lib/api/bottleneko.gen';
     import type { TypedRendererProps, TypedDataTable } from '$lib/components/DataTable';
     import DataTable from '$lib/components/DataTable.svelte';
     import { Subscriber } from '../ws/WebSocketConnection.svelte';

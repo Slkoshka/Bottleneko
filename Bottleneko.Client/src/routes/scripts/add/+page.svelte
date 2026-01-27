@@ -1,7 +1,7 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
     import { resolve } from '$app/paths';
-    import { type ScriptCode } from '$lib/api/dtos.gen';
+    import { type ScriptCode } from '$lib/api/bottleneko.gen';
     import IconButton from '$lib/components/IconButton.svelte';
     import View from '$lib/components/View.svelte';
     import { Scripts } from '$lib/features/scripts';

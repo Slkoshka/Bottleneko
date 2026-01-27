@@ -4,7 +4,7 @@ using Bottleneko.Api.Dtos;
 using Bottleneko.Database.Schema;
 using Bottleneko.Logging;
 using Bottleneko.Messages;
-using Bottleneko.Scripting.Js;
+using Bottleneko.Scripting.Deno;
 
 namespace Bottleneko.Scripting;
 
@@ -31,7 +31,7 @@ class ScriptInstance(IServiceProvider services, INekoLogger logger, ScriptEntity
     {
         return _code switch
         {
-            JsScriptCode js => CreateChild<JsScriptActor>([LocalLog, Self, _id, _name, js.Source], $"script-instance"),
+            JsScriptCode js => CreateChild<DenoScriptActor>([LocalLog, _id, _name, js.Source], $"script-instance"),
             _ => throw new Exception($"Unsupported script engine: {_code}"),
         };
     }

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { TwitchScopeValues, type TwitchScope } from '$lib/api/dtos.gen';
+    import { TwitchScopeValues, type TwitchScope } from '$lib/api/bottleneko.gen';
     import ModalDialog from '$lib/components/ModalDialog.svelte';
     import {
         Alert,

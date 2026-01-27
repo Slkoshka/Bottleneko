@@ -17,7 +17,7 @@
     import type { Props, ConnectionDefinition } from '..';
     import { FormState } from '$lib/FormState.svelte';
     import { Proxies } from '$lib/features/proxies';
-    import type { TwitchAuth, TwitchProtocolChannel, TwitchProtocolConfiguration } from '$lib/api/dtos.gen';
+    import type { TwitchAuth, TwitchProtocolChannel, TwitchProtocolConfiguration } from '$lib/api/bottleneko.gen';
     import {
         countCost,
         countSubs,

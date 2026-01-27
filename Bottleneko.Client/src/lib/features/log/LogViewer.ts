@@ -1,4 +1,4 @@
-import type { LogLetter, LogSourceType, LogSeverity } from '$lib/api/dtos.gen';
+import type { LogLetter, LogSourceType, LogSeverity } from '$lib/api/bottleneko.gen';
 import type { DataTableType } from '$lib/components/DataTable';
 
 export interface Props {

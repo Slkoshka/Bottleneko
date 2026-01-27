@@ -1,4 +1,4 @@
-import { TwitchScopeValues, type TwitchAuth, type TwitchScope } from '$lib/api/dtos.gen';
+import { TwitchScopeValues, type TwitchAuth, type TwitchScope } from '$lib/api/bottleneko.gen';
 import * as yup from 'yup';
 import { chatScopes, viewChannelInfoScopes, viewUserInfoScopes } from './TwitchConfigEditor';
 

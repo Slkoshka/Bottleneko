@@ -1,6 +1,6 @@
 <script lang="ts">
     import { ChangesTracker } from '$lib';
-    import { type UserDto } from '$lib/api/dtos.gen';
+    import { type UserDto } from '$lib/api/bottleneko.gen';
     import ModalDialog from '$lib/components/ModalDialog.svelte';
     import { FormState } from '$lib/FormState.svelte';
     import { Alert, Button, Form, FormFeedback, FormGroup, FormText, Input, Label } from '@sveltestrap/sveltestrap';

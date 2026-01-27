@@ -1,4 +1,4 @@
-import { type ProxyDto, type ProxyType } from '$lib/api/dtos.gen';
+import { type ProxyDto, type ProxyType } from '$lib/api/bottleneko.gen';
 import api from '$lib/api';
 import { EntityProvider, LocalEntity } from '$lib/provider.svelte';
 

@@ -1,6 +1,6 @@
 <script lang="ts">
     import api from '$lib/api';
-    import { type EnvironmentInfoDto } from '$lib/api/dtos.gen';
+    import { type EnvironmentInfoDto } from '$lib/api/bottleneko.gen';
     import View from '$lib/components/View.svelte';
     import { Tooltip } from '@sveltestrap/sveltestrap';
     import LoadingBanner from '$lib/components/LoadingBanner.svelte';

@@ -1,4 +1,4 @@
-import { type UserDto } from '../../api/dtos.gen';
+import { type UserDto } from '../../api/bottleneko.gen';
 import api from '$lib/api';
 import { EntityProvider, LocalEntity } from '$lib/provider.svelte';
 

@@ -28,5 +28,5 @@ WORKDIR /app
 COPY --from=build /app .
 RUN mkdir /data
 
-ENTRYPOINT ["dotnet", "Bottleneko.Server.dll", "--bind", "http://0.0.0.0:5000", "--db", "/data/bottleneko.db"]
+ENTRYPOINT ["dotnet", "Bottleneko.Server.dll", "--bind", "http://0.0.0.0:5000", "--data", "/data"]
 EXPOSE 5000

@@ -1,4 +1,4 @@
-import type { ScriptStatus } from '$lib/api/dtos.gen';
+import type { ScriptStatus } from '$lib/api/bottleneko.gen';
 
 export interface Props {
     status: ScriptStatus;

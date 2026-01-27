@@ -4,7 +4,7 @@ import {
     type TwitchProtocolChannel,
     type TwitchScope,
     type TwitchSubscriptionTopic,
-} from '$lib/api/dtos.gen';
+} from '$lib/api/bottleneko.gen';
 import * as yup from 'yup';
 
 export const TwitchAuthSchema = yup.object().shape({

@@ -130,5 +130,7 @@ class ConnectionActor(IServiceProvider services, AkkaService akka, INekoLogger l
         {
             _ = _connection?.DisposeAsync().AsTask();
         }
+
+        base.PostStop();
     }
 }

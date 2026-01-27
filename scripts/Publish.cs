@@ -1,5 +1,5 @@
 #!/usr/bin/dotnet run
-#:project ../Bottleneko.CliHelpers/Bottleneko.CliHelpers.csproj
+#:project ../Bottleneko.Helpers/Bottleneko.Helpers.csproj
 #:package System.CommandLine@2.*-*
 #:property PublishAot=false
 
@@ -8,7 +8,8 @@ using System.IO.Compression;
 using System.Net.Http.Json;
 using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
-using static Bottleneko.CliHelpers.Helpers;
+using static Bottleneko.Helpers.Cli;
+using static Bottleneko.Helpers.FileSystem;
 
 var platformOption = new Option<string>("--platform")
 {

@@ -55,5 +55,6 @@ public static class Route
     public static RoutedMessageReplyUnavailable ToAllScripts(this object message) => new(_ => new RoutingMessages.ForwardToCat(CatType.Scripting, new RoutingMessages.Broadcast(message), false));
     public static RoutedMessageNoReply ToScript(this object message, long id) => new(isSendAndForget => new RoutingMessages.ForwardToCat(CatType.Scripting, new RoutingMessages.ForwardToItem(id, message, isSendAndForget), isSendAndForget));
 
+    public static RoutedMessageNoReply ToRpc(this object message) => new(isSendAndForget => new RoutingMessages.ForwardToCat(CatType.Rpc, message, isSendAndForget));
     public static RoutedMessageNoReply ToEventBus(this object message) => new(isSendAndForget => new RoutingMessages.ForwardToCat(CatType.EventBus, message, isSendAndForget));
 }

@@ -1,4 +1,4 @@
-import { type Protocol, type ProtocolConfiguration } from '$lib/api/dtos.gen';
+import { type Protocol, type ProtocolConfiguration } from '$lib/api/bottleneko.gen';
 import type { Component } from 'svelte';
 import DiscordConfigEditor from './protocols/DiscordConfigEditor.svelte';
 import TelegramConfigEditor from './protocols/TelegramConfigEditor.svelte';

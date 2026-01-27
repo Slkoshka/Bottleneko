@@ -1,4 +1,5 @@
-﻿using Akka.Actor;
+﻿using System.Security.Cryptography;
+using Akka.Actor;
 using Bottleneko.Actors;
 using Bottleneko.Database;
 using Bottleneko.Database.Schema;
@@ -11,6 +12,8 @@ namespace Bottleneko.Scripting;
 
 class ScriptingCat(IServiceProvider services, INekoLogger logger) : ContainerCat<ScriptInstance, ScriptEntity, ScriptingMessages.Add, ScriptingMessages.Update, ScriptingMessages.Remove>(services)
 {
+    private readonly Dictionary<string, (IActorRef Actor, long Id)> _accessTokens = [];
+
     public override async Task InitAsync(IActorRef self)
     {
         await using var scope = Services.CreateAsyncScope();
@@ -82,13 +85,61 @@ class ScriptingCat(IServiceProvider services, INekoLogger logger) : ContainerCat
         }
     }
 
+    private static string GenerateToken()
+    {
+        return Convert.ToBase64String(RandomNumberGenerator.GetBytes(128));
+    }
+
+    protected override void ChildCreated(IActorRef child, long id)
+    {
+        _accessTokens[GenerateToken()] = (child, id);
+    }
+
+    protected override void ChildDestroyed(IActorRef child, long id)
+    {
+        foreach (var (token, actor) in _accessTokens)
+        {
+            if (actor.Actor == child)
+            {
+                _accessTokens.Remove(token);
+                break;
+            }
+        }
+    }
+
     protected override bool CustomMessageHandler(object message)
     {
         switch (message)
         {
+            case ScriptingMessages.GetAccessToken getAccessToken:
+            {
+                foreach (var (token, actor) in _accessTokens)
+                {
+                    if (actor.Id == getAccessToken.Id)
+                    {
+                        Sender.Tell(token);
+                        return true;
+                    }
+                }
+                Sender.Tell(null);
+                return true;
+            }
+
+            case ScriptingMessages.Authenticate authenticate:
+            {
+                if (_accessTokens.Remove(authenticate.AccessToken, out var actor))
+                {
+                    _accessTokens[GenerateToken()] = actor;
+                    Sender.Tell(actor, Self);
+                }
+                return true;
+            }
+
             case LoggingMessages.GetLogger:
+            {
                 Sender.Tell(logger);
                 return true;
+            }
 
             default:
                 return false;

@@ -3,7 +3,7 @@ import emptyJs from '../templates/empty.js?raw';
 import logMessagesJs from '../templates/log-messages.js?raw';
 import echoJs from '../templates/echo.js?raw';
 import reminderJs from '../templates/reminder.js?raw';
-import type { ScriptCode } from '$lib/api/dtos.gen';
+import type { ScriptCode } from '$lib/api/bottleneko.gen';
 
 const makeJsScript = (
     name: string,

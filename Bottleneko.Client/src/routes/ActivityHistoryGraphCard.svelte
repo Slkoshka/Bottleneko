@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { ActivityStatsDto } from '$lib/api/dtos.gen';
+    import type { ActivityStatsDto } from '$lib/api/bottleneko.gen';
     import DashboardCard from './DashboardCard.svelte';
     import { ButtonGroup, Dropdown, DropdownItem, DropdownMenu } from '@sveltestrap/sveltestrap';
     import IconButton from '$lib/components/IconButton.svelte';

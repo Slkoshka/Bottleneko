@@ -1,4 +1,4 @@
-import { type ScriptDto } from '../../api/dtos.gen';
+import { type ScriptDto } from '../../api/bottleneko.gen';
 import api from '$lib/api';
 import { EntityProvider, LocalEntity } from '$lib/provider.svelte';
 

@@ -1,11 +1,12 @@
 #!/usr/bin/dotnet run
-#:project ../Bottleneko.CliHelpers/Bottleneko.CliHelpers.csproj
+#:project ../Bottleneko.Helpers/Bottleneko.Helpers.csproj
 #:project ../Bottleneko.CodeGenerator/Bottleneko.CodeGenerator.csproj
 #:property PublishAot=false
 
+using System.IO.Compression;
 using System.Text;
 using Bottleneko.CodeGenerator;
-using static Bottleneko.CliHelpers.Helpers;
+using static Bottleneko.Helpers.Cli;
 
 Step("Checking prerequisites", () =>
 {
@@ -15,63 +16,55 @@ Step("Checking prerequisites", () =>
     }
 });
 
-Step("Cleaning up files from previous runs", () =>
-{
-    Delete("./Bottleneko.Core/Scripting/Js/API", recursive: true);
-    Delete("./Bottleneko.Client/src/features/scripts/api", recursive: true);
-    Delete("./Bottleneko.ScriptAPI/dist", recursive: true);
-});
-
 Step("Generating bindings", () =>
 {
-    Directory.CreateDirectory("./Bottleneko.Core/Scripting/Js/API");
-    Directory.CreateDirectory("./Bottleneko.Client/src/lib/scriptApi");
+    Directory.CreateDirectory("./Bottleneko.ScriptRuntime/neko/internal/api");
 
-    Step("Generating API bindings", () => Generator.GenerateAPI("./Bottleneko.Client/src/lib/api/dtos.gen.ts"));
-    Step("Generating script bindings", () => Generator.GenerateScriptBindings("./Bottleneko.Client/src/lib/scriptApi/bottleneko.gen.d.ts"));
+    Step("Generating API bindings", () => Generator.GenerateApi("./Bottleneko.Client/src/lib/api/bottleneko.gen.ts", "./Bottleneko.Client/src/lib/api/rpc.gen.ts", includeImportExtensions: false));
+    Step("Generating script bindings", () => Generator.GenerateApi("./Bottleneko.ScriptRuntime/neko/internal/api/bottleneko.gen.ts", "./Bottleneko.ScriptRuntime/neko/internal/api/rpc.gen.ts", includeImportExtensions: true));
 });
 
-Step("Generating type definitions", () =>
+await Step("Packaging script bindings", async () =>
 {
-    File.Copy("./Bottleneko.Client/src/lib/scriptApi/bottleneko.gen.d.ts", "./Bottleneko.ScriptAPI/src/typeDefs/bottleneko.gen.d.ts", overwrite: true);
+    Run("deno", ["task", "build"], "./Bottleneko.ScriptRuntime", "Building packages");
 
-    Run("npm", ["install"], workingDir: "./Bottleneko.ScriptAPI", description: "Bottleneko.ScriptAPI: npm install");
-    Run("npm", ["run", "build", "--", "--declaration", "--outDir", "./dist"], workingDir: "./Bottleneko.ScriptAPI", description: "Bottleneko.ScriptAPI: npm run build");
-
-    Step("Copying source files", () =>
+    await Step("Archiving files", async () =>
     {
-        CopyFiles("./Bottleneko.ScriptAPI/src/typeDefs", "./Bottleneko.ScriptAPI/dist", "*.d.ts", recursive: true);
-        CopyFiles("./Bottleneko.ScriptAPI/dist", "./Bottleneko.Core/Scripting/Js/API", "*.js", recursive: true);
-        CopyFiles("./Bottleneko.ScriptAPI/dist", "./Bottleneko.Client/src/lib/scriptApi", "*.ts", recursive: true, exclude: file => Path.GetFileName(file).StartsWith('_'));
+        using var archive = await Step("Creating archive", async () =>
+        {
+            return await ZipArchive.CreateAsync(File.Open("./Bottleneko.Client/src/lib/script_bindings.zip", FileMode.Create, FileAccess.Write), ZipArchiveMode.Create, false, Encoding.UTF8);
+        });
+
+        await Step("Adding files", async () =>
+        {
+            foreach (var file in Directory.GetFiles("./Bottleneko.ScriptRuntime/dist", "*.*", SearchOption.AllDirectories))
+            {
+                await archive.CreateEntryFromFileAsync(file, Path.GetRelativePath("./Bottleneko.ScriptRuntime/dist", file).Replace("\\", "/"), CompressionLevel.SmallestSize);
+            }
+        });
     });
+});
 
-    Step("Generating typeDefs.ts", () =>
+await Step("Packaging script runtime", async () =>
+{
+    var files = Run("git", ["ls-files", "-co", "--exclude-standard"], "./Bottleneko.ScriptRuntime", "Getting file listing").Split('\n');
+
+    await Step("Archiving files", async () =>
     {
-        var files = Directory.GetFiles("./Bottleneko.Client/src/lib/scriptApi", "*.d.ts", new EnumerationOptions() { RecurseSubdirectories = true });
-        var imports = files.Select((file, idx) =>
+        using var archive = await Step("Creating archive", async () =>
         {
-            var relativePath = Path.GetRelativePath("./Bottleneko.Client/src/lib/scriptApi", Path.Join(Path.GetDirectoryName(file), Path.GetFileNameWithoutExtension(file))).Replace('\\', '/');
-            return $"import typeDef{idx} from './{relativePath}?raw';";
+            return await ZipArchive.CreateAsync(File.Open("./Bottleneko.Core/script_runtime.zip", FileMode.Create, FileAccess.Write), ZipArchiveMode.Create, false, Encoding.UTF8);
         });
-        var exports = files.Select((file, idx) =>
+        await Step($"Adding files", async () =>
         {
-            var relativePath = Path.GetRelativePath("./Bottleneko.Client/src/lib/scriptApi", file).Replace('\\', '/');
-            return $"    {{ src: typeDef{idx}, path: '{relativePath}' }},";
+            foreach (var file in files.Where(name => !string.IsNullOrWhiteSpace(name)))
+            {
+                var relativePath = file.Replace("\\", "/");
+                if (relativePath.Contains('/'))
+                {
+                    await archive.CreateEntryFromFileAsync(Path.Combine(".", "Bottleneko.ScriptRuntime", file), relativePath, CompressionLevel.SmallestSize);
+                }
+            }
         });
-
-        var sb = new StringBuilder();
-        foreach (var line in imports)
-        {
-            sb.AppendLine(line);
-        }
-        sb.AppendLine();
-        sb.AppendLine("export default [");
-        foreach (var line in exports)
-        {
-            sb.AppendLine(line);
-        }
-        sb.AppendLine("];");
-
-        File.WriteAllText("./Bottleneko.Client/src/lib/scriptApi/typeDefs.ts", sb.ToString());
     });
 });

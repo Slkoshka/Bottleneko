@@ -1,5 +1,5 @@
 import { request, type MutationRequestProperties, type RequestProperties } from '../utils';
-import type { EnvironmentInfoDto, ActivityStatsDto } from '../dtos.gen';
+import type { EnvironmentInfoDto, ActivityStatsDto } from '../bottleneko.gen';
 
 export default {
     getInfo: async (props?: RequestProperties) => {

@@ -1,5 +1,5 @@
 import { request, type MutationRequestProperties, type RequestProperties } from '../utils';
-import type { ProxyDto } from '../dtos.gen';
+import type { ProxyDto } from '../bottleneko.gen';
 
 export interface ListProxiesResponse {
     result: ProxyDto[];

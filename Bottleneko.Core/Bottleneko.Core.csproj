@@ -15,6 +15,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="script_runtime.zip" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Akka" Version="1.5.46" />
     <PackageReference Include="Akka.DependencyInjection" Version="1.5.46" />
     <PackageReference Include="Discord.Net" Version="3.18.0" />
@@ -38,6 +42,7 @@
     <ProjectReference Include="..\Bottleneko.Api\Bottleneko.Api.csproj" />
     <ProjectReference Include="..\Bottleneko.Common\Bottleneko.Common.csproj" />
     <ProjectReference Include="..\Bottleneko.Database\Bottleneko.Database.csproj" />
+    <ProjectReference Include="..\Bottleneko.Helpers\Bottleneko.Helpers.csproj" />
     <ProjectReference Include="..\External\TwitchLib\TwitchLib.EventSub.Websockets\TwitchLib.EventSub.Websockets\TwitchLib.EventSub.Websockets.csproj" />
     <ProjectReference Include="..\External\TwitchLib\TwitchLib.Api\TwitchLib.Api\TwitchLib.Api.csproj" />
   </ItemGroup>

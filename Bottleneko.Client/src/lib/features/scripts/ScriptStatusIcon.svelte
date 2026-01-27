@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { type ScriptStatus } from '$lib/api/dtos.gen';
+    import { type ScriptStatus } from '$lib/api/bottleneko.gen';
     import { Tooltip } from '@sveltestrap/sveltestrap';
     import type { Props } from './ScriptStatusIcon';
 

@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { type Packet, type SubscriptionTopic, type Letter } from '$lib/api/dtos.gen';
+import { type Packet, type SubscriptionTopic, type Letter } from '$lib/api/bottleneko.gen';
 import { authState } from '../auth.svelte';
 import { onDestroy } from 'svelte';
 import deepEqual from 'deep-equal';

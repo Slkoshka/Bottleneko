@@ -3,7 +3,7 @@
     import { Alert, Button, Form, FormFeedback, FormGroup, Input, Label } from '@sveltestrap/sveltestrap';
     import JsScriptEditor from './js/JsScriptEditor.svelte';
     import { EditedScriptSchema, type Props } from './ScriptEditor';
-    import { type ScriptCode } from '$lib/api/dtos.gen';
+    import { type ScriptCode } from '$lib/api/bottleneko.gen';
 
     const props: Props = $props();
 

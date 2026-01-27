@@ -1,4 +1,4 @@
-import { type ProxyType, type ProxyDto, ProxyTypeValues } from '$lib/api/dtos.gen';
+import { type ProxyType, type ProxyDto, ProxyTypeValues } from '$lib/api/bottleneko.gen';
 import * as yup from 'yup';
 import type { ProxiesProvider } from './provider.svelte';
 

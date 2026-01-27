@@ -25,8 +25,9 @@
     <Build />
     <Deploy />
   </Project>
-  <Project Path="Bottleneko.CliHelpers/Bottleneko.CliHelpers.csproj" />
+  <Project Path="Bottleneko.Helpers/Bottleneko.Helpers.csproj" />
   <Project Path="Bottleneko.CodeGenerator/Bottleneko.CodeGenerator.csproj" />
+  <Project Path="Bottleneko.SourceGenerator/Bottleneko.SourceGenerator.csproj" />
   <Project Path="Bottleneko.Common/Bottleneko.Common.csproj" />
   <Project Path="Bottleneko.Core/Bottleneko.Core.csproj" />
   <Project Path="Bottleneko.Database/Bottleneko.Database.csproj" />

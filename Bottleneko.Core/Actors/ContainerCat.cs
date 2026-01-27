@@ -47,6 +47,14 @@ abstract class ContainerCat<TChild, TEntity, TAddMsg, TUpdateMsg, TRemoveMsg>(IS
         return false;
     }
 
+    protected virtual void ChildCreated(IActorRef child, long id)
+    {
+    }
+    
+    protected virtual void ChildDestroyed(IActorRef child, long id)
+    {
+    }
+
     protected IActorRef? GetChild(long id)
     {
         return _children.GetValueOrDefault(id);
@@ -71,6 +79,7 @@ abstract class ContainerCat<TChild, TEntity, TAddMsg, TUpdateMsg, TRemoveMsg>(IS
             case CreateChildActor createChildActor:
                 var actor = _children[createChildActor.Entity.Id] = CreateChild<TChild>([createChildActor.Entity], $"id-{createChildActor.Entity.Id}");
                 Context.Watch(actor);
+                ChildCreated(actor, createChildActor.Entity.Id);
                 break;
 
             case UpdateChildActor updateChildActor:
@@ -131,6 +140,7 @@ abstract class ContainerCat<TChild, TEntity, TAddMsg, TUpdateMsg, TRemoveMsg>(IS
                     if (child.Value == t.ActorRef)
                     {
                         _children.Remove(child.Key);
+                        ChildDestroyed(child.Value, child.Key);
                         break;
                     }
                 }

@@ -1,0 +1,13 @@
+{
+  "name": "neko",
+  "version": "0.1.0",
+  "license": "MIT",
+  "imports": {
+    "uuid": "npm:uuid@^13.0.0"
+  },
+  "tasks": { },
+  "exports": {
+    ".": "./index.ts",
+    "./runtime": "./runtime.ts"
+  }
+}

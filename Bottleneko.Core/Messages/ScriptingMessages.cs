@@ -9,5 +9,7 @@ public static class ScriptingMessages
     public record Update(long Id, string? Name, string? Description, ScriptCode? Code, bool? AutoStart) : ContainerMessages.Update(Id);
     public record Remove(long Id) : ContainerMessages.Remove(Id);
 
+    public record GetAccessToken(long Id);
+    public record Authenticate(string AccessToken);
     public record GetStatus() : SingletonMessage<GetStatus>;
 }

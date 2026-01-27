@@ -1,4 +1,4 @@
-import type { ScriptCode } from '$lib/api/dtos.gen';
+import type { ScriptCode } from '$lib/api/bottleneko.gen';
 import * as yup from 'yup';
 import '$lib'; // for yup.mixed().oneOfSchemas
 

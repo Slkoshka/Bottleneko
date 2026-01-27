@@ -1,4 +1,4 @@
-import type { Protocol } from '$lib/api/dtos.gen';
+import type { Protocol } from '$lib/api/bottleneko.gen';
 import type { ConnectionDefinition } from '$lib/features/connections';
 
 export type AddConnectionStage =

@@ -3,7 +3,7 @@
     import type { Props, ConnectionDefinition } from '..';
     import { FormState } from '$lib/FormState.svelte';
     import { Proxies } from '$lib/features/proxies';
-    import type { TelegramProtocolConfiguration } from '$lib/api/dtos.gen';
+    import type { TelegramProtocolConfiguration } from '$lib/api/bottleneko.gen';
     import { FormSchema } from './TelegramConfigEditor';
 
     const props: Props = $props();

@@ -81,8 +81,8 @@
                         />
                         <FormText>
                             <span>
-                                <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
                                 <span>{@html topic.description}</span>
+                                <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
                                 <a href={topic.infoUrl} target="_blank" rel="external">Docs</a>.
                                 {#if !props['is-mine'] && topic.cost > 0}
                                     <strong>Cost: {topic.cost}</strong>

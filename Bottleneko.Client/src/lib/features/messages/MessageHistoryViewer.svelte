@@ -1,7 +1,7 @@
 <script lang="ts">
     import { blur } from 'svelte/transition';
     import { flip } from 'svelte/animate';
-    import type { ChatMessageLetter } from '$lib/api/dtos.gen';
+    import type { ChatMessageLetter } from '$lib/api/bottleneko.gen';
     import { Subscriber } from '../ws/WebSocketConnection.svelte';
     import type { Props } from './MessageHistoryViewer';
     import { Button, Card, CardBody, CardFooter, CardHeader } from '@sveltestrap/sveltestrap';

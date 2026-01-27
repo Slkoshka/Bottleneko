@@ -1,7 +1,7 @@
 <script lang="ts">
     import { Connections, protocols } from '$lib/features/connections';
     import View from '$lib/components/View.svelte';
-    import { type Protocol } from '$lib/api/dtos.gen';
+    import { type Protocol } from '$lib/api/bottleneko.gen';
     import { Button } from '@sveltestrap/sveltestrap';
     import ProtocolIcon from '$lib/features/connections/ProtocolIcon.svelte';
     import { goto } from '$app/navigation';
