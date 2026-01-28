@@ -1,7 +1,7 @@
 import process from 'node:process';
 import NekoRpc, { type TransportType } from './internal/rpc/index.ts';
 
-class NekoRuntime {
+class NekoRuntimeImpl {
     #accessToken: string;
     #destroy: () => void;
 
@@ -21,7 +21,7 @@ class NekoRuntime {
         }
 
         const { rpc, destroy } = await NekoRpc.create(transport as TransportType, name, () => runtime.#onConnectionClosed());
-        const runtime = new NekoRuntime(rpc, destroy, accessToken);
+        const runtime = new NekoRuntimeImpl(rpc, destroy, accessToken);
         await runtime.#run();
         return runtime;
     }
@@ -33,6 +33,13 @@ class NekoRuntime {
             accessToken: this.#accessToken,
         });
     }
+
+    stop() {
+        this.#destroy();
+    }
 }
 
-export default await NekoRuntime.create();
+export default await NekoRuntimeImpl.create();
+
+type ExtractTypeFromPromise<Type> = Type extends Promise<infer X> ? X : never
+export type NekoRuntime = ExtractTypeFromPromise<ReturnType<typeof NekoRuntimeImpl.create>>;

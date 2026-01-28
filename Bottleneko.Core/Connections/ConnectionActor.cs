@@ -42,8 +42,7 @@ class ConnectionActor(IServiceProvider services, AkkaService akka, INekoLogger l
                 _connection.OnRestartRequested += (_, isImmediate) => owner.Tell(isImmediate ? ContainerMessages.Restart.Instance : ConnectionInstance.DelayedRestart.Instance);
                 _connection.OnMessageReceived += (_, msg) =>
                 {
-                    akka.Tell(new EventBusMessages.Publish("internal/connection/message_received", msg.Entity).ToEventBus());
-                    akka.Tell(new EventBusMessages.Publish("connection/message_received", msg.Binding).ToEventBus());
+                    akka.Tell(new EventBusMessages.Publish("internal/connection/message_received", msg).ToEventBus());
                 };
                 _connection.OnDied += (_, ex) => self.Tell(new ConnectionDied(ex));
 

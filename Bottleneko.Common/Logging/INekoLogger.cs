@@ -1,6 +1,4 @@
-﻿using Bottleneko.Scripting;
-
-namespace Bottleneko.Logging;
+﻿namespace Bottleneko.Logging;
 
 public enum LogSourceType
 {
@@ -9,7 +7,6 @@ public enum LogSourceType
     Script,
 }
 
-[ExposeToScripts]
 public enum LogSeverity
 {
     Critical,

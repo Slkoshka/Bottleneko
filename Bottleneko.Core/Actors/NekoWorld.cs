@@ -13,22 +13,24 @@ public enum CatType
     Connections,
     Scripting,
     Rpc,
+    Api,
     EventBus,
 }
 
-public class NekoWorld(IServiceProvider services, INekoLogger logger) : NekoActor(services)
+public class NekoWorld(IServiceProvider services, INekoLogger logger, Type apiCatType) : NekoActor(services)
 {
     record CatReady(IActorRef Cat);
-    record CatDied(IActorRef Cat, Exception Exception);
+    record CatDied(CatType Cat, Exception Exception);
 
-    record CatStartup(Func<NekoWorld, IActorRef> Handler);
+    record CatStartup(CatType Cat, Func<IActorRef> Handler);
 
-    private static readonly CatStartup[] _startupSequence =
+    private readonly CatStartup[] _startupSequence =
     [
-        new(world => world._cats[CatType.EventBus] = CreateChild<EventBusCat>([], "event-bus")),
-        new(world => world._cats[CatType.Rpc] = CreateChild<RpcCat>([], "rpc")),
-        new(world => world._cats[CatType.Scripting] = CreateChild<ScriptingCat>([], "scripting")),
-        new(world => world._cats[CatType.Connections] = CreateChild<ConnectionsCat>([], "connections")),
+        new(CatType.EventBus, () => CreateChild<EventBusCat>([], "event-bus")),
+        new(CatType.Api, () => CreateChild(apiCatType, [], "api")),
+        new(CatType.Rpc, () => CreateChild<RpcCat>([], "rpc")),
+        new(CatType.Scripting, () => CreateChild<ScriptingCat>([], "scripting")),
+        new(CatType.Connections, () => CreateChild<ConnectionsCat>([], "connections")),
     ];
     private int _startupSequenceIndex = -1;
     private bool _isShuttingDown = false;
@@ -59,9 +61,21 @@ public class NekoWorld(IServiceProvider services, INekoLogger logger) : NekoActo
         logger.LogDebug("Bottleneko.NekoWorld", $"Spawning cat {_startupSequenceIndex + 2}/{_startupSequence.Length}...");
 
         var step = _startupSequence[++_startupSequenceIndex];
-        var cat = step.Handler(this);
+        IActorRef cat;
+
+        try
+        {
+            cat = step.Handler();
+        }
+        catch (Exception ex)
+        {
+            Self.Tell(new CatDied(step.Cat, ex));
+            return;
+        }
+
+        _cats[step.Cat] = cat;
         Context.Watch(cat);
-        _ = cat.Ask(ControlMessages.Ready.Instance).PipeTo(Self, cat, () => new CatReady(cat), ex => new CatDied(cat, ex));
+        _ = cat.Ask(ControlMessages.Ready.Instance).PipeTo(Self, cat, () => new CatReady(cat), ex => new CatDied(step.Cat, ex));
     }
 
     private void TryRoute(RoutingMessages.ForwardMessage message, bool stashIfNotAvailable)
@@ -102,7 +116,7 @@ public class NekoWorld(IServiceProvider services, INekoLogger logger) : NekoActo
                 break;
 
             case CatDied died:
-                logger.LogError("Bottleneko", $"Cat {died.Cat.Path} has failed to start: {died.Exception}");
+                logger.LogError("Bottleneko", $"Cat {died.Cat} has failed to start: {died.Exception}");
                 Self.Tell(ControlMessages.Shutdown.Instance);
                 break;
 

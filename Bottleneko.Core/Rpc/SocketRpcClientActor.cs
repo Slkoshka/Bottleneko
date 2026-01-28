@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Akka.Actor;
-using Bottleneko.Api.Packets;
+using Bottleneko.Api.Rpc;
 using Bottleneko.Logging;
 using Bottleneko.Messages;
 using Bottleneko.Services;
@@ -74,7 +74,7 @@ class SocketRpcClientActor(IServiceProvider services, AkkaService akka, INekoLog
         return true;
     }
 
-    private async Task<Packet?> ReceiveAsync(IActorRef self, CancellationToken cancellationToken)
+    private async Task<Packet?> ReceiveAsync(CancellationToken cancellationToken)
     {
         if (!await ReceiveExactlyAsync(_receiveBuffer.AsMemory(0, sizeof(uint)), cancellationToken))
         {
@@ -141,7 +141,7 @@ class SocketRpcClientActor(IServiceProvider services, AkkaService akka, INekoLog
 
     private void Read(IActorRef self)
     {
-        _ = ReceiveAsync(self, _cts.Token).PipeTo(self, self, packet => packet is null ? EndOfStream.Instance : new RpcCat.PacketReceived(packet), ex => ex is OperationCanceledException ? null : new ConnectionError(ex));
+        _ = ReceiveAsync(_cts.Token).PipeTo(self, self, packet => packet is null ? EndOfStream.Instance : new RpcMessages.PacketReceived(packet), ex => ex is OperationCanceledException ? null : new ConnectionError(ex));
     }
 
     protected override void Send(Packet packet)
@@ -162,7 +162,7 @@ class SocketRpcClientActor(IServiceProvider services, AkkaService akka, INekoLog
                 OnConnected();
                 break;
 
-            case RpcCat.PacketReceived packetReceived:
+            case RpcMessages.PacketReceived packetReceived:
                 OnPacketReceived(packetReceived.Packet);
                 Read(Self);
                 break;
@@ -180,6 +180,7 @@ class SocketRpcClientActor(IServiceProvider services, AkkaService akka, INekoLog
                 break;
 
             case PacketSent:
+                _isSending = false;
                 Stash.Unstash();
                 break;
 

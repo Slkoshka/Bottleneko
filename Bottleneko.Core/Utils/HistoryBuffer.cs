@@ -1,4 +1,6 @@
-﻿namespace Bottleneko.Utils;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Bottleneko.Utils;
 
 public interface IHistoryFilter<in TItem>
 {
@@ -14,7 +16,7 @@ public abstract class HistoryBuffer<TItem, TFilter>(int capacity)
     where TItem : IHistoryItem
     where TFilter : IHistoryFilter<TItem>
 {
-    private readonly Lock _lock = new Lock();
+    private readonly Lock _lock = new();
     private readonly CircularBuffer<TItem> _buffer = new(capacity);
 
     public void Write(TItem message)
@@ -33,6 +35,21 @@ public abstract class HistoryBuffer<TItem, TFilter>(int capacity)
             result[i] = _buffer[i];
         }
         return result;
+    }
+
+    public bool TryGetLast(TFilter filter, [NotNullWhen(true)] out TItem? result)
+    {
+        for (var i = _buffer.Count - 1; i >= 0; i--)
+        {
+            if (filter.Matches(_buffer[i]))
+            {
+                result = _buffer[i];
+                return true;
+            }
+        }
+
+        result = default;
+        return false;
     }
 
     public int GetLast(Memory<TItem> target, TFilter filter)

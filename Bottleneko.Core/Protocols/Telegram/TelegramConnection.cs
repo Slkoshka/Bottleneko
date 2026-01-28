@@ -7,8 +7,6 @@ using Bottleneko.Database.Schema;
 using Bottleneko.Database.Schema.Protocols.Telegram;
 using Bottleneko.Logging;
 using Bottleneko.Messages;
-using Bottleneko.Scripting.Bindings;
-using Bottleneko.Scripting.Bindings.Telegram;
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
@@ -29,7 +27,7 @@ class TelegramConnection(StaticConnectionCreationData<TelegramProtocolConfigurat
 
     public static ProtocolDescription GetDescription()
     {
-        return ProtocolDescription.Make<TelegramProtocolConfiguration>(ProtocolId, (data) => new TelegramConnection(data), TestAsync, (connectionId, connection) => new TelegramConnectionBinding(connectionId, connection));
+        return ProtocolDescription.Make<TelegramProtocolConfiguration>(ProtocolId, (data) => new TelegramConnection(data), TestAsync);
     }
 
     public static string FormatName(string firstName, string? lastName) => lastName is null ? firstName : $"{firstName} {lastName}";
@@ -272,53 +270,7 @@ class TelegramConnection(StaticConnectionCreationData<TelegramProtocolConfigurat
             return;
         }
 
-        var msgBinding = new ChatMessageBinding(Owner, new TelegramChatMessageBinding(update))
-        {
-            id = msg.Id,
-            protocol = ProtocolId,
-            connectionId = ConnectionId,
-            timestamp = message.Date,
-            attachments = [.. attachments.DistinctBy(attachment => attachment.Entity.Id).Select(attachment => new ChatMessageAttachmentBinding(new TelegramChatMessageAttachmentBinding(attachment.File))
-            {
-                id = attachment.Entity.Id,
-                messageId = msg.Id,
-                contentType = attachment.Entity.ContentType,
-                fileName = attachment.Entity.FileName,
-            })],
-            chat = new ChatBinding(Owner, new TelegramChatBinding(message.Chat))
-            {
-                id = chat.Id,
-                protocol = ProtocolId,
-                connectionId = ConnectionId,
-                displayName = chat.DisplayName,
-                flags = new ChatFlags()
-                {
-                    isPrivate = chat.IsPrivate,
-                },
-            },
-            author = new ChatterBinding(new TelegramChatterBinding(message.From))
-            {
-                id = author.Id,
-                protocol = ProtocolId,
-                connectionId = ConnectionId,
-                displayName = author.DisplayName,
-                username = author.Username,
-                flags = new ChatterFlags()
-                {
-                    isBot = author.IsBot,
-                },
-            },
-            text = msg.TextContent,
-            replyToId = msg.ReplyToId,
-            flags = new ChatMessageFlags()
-            {
-                isSpecial = msg.IsSpecial,
-                isDirect = msg.IsDirect,
-                isOffline = msg.IsOffline,
-            },
-        };
-
-        MessageReceived(msg, msgBinding);
+        MessageReceived(msg);
     }
 
     private async Task HandleTelegramUpdateAsync(Update update, bool isOffline)
@@ -404,32 +356,6 @@ class TelegramConnection(StaticConnectionCreationData<TelegramProtocolConfigurat
                     if (!string.IsNullOrEmpty(Configuration.ProxyId) && long.TryParse(Configuration.ProxyId, out var proxyId) && proxyId == proxyUpdated.ProxyId)
                     {
                         RequestRestart(true);
-                    }
-                    break;
-                }
-
-            case ConnectionMessages.SimpleReply simpleReply:
-                {
-                    if (simpleReply.ReplyTo.chat.telegram is TelegramChatBinding telegramChat && simpleReply.ReplyTo.telegram is TelegramChatMessageBinding telegramMessage && telegramMessage.Update.Message is not null)
-                    {
-                        await _bot.SendMessage(telegramChat.Chat.Id, simpleReply.Text, ParseMode.None, replyParameters: telegramMessage.Update.Message);
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException("Invalid send target");
-                    }
-                    break;
-                }
-
-            case ConnectionMessages.SendMessage sendMessage:
-                {
-                    if (sendMessage.Chat.telegram is TelegramChatBinding telegramChat)
-                    {
-                        await _bot.SendMessage(telegramChat.Chat.Id, sendMessage.Text, ParseMode.None);
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException("Invalid send target");
                     }
                     break;
                 }

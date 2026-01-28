@@ -1,6 +1,6 @@
 using Akka.Actor;
 using Bottleneko.Actors;
-using Bottleneko.Api.Packets;
+using Bottleneko.Api.Rpc;
 using Bottleneko.Messages;
 using Bottleneko.Utils;
 
@@ -11,9 +11,9 @@ record RpcEndPoint(string Transport, string Name);
 class RpcCat(IServiceProvider services, NekoEnvironment environment) : NekoActor(services)
 {
     record Start() : SingletonMessage<Start>;
-    public record PacketReceived(Packet Packet);
 
     private IActorRef _transport = null!;
+    private readonly List<IActorRef> _adapters = [];
 
     private IActorRef CreateTransport()
     {
@@ -57,16 +57,28 @@ class RpcCat(IServiceProvider services, NekoEnvironment environment) : NekoActor
             case RpcMessages.GetEndPoint getEndPoint:
                 _transport.Forward(getEndPoint);
                 break;
+            
+            case RpcMessages.CreateRpcAdapter createRpcAdapter:
+                Sender.Tell(CreateChild<AdapterRpcClientActor>([createRpcAdapter.SendCallback]));
+                break;
 
             case Terminated t:
                 if (t.ActorRef == _transport)
                 {
                     Context.Stop(Self);
                 }
+                else
+                {
+                    _adapters.Remove(t.ActorRef);
+                }
                 break;
 
             case ControlMessages.Shutdown:
                 _transport.Tell(ControlMessages.Shutdown.Instance);
+                foreach (var adapter in _adapters)
+                {
+                    adapter.Tell(ControlMessages.Shutdown.Instance);
+                }
                 break;
 
             default:

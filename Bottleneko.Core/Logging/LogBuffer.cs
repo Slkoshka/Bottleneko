@@ -1,4 +1,4 @@
-﻿using Bottleneko.Api.Packets;
+﻿using Bottleneko.Api.Rpc;
 using Bottleneko.Utils;
 
 namespace Bottleneko.Logging;

@@ -1,9 +1,9 @@
 <script lang="ts">
     import './styles.scss';
-    import { type LogSeverity, type LogLetter } from '$lib/api/bottleneko.gen';
+    import { type LogSeverity } from '$lib/api/bottleneko.gen';
     import type { TypedRendererProps, TypedDataTable } from '$lib/components/DataTable';
     import DataTable from '$lib/components/DataTable.svelte';
-    import { Subscriber } from '../ws/WebSocketConnection.svelte';
+    import { LogSubscriber } from '../ws/WebSocketConnection.svelte';
     import LogRowRenderer from './LogRowRenderer.svelte';
     import { Button, ButtonGroup } from '@sveltestrap/sveltestrap';
     import { getSeverityButtonVariant, type Props, type TableType } from './LogViewer';
@@ -23,20 +23,13 @@
         severityFilter = { ...severityFilter, [severity]: !severityFilter[severity] };
     };
 
-    const subscriber = new Subscriber<LogLetter>();
+    const subscriber = new LogSubscriber();
     $effect(() => {
         subscriber.subscribe({
-            topic: {
-                $type: 'Logs',
-                filter: {
-                    severities: (Object.keys(severityFilter) as LogSeverity[]).filter(
-                        (severity) => severityFilter[severity],
-                    ),
-                    sourceType: props.sourceType ?? null,
-                    sourceId: props.sourceId ?? null,
-                    category: null,
-                },
-            },
+            severities: (Object.keys(severityFilter) as LogSeverity[]).filter((severity) => severityFilter[severity]),
+            sourceType: props.sourceType ?? null,
+            sourceId: props.sourceId ?? null,
+            category: null,
         });
     });
 

@@ -76,10 +76,11 @@ class EventBusCat(IServiceProvider services) : NekoActor(services)
         {
             case EventBusMessages.Subscribe subscribe:
                 Sender.Tell(AddSubscription(subscribe.Listener, subscribe.Name, subscribe.PayloadType));
+                Context.Watch(subscribe.Listener);
                 break;
 
             case EventBusMessages.SubscribeExternal external:
-                _externalSubscriptions[external.Token] = CreateChild<ExternalSubscriptionActor>([Self, external.Listener, external]);
+                Context.Watch(_externalSubscriptions[external.Token] = CreateChild<ExternalSubscriptionActor>([Self, external.Listener, external]));
                 break;
 
             case EventBusMessages.Publish publish:

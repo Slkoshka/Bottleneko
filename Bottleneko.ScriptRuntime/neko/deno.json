@@ -8,6 +8,8 @@
   "tasks": { },
   "exports": {
     ".": "./index.ts",
-    "./runtime": "./runtime.ts"
+    "./runtime": "./runtime.ts",
+    "./log": "./log.ts",
+    "./messages": "./messages.ts"
   }
 }

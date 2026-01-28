@@ -7,8 +7,6 @@ using Bottleneko.Database.Schema;
 using Bottleneko.Database.Schema.Protocols.Discord;
 using Bottleneko.Logging;
 using Bottleneko.Messages;
-using Bottleneko.Scripting.Bindings;
-using Bottleneko.Scripting.Bindings.Discord;
 using Bottleneko.Utils;
 using Discord;
 using Discord.Net;
@@ -35,7 +33,7 @@ class DiscordConnection(StaticConnectionCreationData<DiscordProtocolConfiguratio
 
     public static ProtocolDescription GetDescription()
     {
-        return ProtocolDescription.Make<DiscordProtocolConfiguration>(ProtocolId, (data) => new DiscordConnection(data), TestAsync, (connectionId, connection) => new DiscordConnectionBinding(connectionId, connection));
+        return ProtocolDescription.Make<DiscordProtocolConfiguration>(ProtocolId, (data) => new DiscordConnection(data), TestAsync);
     }
 
     private static GatewayIntents GetIntents(DiscordProtocolConfiguration config)
@@ -192,7 +190,7 @@ class DiscordConnection(StaticConnectionCreationData<DiscordProtocolConfiguratio
             Author = author,
             AuthorId = author.Id,
             TextContent = string.IsNullOrEmpty(message.Content) ? null : message.Content,
-            IsSpecial = message.Type is not MessageType.Default or MessageType.Reply,
+            IsSpecial = message.Type is not MessageType.Default and not MessageType.Reply,
             IsDirect = message.Channel is IDMChannel || message.MentionedUsers.Any(user => user.Id == _rest.CurrentUser.Id) || replyTo?.Author.Id == _rest.CurrentUser.Id,
             IsOffline = false,
             ReplyToId = replyTo is null ? null : (await db.DiscordChatMessages.SingleOrDefaultAsync(chatMessage =>
@@ -244,53 +242,7 @@ class DiscordConnection(StaticConnectionCreationData<DiscordProtocolConfiguratio
 
         await db.SaveChangesAsync();
 
-        var msgBinding = new ChatMessageBinding(Owner, new DiscordChatMessageBinding(message))
-        {
-            id = msg.Id,
-            protocol = ProtocolId,
-            connectionId = ConnectionId,
-            timestamp = message.Timestamp.UtcDateTime,
-            attachments = [.. message.Attachments.Select(attachment => new ChatMessageAttachmentBinding(new DiscordChatMessageAttachmentBinding(attachment))
-            {
-                id = attachment.Id,
-                messageId = msg.Id,
-                contentType = attachment.ContentType ?? "application/octet-stream",
-                fileName = attachment.Filename,
-            })],
-            chat = new ChatBinding(Owner, new DiscordChatBinding(message.Channel))
-            {
-                id = chat.Id,
-                protocol = ProtocolId,
-                connectionId = ConnectionId,
-                displayName = chat.DisplayName,
-                flags = new ChatFlags()
-                {
-                    isPrivate = chat.IsPrivate,
-                },
-            },
-            author = new ChatterBinding(new DiscordChatterBinding(message.Author))
-            {
-                id = author.Id,
-                protocol = ProtocolId,
-                connectionId = ConnectionId,
-                displayName = author.DisplayName,
-                username = author.Username,
-                flags = new ChatterFlags()
-                {
-                    isBot = author.IsBot,
-                },
-            },
-            text = msg.TextContent,
-            replyToId = msg.ReplyToId,
-            flags = new ChatMessageFlags()
-            {
-                isSpecial = msg.IsSpecial,
-                isDirect = msg.IsDirect,
-                isOffline = msg.IsOffline,
-            },
-        };
-
-        MessageReceived(msg, msgBinding);
+        MessageReceived(msg);
     }
 
     private Task Client_DisconnectedAsync(Exception exception)
@@ -425,46 +377,6 @@ class DiscordConnection(StaticConnectionCreationData<DiscordProtocolConfiguratio
                     break;
                 }
 
-            case ConnectionMessages.SimpleReply simpleReply:
-                {
-                    try
-                    {
-                        if (_client is not null && simpleReply.ReplyTo.chat.discord is DiscordChatBinding discordChat && discordChat.channel.Channel is ITextChannel textChannel && simpleReply.ReplyTo.discord is DiscordChatMessageBinding discordMessage)
-                        {
-                            await textChannel.SendMessageAsync(simpleReply.Text, messageReference: new MessageReference((ulong)discordMessage.id));
-                        }
-                        else
-                        {
-                            throw new InvalidOperationException("Client is not connected, message is not a Discord message, or you are trying to post in a non-text channel.");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogError(LogCategory, "Failed to send message", ex);
-                    }
-                    break;
-                }
-
-            case ConnectionMessages.SendMessage sendMessage:
-                {
-                    try
-                    {
-                        if (_client is not null && sendMessage.Chat.discord is DiscordChatBinding discordChat && discordChat.channel.Channel is ITextChannel textChannel)
-                        {
-                            await textChannel.SendMessageAsync(sendMessage.Text);
-                        }
-                        else
-                        {
-                            throw new InvalidOperationException("Client is not connected or you are trying to post in a non-text channel.");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogError(LogCategory, "Failed to send message", ex);
-                    }
-                    break;
-                }
-
             case ConnectionMessages.GetAttachment getAttachment:
                 {
                     await using var db = NekoDbContext.Get();
@@ -485,38 +397,6 @@ class DiscordConnection(StaticConnectionCreationData<DiscordProtocolConfiguratio
                         break;
                     }
                     sender.Tell(msg.Attachments.SingleOrDefault(a => a.Id == attachment.Discord.DiscordAttachmentId)?.ProxyUrl);
-                    break;
-                }
-
-            case DiscordMessages.GetChat getChat:
-                {
-                    try
-                    {
-                        await using var db = NekoDbContext.Get();
-                        var channel = await _rest.GetChannelAsync(getChat.ChatId);
-                        if (channel is null)
-                        {
-                            sender.Tell(null);
-                            return;
-                        }
-                        var chat = await SaveChatAsync(db, channel);
-
-                        sender.Tell(new ChatBinding(Owner, new DiscordChatBinding(channel))
-                        {
-                            id = chat.Id,
-                            protocol = ProtocolId,
-                            connectionId = ConnectionId,
-                            displayName = chat.DisplayName,
-                            flags = new ChatFlags()
-                            {
-                                isPrivate = chat.IsPrivate,
-                            },
-                        });
-                    }
-                    catch (Exception ex)
-                    {
-                        sender.Tell(new Status.Failure(ex));
-                    }
                     break;
                 }
         }

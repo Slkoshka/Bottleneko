@@ -1,6 +1,5 @@
 using Akka.Actor;
 using Bottleneko.Actors;
-using Bottleneko.Api.Packets;
 using Bottleneko.Api.Rpc;
 using Bottleneko.Logging;
 using Bottleneko.Messages;
@@ -18,11 +17,14 @@ abstract class RpcClientActor(IServiceProvider services, AkkaService akka, INeko
 
         public record Running : State;
         public record RunningScript(IActorRef Actor, long Id) : Running;
+        public record RunningApi(object UserData) : Running;
 
         public record Dead : State;
     }
 
     record AuthenticateAsScript(IActorRef Actor, long Id);
+    record AuthenticateAsApi(object UserData);
+    record AuthenticationFailure(string Message);
 
     public INekoLogger Logger { get; } = logger;
     private State _state = new State.WaitingForAuthentication();
@@ -41,6 +43,19 @@ abstract class RpcClientActor(IServiceProvider services, AkkaService akka, INeko
     protected void OnDisconnected()
     {
         Logger.LogVerbose("Bottleneko.Rpc", $"[{_connectionId}] Connection closed");
+
+        switch (_state)
+        {
+            case State.RunningScript runningScript:
+                runningScript.Actor.Tell(new RpcMessages.ConnectionClosed(new ScriptRpcContext(Self, runningScript.Actor)));
+                break;
+
+            case State.RunningApi runningApi:
+                akka.Tell(new RpcMessages.ConnectionClosed(new ApiRpcContext(Self, runningApi.UserData)).ToApi());
+                break;
+        }
+
+        _state = new State.Dead();
     }
 
     protected bool CustomMessageHandler(object message)
@@ -49,19 +64,30 @@ abstract class RpcClientActor(IServiceProvider services, AkkaService akka, INeko
         {
             case AuthenticateAsScript authenticateAsScript:
                 Logger.LogVerbose("Bottleneko.Rpc", $"[{_connectionId}] Authenticated as script #{authenticateAsScript.Id}");
+                Context.Watch(authenticateAsScript.Actor);
                 _state = new State.RunningScript(authenticateAsScript.Actor, authenticateAsScript.Id);
-                while (true)
+                while (_packetStash.TryDequeue(out var packet))
                 {
-                    if (_packetStash.TryDequeue(out var packet))
-                    {
-                        OnPacketReceived(packet);
-                    }
-                    else
-                    {
-                        break;
-                    }
+                    OnPacketReceived(packet);
                 }
                 return true;
+
+            case AuthenticateAsApi authenticateAsApi:
+                Logger.LogVerbose("Bottleneko.Rpc", $"[{_connectionId}] Authenticated as API client: {authenticateAsApi.UserData}");
+                _state = new State.RunningApi(authenticateAsApi.UserData);
+                while (_packetStash.TryDequeue(out var packet))
+                {
+                    OnPacketReceived(packet);
+                }
+                return true;
+            
+            case Terminated t:
+                if (_state is State.RunningScript runningScript && runningScript.Actor == t.ActorRef)
+                {
+                    Self.Tell(ControlMessages.Shutdown.Instance);
+                    return true;
+                }
+                return false;
 
             default:
                 return false;
@@ -85,8 +111,9 @@ abstract class RpcClientActor(IServiceProvider services, AkkaService akka, INeko
                                 break;
                             
                             case ClientType.Api:
-                                // TODO
-                                Error("Unsupported");
+                                _state = new State.Authenticating();
+                                _ = akka.AskAsync(new ApiMessages.Authenticate(authenticatePacket.AccessToken).ToApi().WithReply<object>())
+                                    .PipeTo(Self, Self, userData => userData is not null ? new AuthenticateAsApi(userData) : new AuthenticationFailure("Invalid access token"), ex => new AuthenticationFailure(ex.ToString()));
                                 break;
                         }
                         break;
@@ -104,12 +131,27 @@ abstract class RpcClientActor(IServiceProvider services, AkkaService akka, INeko
             case State.Running:
                 if (packet is RequestPacket request)
                 {
-                    if (_state is State.RunningScript runningScript)
+                    switch (_state)
                     {
-                        _ = runningScript.Actor.Ask<ResponsePacket>(request).PipeTo(Self, runningScript.Actor,
-                            result => new RpcMessages.SendPacket(result),
-                            ex => new RpcMessages.SendPacket(new ResponsePacket(request.RequestId, new ErrorResult(ex.ToString())))
-                        );
+                        case State.RunningScript runningScript:
+                        {
+                            var context = new ScriptRpcContext(Self, runningScript.Actor);
+                            _ = runningScript.Actor.Ask<ResponsePacket>(new RpcMessages.HandleRequest(context, request)).PipeTo(Self, runningScript.Actor,
+                                result => new RpcMessages.SendPacket(result),
+                                ex => new RpcMessages.SendPacket(new ResponsePacket(request.RequestId, new ErrorResult(ex.ToString())))
+                            );
+                            break;
+                        }
+
+                        case State.RunningApi runningApi:
+                        {
+                            var context = new ApiRpcContext(Self, runningApi.UserData);
+                            _ = akka.AskAsync(new RpcMessages.HandleRequest(context, request).ToApi().WithReply<ResponsePacket>()).PipeTo(Self, Self,
+                                result => new RpcMessages.SendPacket(result),
+                                ex => new RpcMessages.SendPacket(new ResponsePacket(request.RequestId, new ErrorResult(ex.ToString())))
+                            );
+                            break;
+                        }
                     }
                 }
                 break;

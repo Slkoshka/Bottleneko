@@ -1,9 +1,7 @@
 ﻿using Bottleneko.Api.Protocols;
-using Bottleneko.Scripting;
 
 namespace Bottleneko.Api.Dtos;
 
-[ExposeToScripts]
 public enum ConnectionStatus
 {
     NotConnected,
@@ -16,7 +14,6 @@ public enum ConnectionStatus
     Error,
 }
 
-[ExposeToScripts]
 public enum Protocol
 {
     Discord,

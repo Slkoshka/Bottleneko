@@ -6,7 +6,6 @@ using Bottleneko.Database.Schema;
 using Bottleneko.Logging;
 using Bottleneko.Messages;
 using Bottleneko.Protocols;
-using Bottleneko.Scripting.Bindings;
 using Bottleneko.Utils;
 
 namespace Bottleneko.Connections;
@@ -86,16 +85,6 @@ class ConnectionInstance(IServiceProvider services, INekoLogger logger, Protocol
         {
             case ConnectionMessages.GetStatus:
                 Sender.Tell(new ExtendedConnectionStatus(_status, _status == ConnectionStatus.DelayedReconnect ? Math.Max(0, (float)(_statusChangeTime - DateTime.UtcNow).TotalSeconds) : 0.0f));
-                return true;
-
-            case ConnectionMessages.GetBinding:
-                Sender.Tell(new ConnectionBinding(registry.GetProtocol(_protocol).BindingFactory(_id, Self))
-                {
-                    id = _id,
-                    name = _name,
-                    status = _status,
-                    protocol = _protocol,
-                });
                 return true;
 
             case LoggingMessages.GetLogger:

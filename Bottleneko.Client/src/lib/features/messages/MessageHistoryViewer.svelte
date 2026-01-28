@@ -1,8 +1,7 @@
 <script lang="ts">
     import { blur } from 'svelte/transition';
     import { flip } from 'svelte/animate';
-    import type { ChatMessageLetter } from '$lib/api/bottleneko.gen';
-    import { Subscriber } from '../ws/WebSocketConnection.svelte';
+    import { ChatMessagesSubscriber } from '../ws/WebSocketConnection.svelte';
     import type { Props } from './MessageHistoryViewer';
     import { Button, Card, CardBody, CardFooter, CardHeader } from '@sveltestrap/sveltestrap';
     import dateFormat from 'dateformat';
@@ -14,11 +13,9 @@
 
     const props: Props = $props();
 
-    const subscriber = new Subscriber<ChatMessageLetter>();
+    const subscriber = new ChatMessagesSubscriber();
     $effect(() => {
-        subscriber.subscribe({
-            topic: { $type: 'ChatMessages', filter: { connectionId: props.connectionId ?? null } },
-        });
+        subscriber.subscribe({ connectionId: props.connectionId ?? null });
     });
 </script>
 

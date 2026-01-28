@@ -69,6 +69,9 @@ export default class NekoRpc extends AbstractRpc {
                             }
                         }
                     }
+                    else if (packet.$type === 'Mail') {
+                        this.onMail(packet);
+                    }
                 }
                 finally {
                     this.#incomingPacketSize = null;

@@ -7,8 +7,6 @@ using Bottleneko.Database.Schema;
 using Bottleneko.Database.Schema.Protocols.Twitch;
 using Bottleneko.Logging;
 using Bottleneko.Messages;
-using Bottleneko.Scripting.Bindings;
-using Bottleneko.Scripting.Bindings.Twitch;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
@@ -149,7 +147,7 @@ class TwitchConnection(StaticConnectionCreationData<TwitchProtocolConfiguration>
 
     public static ProtocolDescription GetDescription()
     {
-        return ProtocolDescription.Make<TwitchProtocolConfiguration>(ProtocolId, data => new TwitchConnection(data), TestAsync, (connectionId, connection) => new TwitchConnectionBinding(connectionId, connection));
+        return ProtocolDescription.Make<TwitchProtocolConfiguration>(ProtocolId, data => new TwitchConnection(data), TestAsync);
     }
 
     private static async Task<(TwitchAPI API, EventSubWebsocketClient? EventSub)> CreateAsync(StaticProtocolContext<TwitchProtocolConfiguration> context)
@@ -405,47 +403,7 @@ class TwitchConnection(StaticConnectionCreationData<TwitchProtocolConfiguration>
 
         await db.SaveChangesAsync();
 
-        var msgBinding = new ChatMessageBinding(Owner, new TwitchChatMessageBinding(message))
-        {
-            id = msg.Id,
-            protocol = ProtocolId,
-            connectionId = ConnectionId,
-            timestamp = msg.RemoteTimestamp,
-            attachments = [],
-            chat = new ChatBinding(Owner, new TwitchChatBinding(message))
-            {
-                id = chat.Id,
-                protocol = ProtocolId,
-                connectionId = ConnectionId,
-                displayName = chat.DisplayName,
-                flags = new ChatFlags()
-                {
-                    isPrivate = chat.IsPrivate,
-                },
-            },
-            author = new ChatterBinding(new TwitchChatterBinding(message))
-            {
-                id = author.Id,
-                protocol = ProtocolId,
-                connectionId = ConnectionId,
-                displayName = author.DisplayName,
-                username = author.Username,
-                flags = new ChatterFlags()
-                {
-                    isBot = author.IsBot,
-                },
-            },
-            text = msg.TextContent,
-            replyToId = msg.ReplyToId,
-            flags = new ChatMessageFlags()
-            {
-                isSpecial = msg.IsSpecial,
-                isDirect = msg.IsDirect,
-                isOffline = msg.IsOffline,
-            },
-        };
-
-        MessageReceived(msg, msgBinding);
+        MessageReceived(msg);
     }
 
     private async Task OnUserWhisperMessageAsync(object? sender, UserWhisperMessageArgs args)
@@ -550,47 +508,7 @@ class TwitchConnection(StaticConnectionCreationData<TwitchProtocolConfiguration>
 
         await db.SaveChangesAsync();
 
-        var msgBinding = new ChatMessageBinding(Owner, new TwitchChatMessageBinding(message))
-        {
-            id = msg.Id,
-            protocol = ProtocolId,
-            connectionId = ConnectionId,
-            timestamp = msg.RemoteTimestamp,
-            attachments = [],
-            chat = new ChatBinding(Owner, new TwitchChatBinding(message))
-            {
-                id = chat.Id,
-                protocol = ProtocolId,
-                connectionId = ConnectionId,
-                displayName = chat.DisplayName,
-                flags = new ChatFlags()
-                {
-                    isPrivate = chat.IsPrivate,
-                },
-            },
-            author = new ChatterBinding(new TwitchChatterBinding(message))
-            {
-                id = author.Id,
-                protocol = ProtocolId,
-                connectionId = ConnectionId,
-                displayName = author.DisplayName,
-                username = author.Username,
-                flags = new ChatterFlags()
-                {
-                    isBot = author.IsBot,
-                },
-            },
-            text = msg.TextContent,
-            replyToId = null,
-            flags = new ChatMessageFlags()
-            {
-                isSpecial = msg.IsSpecial,
-                isDirect = msg.IsDirect,
-                isOffline = msg.IsOffline,
-            },
-        };
-
-        MessageReceived(msg, msgBinding);
+        MessageReceived(msg);
     }
 
     [SuppressMessage("Style", "VSTHRD200:Use \"Async\" suffix for async methods")]
@@ -755,61 +673,6 @@ class TwitchConnection(StaticConnectionCreationData<TwitchProtocolConfiguration>
                     if (!string.IsNullOrEmpty(Configuration.ProxyId) && long.TryParse(Configuration.ProxyId, out var proxyId) && proxyId == proxyUpdated.ProxyId)
                     {
                         RequestRestart(true);
-                    }
-                    break;
-                }
-
-            case ConnectionMessages.SimpleReply simpleReply:
-                {
-                    if (simpleReply.ReplyTo.twitch is TwitchChatMessageBinding twitchMessage)
-                    {
-                        switch (twitchMessage.Message)
-                        {
-                            case ChannelChatMessage channelMessage:
-                                await WithApi(api => api.Helix.Chat.SendChatMessage(new SendChatMessageRequest()
-                                {
-                                    BroadcasterId = channelMessage.BroadcasterUserId,
-                                    SenderId = _me.Id,
-                                    Message = simpleReply.Text,
-                                    ReplyParentMessageId = channelMessage.MessageId,
-                                }));
-                                break;
-
-                            case UserWhisperMessage whisperMessage:
-                                await WithApi(api => api.Helix.Whispers.SendWhisperAsync(_me.Id, whisperMessage.FromUserId, simpleReply.Text, false));
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException("Invalid send target");
-                    }
-                    break;
-                }
-
-            case ConnectionMessages.SendMessage sendMessage:
-                {
-                    if (sendMessage.Chat.twitch is TwitchChatBinding twitchChat)
-                    {
-                        switch (twitchChat.Message)
-                        {
-                            case ChannelChatMessage channelMessage:
-                                await WithApi(api => api.Helix.Chat.SendChatMessage(new SendChatMessageRequest()
-                                {
-                                    BroadcasterId = channelMessage.BroadcasterUserId,
-                                    SenderId = _me.Id,
-                                    Message = sendMessage.Text,
-                                }));
-                                break;
-
-                            case UserWhisperMessage whisperMessage:
-                                await WithApi(api => api.Helix.Whispers.SendWhisperAsync(_me.Id, whisperMessage.FromUserId, sendMessage.Text, true));
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException("Invalid send target");
                     }
                     break;
                 }

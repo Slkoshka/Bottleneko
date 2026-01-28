@@ -5,8 +5,8 @@ using Bottleneko.Helpers;
 using Bottleneko.Logging;
 using Bottleneko.Protocols;
 using Bottleneko.Scripting.Deno;
+using Bottleneko.Server.Actors;
 using Bottleneko.Server.Controllers;
-using Bottleneko.Server.Controllers.WebSockets;
 using Bottleneko.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
@@ -138,7 +138,6 @@ public class BottlenekoServer : IAsyncDisposable
                 };
             });
 
-        builder.Services.AddScoped<WebSocketHandler>();
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddOpenApi(options =>
@@ -167,6 +166,7 @@ public class BottlenekoServer : IAsyncDisposable
         Directory.CreateDirectory(dataDir);
         var environment = new NekoEnvironment()
         {
+            ApiActorType = typeof(ApiCat),
             DataPath = dataDir,
             DatabasePath = Path.Combine(dataDir, "bottleneko.db"),
         };

@@ -19,7 +19,6 @@ public abstract class NekoActor(IServiceProvider services) : UntypedActorWithSta
 
     private readonly INekoLogger _logger = services.GetRequiredService<INekoLogger>();
 
-
     protected sealed override void PreStart()
     {
         _ = InitAsync(Self).PipeTo(Self, Sender, success: () => InitSuccess.Instance, failure: ex => new InitFailure(ex));
@@ -92,6 +91,15 @@ public abstract class NekoActor(IServiceProvider services) : UntypedActorWithSta
     protected static IActorRef CreateChild<T>(object?[] args, string? name = null) where T : ActorBase
     {
         return Context.ActorOf(Resolver.Props<T>(args), name);
+    }
+
+    protected static IActorRef CreateChild(Type actorType, object?[] args, string? name = null)
+    {
+        if (!actorType.IsAssignableTo(typeof(ActorBase)))
+        {
+            throw new ArgumentException($"{nameof(actorType)} must be a subclass of {nameof(ActorBase)}", nameof(actorType));
+        }
+        return Context.ActorOf(Resolver.Props(actorType, args), name);
     }
 
     protected abstract void OnMessage(object message);

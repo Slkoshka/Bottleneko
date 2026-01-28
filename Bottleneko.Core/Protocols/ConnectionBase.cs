@@ -5,7 +5,6 @@ using Bottleneko.Database;
 using Bottleneko.Database.Schema;
 using Bottleneko.Logging;
 using Bottleneko.Messages;
-using Bottleneko.Scripting.Bindings;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 
@@ -20,7 +19,7 @@ public abstract class ConnectionBase : IAsyncDisposable
 {
     public event EventHandler? OnConnected;
     public event EventHandler<bool>? OnRestartRequested;
-    public event EventHandler<(ChatMessageEntity Entity, ChatMessageBinding Binding)>? OnMessageReceived;
+    public event EventHandler<ChatMessageEntity>? OnMessageReceived;
     public event EventHandler<Exception>? OnDied;
 
     public abstract Task StartAsync();
@@ -34,7 +33,7 @@ public abstract class ConnectionBase : IAsyncDisposable
 
     protected void Connected() => OnConnected?.Invoke(this, EventArgs.Empty);
     protected void RequestRestart(bool immediate) => OnRestartRequested?.Invoke(this, immediate);
-    protected void MessageReceived(ChatMessageEntity entity, ChatMessageBinding binding) => OnMessageReceived?.Invoke(this, (entity, binding));
+    protected void MessageReceived(ChatMessageEntity entity) => OnMessageReceived?.Invoke(this, entity);
     protected void Die(Exception exception) => OnDied?.Invoke(this, exception);
 
     public abstract Task HandleMessageAsync(IActorRef sender, IHandledByConnection message);

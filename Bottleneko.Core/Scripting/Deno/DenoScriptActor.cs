@@ -5,17 +5,20 @@ using Bottleneko.Actors;
 using Bottleneko.Helpers;
 using Bottleneko.Logging;
 using Bottleneko.Messages;
-using Bottleneko.Rpc.Api;
 using Bottleneko.Rpc;
 using Bottleneko.Services;
+using Bottleneko.Scripting.Rpc;
+using Bottleneko.Protocols;
 using Bottleneko.Api.Rpc;
 
 namespace Bottleneko.Scripting.Deno;
 
 class DenoScriptActor(IServiceProvider services, AkkaService akka, DenoScriptEngine engine, NekoEnvironment environment, INekoLogger logger, long id, string name, string source) : NekoActor(services)
 {
+    public record CreateMessagesSubscription(IActorRef Connection, ChatMessageFilter Filter, SubscriptionId SubscriptionId);
     record Start(RpcEndPoint EndPoint, string AccessToken);
 
+    public INekoLogger Logger { get; } = logger;
     public long Id { get; } = id;
     public string Name { get; set; } = name;
 
@@ -25,9 +28,11 @@ class DenoScriptActor(IServiceProvider services, AkkaService akka, DenoScriptEng
     private readonly DenoScriptEngine _engine = engine;
     private readonly string _source = source;
 
-    private void RegisterRpcServices()
+    private void RegisterRpcServices(IActorRef self)
     {
+        _services.Register(new LoggingRpcService(this));
         _services.Register(new ScriptRpcService(this));
+        _services.Register(new MessagesRpcService(self));
     }
 
     private async Task DeployAsync()
@@ -64,7 +69,7 @@ class DenoScriptActor(IServiceProvider services, AkkaService akka, DenoScriptEng
 
     public override async Task InitAsync(IActorRef self)
     {
-        RegisterRpcServices();
+        RegisterRpcServices(self);
         await DeployAsync();
 
         var accessToken = await akka.AskAsync(new ScriptingMessages.GetAccessToken(Id).ToScripting().WithReply<string?>()) ?? throw new Exception("Failed to get script access token");
@@ -78,7 +83,7 @@ class DenoScriptActor(IServiceProvider services, AkkaService akka, DenoScriptEng
         switch (message)
         {
             case Start start:
-                logger.LogDebug("Bottleneko.Deno", "Installing dependencies");
+                Logger.LogDebug("Bottleneko.Script", "Installing dependencies");
                 var installProcess = CreateChild<ProcessActor>([Self, DenoScriptEngine.DenoExecutable.Value, _scriptDirectory, new string[] { "install" }, new Dictionary<string, string>()
                 {
                     { "DENO_DIR", _engine.DenoDir },
@@ -102,7 +107,7 @@ class DenoScriptActor(IServiceProvider services, AkkaService akka, DenoScriptEng
             case ProcessMessages.ProcessStopped processStopped:
                 if (processStopped.Code == 0)
                 {
-                    logger.LogDebug("Bottleneko.Deno", "Running script");
+                    Logger.LogDebug("Bottleneko.Script", "Running script");
                     var scriptProcess = CreateChild<ProcessActor>([Self, DenoScriptEngine.DenoExecutable.Value, _scriptDirectory, new string[] { "run", "--allow-all", "--no-prompt", "./entrypoint.ts", endPoint.Transport, endPoint.Name, accessToken }, new Dictionary<string, string>()
                     {
                         { "DENO_DIR", _engine.DenoDir },
@@ -114,18 +119,18 @@ class DenoScriptActor(IServiceProvider services, AkkaService akka, DenoScriptEng
                 }
                 else
                 {
-                    logger.LogError("Bottleneko.Deno", $"deno install exited with code {processStopped.Code}");
+                    Logger.LogError("Bottleneko.Script", $"deno install exited with code {processStopped.Code}");
                     Context.Stop(Self);
                 }
                 break;
 
             case ProcessMessages.ProcessFailed processFailed:
-                logger.LogError("Bottleneko.Deno", "deno install failed", processFailed.Exception);
+                Logger.LogError("Bottleneko.Script", "deno install failed", processFailed.Exception);
                 Context.Stop(Self);
                 break;
 
             case ProcessMessages.OutputLine outputLine:
-                logger.LogDebug("Bottleneko.Deno", $"deno install: {outputLine.Line}");
+                Logger.LogDebug("Bottleneko.Script", $"deno install: {outputLine.Line}");
                 break;
 
             case ControlMessages.Shutdown:
@@ -145,28 +150,36 @@ class DenoScriptActor(IServiceProvider services, AkkaService akka, DenoScriptEng
     {
         switch (message)
         {
+            case RpcMessages.HandleRequest handleRequest:
+                _ = _services.HandleRequestAsync(handleRequest.Context, handleRequest.Request).PipeTo(Sender, Self);
+                break;
+
+            case RpcMessages.ConnectionClosed connectionClosed:
+                _services.HandleConnectionClosed(connectionClosed.Context);
+                break;
+
+            case CreateMessagesSubscription createMessagesSubscription:
+                Sender.Tell(CreateChild<MessagesSubscriptionActor>([createMessagesSubscription.Connection, createMessagesSubscription.Filter, createMessagesSubscription.SubscriptionId, false]));
+                break;
+
             case ProcessMessages.ProcessStopped processStopped:
-                logger.LogDebug("Bottleneko.Deno", $"Script process finished");
+                Logger.LogDebug("Bottleneko.Script", $"Script process finished");
                 Context.Stop(Self);
                 break;
 
             case ProcessMessages.ProcessFailed processFailed:
-                logger.LogError("Bottleneko.Deno", "Script process failed", processFailed.Exception);
+                Logger.LogError("Bottleneko.Script", "Script process failed", processFailed.Exception);
                 Context.Stop(Self);
                 break;
 
             case ProcessMessages.OutputLine outputLine:
-                logger.LogDebug("Bottleneko.Deno", $"script: {outputLine.Line}");
+                Logger.LogDebug("Bottleneko.Script", $"script: {outputLine.Line}");
                 break;
 
             case ControlMessages.Shutdown:
                 Context.Watch(process);
                 process.Tell(ControlMessages.Shutdown.Instance);
                 Become(msg => WaitForShutdown(process, msg));
-                break;
-
-            case RequestPacket request:
-                _ = _services.HandleRequestAsync(request).PipeTo(Sender, Self);
                 break;
 
             default:

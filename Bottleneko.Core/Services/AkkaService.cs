@@ -9,7 +9,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace Bottleneko.Services;
 
-public class AkkaService(IServiceProvider services, IHostApplicationLifetime lifetime) : IHostedService
+public class AkkaService(IServiceProvider services, IHostApplicationLifetime lifetime, NekoEnvironment environment) : IHostedService
 {
     private ActorSystem? _system = null;
     private IActorRef? _world = null;
@@ -41,7 +41,7 @@ public class AkkaService(IServiceProvider services, IHostApplicationLifetime lif
         _system = ActorSystem.Create("neko", setup);
         var dr = DependencyResolver.For(_system);
 
-        _world = _system.ActorOf(dr.Props<NekoWorld>(), "world");
+        _world = _system.ActorOf(dr.Props<NekoWorld>([environment.ApiActorType]), "world");
         _ = _system.WhenTerminated.ContinueWith(_ => lifetime.StopApplication(), CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
 
         await _world.Ask(ControlMessages.Ready.Instance, cancellationToken);

@@ -100,48 +100,62 @@ public record RpcMethod(RpcService Service, string MethodName, Type RequestType,
                     
                     var isVoidMethod = returnType is null;
 
-                    contract.AppendLine($"        public record {methodName}Request({string.Join(", ", methodSymbol.Parameters.Select(parameter => $"{parameter.Type.ToDisplayString()} {Capitalize(parameter.Name)}"))}) : Bottleneko.Api.Rpc.RpcRequest;");
-                    contract.AppendLine($"        public record {methodName}Response({(isVoidMethod ? "" : $"{returnType} Result")}) : Bottleneko.Api.Rpc.RpcResponse;");
+                    if (methodSymbol.Parameters.Length == 0 || methodSymbol.Parameters[0].Type.ToDisplayString() != "Bottleneko.Api.Rpc.RpcContext")
+                    {
+                        throw new Exception("First argument of RpcService should have RpcContext type");
+                    }
 
-                    execute.AppendLine($"                case {methodName}Request{(methodSymbol.Parameters.Length == 0 ? "" : $" request{methodName}")}:");
+                    contract.AppendLine($"        public record {serviceType}{methodName}Request({string.Join(", ", methodSymbol.Parameters.Skip(1).Select(parameter => $"{parameter.Type.ToDisplayString()} {Capitalize(parameter.Name)}"))}) : Bottleneko.Api.Rpc.RpcRequest;");
+                    contract.AppendLine($"        public record {serviceType}{methodName}Response({(isVoidMethod ? "" : $"{returnType} Result")}) : Bottleneko.Api.Rpc.RpcResponse;");
+
+                    execute.AppendLine($"                case {serviceType}{methodName}Request{(methodSymbol.Parameters.Length == 1 ? "" : $" request{methodName}")}:");
                     execute.AppendLine("                {");
-                    if (isVoidMethod && !isAsyncMethod)
+
+                    execute.Append("                    ");
+                    if (!isVoidMethod || isAsyncMethod)
                     {
-                        execute.AppendLine($"                    this.{methodSymbol.Name}({string.Join(", ", methodSymbol.Parameters.Select(parameter => $"request{methodName}.{Capitalize(parameter.Name)}"))});");
+                        execute.Append("var result");
+                        if (isAsyncMethod)
+                        {
+                            execute.Append("Task");
+                        }
+                        execute.Append(" = ");
                     }
-                    else
+                    execute.Append($"this.{methodSymbol.Name}(context");
+                    if (methodSymbol.Parameters.Length > 1)
                     {
-                        execute.AppendLine($"                    var result{(isAsyncMethod ? "Task" : "")} = this.{methodSymbol.Name}({string.Join(", ", methodSymbol.Parameters.Select(parameter => $"request{methodName}.{Capitalize(parameter.Name)}"))});");
+                        execute.Append(", ");
+                        execute.Append(string.Join(", ", methodSymbol.Parameters.Skip(1).Select(parameter => $"request{methodName}.{Capitalize(parameter.Name)}")));
                     }
+                    execute.Append(");");
 
                     if (isAsyncMethod)
                     {
-                        if (isVoidMethod)
+                        execute.Append("                    ");
+                        if (!isVoidMethod)
                         {
-                            execute.AppendLine("                    await resultTask;");
+                            execute.AppendLine("var result = ");
                         }
-                        else
-                        {
-                            execute.AppendLine("                    var result = await resultTask;");
-                        }
+                        
+                        execute.AppendLine("await resultTask;");
                     }
 
                     if (isVoidMethod)
                     {
-                        execute.AppendLine($"                    return new(packet.RequestId, new Bottleneko.Api.Rpc.SuccessResult(new {methodName}Response()));");
+                        execute.AppendLine($"                    return new(packet.RequestId, new Bottleneko.Api.Rpc.SuccessResult(new {serviceType}{methodName}Response()));");
                     }
                     else
                     {
-                        execute.AppendLine($"                    return new(packet.RequestId, new Bottleneko.Api.Rpc.SuccessResult(new {methodName}Response(result)));");
+                        execute.AppendLine($"                    return new(packet.RequestId, new Bottleneko.Api.Rpc.SuccessResult(new {serviceType}{methodName}Response(result)));");
                     }
                     execute.AppendLine("                }");
                     execute.AppendLine();
 
-                    methodList.AppendLine($"                new(Bottleneko.Api.Rpc.RpcService.{serviceType}, \"{methodName}\", typeof({methodName}Request), typeof({methodName}Response)),");
+                    methodList.AppendLine($"                new(Bottleneko.Api.Rpc.RpcService.{serviceType}, \"{methodName}\", typeof({serviceType}{methodName}Request), typeof({serviceType}{methodName}Response)),");
                 }
             }
 
-            contract.AppendLine($"        async Task<Bottleneko.Api.Rpc.ResponsePacket> Bottleneko.Api.Rpc.IRpcService.ExecuteAsync(Bottleneko.Api.Rpc.RequestPacket packet)");
+            contract.AppendLine($"        async Task<Bottleneko.Api.Rpc.ResponsePacket> Bottleneko.Api.Rpc.IRpcService.ExecuteAsync(Bottleneko.Api.Rpc.RpcContext context, Bottleneko.Api.Rpc.RequestPacket packet)");
             contract.AppendLine("        {");
             contract.AppendLine("            switch (packet.Request)");
             contract.AppendLine("            {");
@@ -158,7 +172,7 @@ public record RpcMethod(RpcService Service, string MethodName, Type RequestType,
             contract.AppendLine("            {");
             foreach (var method in methods)
             {
-                contract.AppendLine($"                case {method}Request:");
+                contract.AppendLine($"                case {serviceType}{method}Request:");
                 contract.AppendLine("                    return true;");
             }
             contract.AppendLine("                default:");
@@ -185,7 +199,7 @@ public record RpcMethod(RpcService Service, string MethodName, Type RequestType,
             contract.AppendLine("{");
             foreach (var method in methods)
             {
-                contract.AppendLine($"    [System.Text.Json.Serialization.JsonDerivedType(typeof({(interfaceSymbol.ContainingNamespace?.IsGlobalNamespace == false ? $"{interfaceSymbol.ContainingNamespace.ToDisplayString()}." : "")}{interfaceSymbol.Name}.{method}Request), \"{serviceType}/{method}\")]");
+                contract.AppendLine($"    [System.Text.Json.Serialization.JsonDerivedType(typeof({(interfaceSymbol.ContainingNamespace?.IsGlobalNamespace == false ? $"{interfaceSymbol.ContainingNamespace.ToDisplayString()}." : "")}{interfaceSymbol.Name}.{serviceType}{method}Request), \"{serviceType}/{method}\")]");
             }
             contract.AppendLine("    public partial record RpcRequest;");
 
@@ -193,7 +207,7 @@ public record RpcMethod(RpcService Service, string MethodName, Type RequestType,
 
             foreach (var method in methods)
             {
-                contract.AppendLine($"    [System.Text.Json.Serialization.JsonDerivedType(typeof({(interfaceSymbol.ContainingNamespace?.IsGlobalNamespace == false ? $"{interfaceSymbol.ContainingNamespace.ToDisplayString()}." : "")}{interfaceSymbol.Name}.{method}Response), \"{serviceType}/{method}\")]");
+                contract.AppendLine($"    [System.Text.Json.Serialization.JsonDerivedType(typeof({(interfaceSymbol.ContainingNamespace?.IsGlobalNamespace == false ? $"{interfaceSymbol.ContainingNamespace.ToDisplayString()}." : "")}{interfaceSymbol.Name}.{serviceType}{method}Response), \"{serviceType}/{method}\")]");
             }
             contract.AppendLine("    public partial record RpcResponse;");
             contract.AppendLine("}");

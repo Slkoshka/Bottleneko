@@ -3,7 +3,6 @@ using Bottleneko.Api.Dtos;
 using Bottleneko.Database;
 using Bottleneko.Database.Schema;
 using Bottleneko.Messages;
-using Bottleneko.Server.Utils;
 using Bottleneko.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
