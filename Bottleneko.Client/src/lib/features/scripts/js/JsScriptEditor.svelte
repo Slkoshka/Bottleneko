@@ -1,16 +1,25 @@
 <script lang="ts">
     import { Card, CardBody } from '@sveltestrap/sveltestrap';
     import { onDestroy, onMount } from 'svelte';
-    import * as monaco from 'monaco-editor';
-    import { bindings, type Props } from './JsScriptEditor';
+    import type { editor as MonacoEditor, IDisposable } from 'monaco-editor';
+    import { getBindings, type Props } from './JsScriptEditor';
+    import LoadingBanner from '$lib/components/LoadingBanner.svelte';
 
     const props: Props = $props();
 
+    let destroyed = false;
     let editorElement: HTMLElement | undefined = $state();
-    let editor: monaco.editor.IStandaloneCodeEditor | null = $state(null);
-    let subscription: monaco.IDisposable | null = $state(null);
+    let editor: MonacoEditor.IStandaloneCodeEditor | null = $state(null);
+    let subscription: IDisposable | null = $state(null);
 
-    onMount(() => {
+    onMount(async () => {
+        const bindings = await getBindings();
+        const monaco = await import("monaco-editor");
+
+        if (destroyed) {
+            return;
+        }
+
         monaco.typescript.typescriptDefaults.setDiagnosticsOptions({
             noSemanticValidation: false,
             noSyntaxValidation: false,
@@ -60,7 +69,9 @@
             });
         }
     });
+
     onDestroy(() => {
+        destroyed = true;
         subscription?.dispose();
         subscription = null;
         editor?.dispose();
@@ -71,7 +82,11 @@
 <Card class="flex-grow-1">
     <CardBody style="min-height: 20rem">
         <section style="display: flex; position: relative; text-align: initial; width: 100%; height: 100%;">
-            <div style="width: 100%" bind:this={editorElement}></div>
+            <div style="width: 100%" bind:this={editorElement}>
+                {#if editor === null}
+                    <LoadingBanner size="xl" description="Loading code editor..." />
+                {/if}
+            </div>
         </section>
     </CardBody>
 </Card>

@@ -42,6 +42,7 @@
         "@netbek/noto-emoji": "^0.0.9",
         "@sveltestrap/sveltestrap": "^7.1.0",
         "@zip.js/zip.js": "^2.8.15",
+        "async-mutex": "^0.5.0",
         "bootstrap": "^5.3.8",
         "bootstrap-icons": "^1.13.1",
         "chart.js": "^4.5.1",

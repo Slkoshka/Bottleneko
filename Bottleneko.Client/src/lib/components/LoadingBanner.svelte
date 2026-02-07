@@ -2,11 +2,14 @@
     import { Spinner } from '@sveltestrap/sveltestrap';
     import type { Props } from './LoadingBanner';
 
-    const { size = 'sm' }: Props = $props();
+    const { size = 'sm', ...props }: Props = $props();
 </script>
 
-<div class="container d-flex w-100 h-100 justify-content-center align-items-center">
+<div class="container d-flex w-100 h-100 justify-content-center align-items-center flex-column" style:gap="2rem">
     <Spinner type="border" class={`loading-spinner-${size}`} />
+    {#if props.description}
+        <h2>{props.description}</h2>
+    {/if}
 </div>
 
 <style>
