@@ -4,5 +4,6 @@ public enum RpcService
 {
     Logging,
     Messages,
+    Connections,
     Script,
 }

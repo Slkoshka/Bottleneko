@@ -1,8 +1,5 @@
 using System.Buffers.Binary;
 using System.Net.Sockets;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Akka.Actor;
 using Bottleneko.Api.Rpc;
 using Bottleneko.Logging;
@@ -10,9 +7,9 @@ using Bottleneko.Messages;
 using Bottleneko.Services;
 using Bottleneko.Utils;
 
-namespace Bottleneko.Rpc;
+namespace Bottleneko.Rpc.Transports;
 
-class SocketRpcClientActor(IServiceProvider services, AkkaService akka, INekoLogger logger, Socket socket) : RpcClientActor(services, akka, logger)
+class SocketRpcClient(IServiceProvider services, AkkaService akka, INekoLogger logger, Socket socket) : RpcClientBase(services, akka, logger)
 {
     record Connected : SingletonMessage<Connected>;
     record EndOfStream : SingletonMessage<EndOfStream>;
@@ -24,17 +21,7 @@ class SocketRpcClientActor(IServiceProvider services, AkkaService akka, INekoLog
     private readonly byte[] _receiveBuffer = new byte[4096];
     private readonly MemoryStream _receiveStream = new();
     private bool _isSending = false;
-    
-    private static readonly JsonSerializerOptions _serializerOptions = new()
-    {
-        AllowOutOfOrderMetadataProperties = true,
-        Converters =
-        {
-            new JsonStringEnumConverter(),
-        },
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-    };
-
+ 
     public override Task InitAsync(IActorRef self)
     {
         Read(self);
@@ -95,7 +82,7 @@ class SocketRpcClientActor(IServiceProvider services, AkkaService akka, INekoLog
         }
 
         _receiveStream.Seek(0, SeekOrigin.Begin);
-        if (JsonSerializer.Deserialize<Packet>(_receiveStream, _serializerOptions) is Packet packet)
+        if (RpcProtocol.Deserialize(_receiveStream) is { } packet)
         {
             return packet;
         }
@@ -107,7 +94,7 @@ class SocketRpcClientActor(IServiceProvider services, AkkaService akka, INekoLog
 
     private async Task<bool> SendAsync(Packet packet, CancellationToken cancellationToken)
     {
-        var buffer = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(packet, _serializerOptions));
+        var buffer = RpcProtocol.Serialize(packet);
         if (buffer.Length > int.MaxValue)
         {
             throw new Exception("Invalid packet header");

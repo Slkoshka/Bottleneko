@@ -2,16 +2,15 @@
 using Bottleneko.Actors;
 using Bottleneko.Api.Rpc;
 using Bottleneko.Messages;
+using Bottleneko.Rpc;
 using Bottleneko.Services;
 using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using System.Net.WebSockets;
-using System.Text.Json;
 
 namespace Bottleneko.Server.Controllers;
 
-public class WebSocketController(AkkaService akka, IOptions<JsonOptions> jsonOptions) : NekoController
+public class WebSocketController(AkkaService akka) : NekoController
 {
     private readonly byte[] _receiveBuffer = new byte[65536];
 
@@ -21,14 +20,14 @@ public class WebSocketController(AkkaService akka, IOptions<JsonOptions> jsonOpt
 
         if (!result.EndOfMessage)
         {
-            await ws.CloseAsync(WebSocketCloseStatus.MessageTooBig, "Message too big", cancellationToken);
+            await ws.CloseAsync(WebSocketCloseStatus.MessageTooBig, "The message is too big", cancellationToken);
             return null;
         }
 
         switch (result.MessageType)
         {
             case WebSocketMessageType.Text:
-                return result.CloseStatus.HasValue ? null : JsonSerializer.Deserialize<Packet>(_receiveBuffer.AsSpan(0, result.Count), jsonOptions.Value.JsonSerializerOptions);
+                return result.CloseStatus.HasValue ? null : RpcProtocol.Deserialize(_receiveBuffer.AsSpan(0, result.Count));
 
             case WebSocketMessageType.Binary:
                 await ws.CloseAsync(WebSocketCloseStatus.InvalidMessageType, "Binary messages are not supported", cancellationToken);
@@ -38,13 +37,13 @@ public class WebSocketController(AkkaService akka, IOptions<JsonOptions> jsonOpt
                 return null;
 
             default:
-                throw new InvalidOperationException("Unexpected WebSocketMessageType");
+                throw new InvalidOperationException("Unexpected message type");
         }
     }
 
     private async Task SendAsync(WebSocket ws, Packet packet, CancellationToken cancellationToken)
     {
-        await ws.SendAsync(JsonSerializer.SerializeToUtf8Bytes(packet, jsonOptions.Value.JsonSerializerOptions), WebSocketMessageType.Text, true, cancellationToken);
+        await ws.SendAsync(RpcProtocol.Serialize(packet), WebSocketMessageType.Text, true, cancellationToken);
     }
 
     public async Task HandleConnectionAsync(WebSocket ws, CancellationToken cancellationToken)
@@ -55,6 +54,11 @@ public class WebSocketController(AkkaService akka, IOptions<JsonOptions> jsonOpt
         {
             while (!cancellationToken.IsCancellationRequested)
             {
+                if (ws.State != WebSocketState.Open)
+                {
+                    break;
+                }
+
                 if (await ReceiveAsync(ws, cancellationToken) is { } packet)
                 {
                     adapter.Tell(new RpcMessages.PacketReceived(packet));

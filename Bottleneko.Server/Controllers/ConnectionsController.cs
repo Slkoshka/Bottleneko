@@ -1,6 +1,7 @@
 ﻿using Bottleneko.Actors;
 using Bottleneko.Api.Dtos;
 using Bottleneko.Api.Protocols;
+using Bottleneko.Api.Rpc;
 using Bottleneko.Database;
 using Bottleneko.Database.Schema;
 using Bottleneko.Logging;

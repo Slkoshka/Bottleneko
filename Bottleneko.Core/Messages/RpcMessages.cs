@@ -1,3 +1,4 @@
+using Akka.Actor;
 using Bottleneko.Api.Rpc;
 using Bottleneko.Utils;
 
@@ -10,6 +11,9 @@ public static class RpcMessages
 
     public record GetEndPoint : SingletonMessage<GetEndPoint>;
     public record SendPacket(Packet Packet);
-    public record HandleRequest(RpcContext Context, RequestPacket Request);
-    public record ConnectionClosed(RpcContext Context);
+    public record HandleRequest(IRpcContext Context, RequestPacket Request);
+    public record ConnectionClosed(IRpcContext Context);
+
+    public record CreateMessagesSubscription(IActorRef Connection, ChatMessageFilter Filter, SubscriptionId SubscriptionId);
+    public record CreateLogSubscription(IActorRef Connection, LogFilter Filter, SubscriptionId SubscriptionId);
 }

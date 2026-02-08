@@ -1,8 +1,8 @@
 import { onDestroy } from 'svelte';
 import { addMethod, MixedSchema, type AnySchema } from 'yup';
-import { ErrorCode } from './api/responses';
 import { RequestError } from './api/errors';
 import deelEqual from 'deep-equal';
+import type { ErrorCode } from './api/bottleneko.gen';
 
 export type ArrayElement<ArrayType extends readonly unknown[]> = ArrayType extends readonly (infer ElementType)[]
     ? ElementType
@@ -71,7 +71,7 @@ export function extractErrorInfo(err: unknown): ErrorMetadata {
         return { code: err.code, message: err.message, extra: err.extra };
     } else {
         return {
-            code: ErrorCode.UnknownError,
+            code: 'InternalError',
             message: err instanceof Error ? err.message : 'Unknown error',
             extra: null,
         };

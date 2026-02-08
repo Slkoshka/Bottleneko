@@ -34,4 +34,4 @@ export const getBindings = async () => {
     } finally {
         release();
     }
-}
+};

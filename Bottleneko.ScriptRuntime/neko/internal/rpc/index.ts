@@ -65,7 +65,7 @@ export default class NekoRpc extends AbstractRpc {
                                 handler.resolve(packet.result.data);
                             }
                             else {
-                                handler.reject(packet.result.message);
+                                handler.reject(packet.result);
                             }
                         }
                     }

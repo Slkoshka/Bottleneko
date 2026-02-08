@@ -3,9 +3,9 @@ using Akka.Actor;
 using Bottleneko.Messages;
 using Bottleneko.Utils;
 
-namespace Bottleneko.Rpc;
+namespace Bottleneko.Rpc.Transports;
 
-class UnixSocketRpcActor(IServiceProvider services, NekoEnvironment environment, string name, bool abstractSocket) : RpcTransportActor(services)
+class UnixSocketRpcTransport(IServiceProvider services, NekoEnvironment environment, string name, bool abstractSocket) : RpcTransportBase(services)
 {
     record ClientConnected(Socket Socket);
     record Error(Exception Exception);
@@ -38,7 +38,7 @@ class UnixSocketRpcActor(IServiceProvider services, NekoEnvironment environment,
                 }
                 else
                 {
-                    _children.Add(CreateChild<SocketRpcClientActor>([clientConnected.Socket]));
+                    _children.Add(CreateChild<SocketRpcClient>([clientConnected.Socket]));
                     Context.Watch(_children[^1]);
                     _ = _socket.AcceptAsync().PipeTo(Self, Self, socket => new ClientConnected(socket), ex => ex is OperationCanceledException ? null : new Error(ex));
                 }

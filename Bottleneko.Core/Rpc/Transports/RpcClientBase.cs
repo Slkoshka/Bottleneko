@@ -1,13 +1,15 @@
 using Akka.Actor;
 using Bottleneko.Actors;
 using Bottleneko.Api.Rpc;
+using Bottleneko.Database.Schema;
 using Bottleneko.Logging;
 using Bottleneko.Messages;
 using Bottleneko.Services;
+using Bottleneko.Utils;
 
-namespace Bottleneko.Rpc;
+namespace Bottleneko.Rpc.Transports;
 
-abstract class RpcClientActor(IServiceProvider services, AkkaService akka, INekoLogger logger) : NekoActor(services)
+abstract class RpcClientBase(IServiceProvider services, AkkaService akka, INekoLogger logger) : NekoActor(services)
 {
     abstract record State
     {
@@ -17,13 +19,13 @@ abstract class RpcClientActor(IServiceProvider services, AkkaService akka, INeko
 
         public record Running : State;
         public record RunningScript(IActorRef Actor, long Id) : Running;
-        public record RunningApi(object UserData) : Running;
+        public record RunningApi(UserEntity? User) : Running;
 
         public record Dead : State;
     }
 
     record AuthenticateAsScript(IActorRef Actor, long Id);
-    record AuthenticateAsApi(object UserData);
+    record AuthenticateAsApi(UserEntity? User);
     record AuthenticationFailure(string Message);
 
     public INekoLogger Logger { get; } = logger;
@@ -51,7 +53,7 @@ abstract class RpcClientActor(IServiceProvider services, AkkaService akka, INeko
                 break;
 
             case State.RunningApi runningApi:
-                akka.Tell(new RpcMessages.ConnectionClosed(new ApiRpcContext(Self, runningApi.UserData)).ToApi());
+                akka.Tell(new RpcMessages.ConnectionClosed(new ApiRpcContext(Self, runningApi.User)).ToApi());
                 break;
         }
 
@@ -73,8 +75,8 @@ abstract class RpcClientActor(IServiceProvider services, AkkaService akka, INeko
                 return true;
 
             case AuthenticateAsApi authenticateAsApi:
-                Logger.LogVerbose("Bottleneko.Rpc", $"[{_connectionId}] Authenticated as API client: {authenticateAsApi.UserData}");
-                _state = new State.RunningApi(authenticateAsApi.UserData);
+                Logger.LogVerbose("Bottleneko.Rpc", $"[{_connectionId}] Authenticated as user '{authenticateAsApi.User?.Login ?? "Anonymous"}'");
+                _state = new State.RunningApi(authenticateAsApi.User);
                 while (_packetStash.TryDequeue(out var packet))
                 {
                     OnPacketReceived(packet);
@@ -112,8 +114,8 @@ abstract class RpcClientActor(IServiceProvider services, AkkaService akka, INeko
                             
                             case ClientType.Api:
                                 _state = new State.Authenticating();
-                                _ = akka.AskAsync(new ApiMessages.Authenticate(authenticatePacket.AccessToken).ToApi().WithReply<object>())
-                                    .PipeTo(Self, Self, userData => userData is not null ? new AuthenticateAsApi(userData) : new AuthenticationFailure("Invalid access token"), ex => new AuthenticationFailure(ex.ToString()));
+                                _ = akka.AskAsync(new ApiMessages.Authenticate(authenticatePacket.AccessToken).ToApi().WithReply<ApiMessages.AuthenticationResult>())
+                                    .PipeTo(Self, Self, result => new AuthenticateAsApi(result.User), ex => new AuthenticationFailure(ex.ToString()));
                                 break;
                         }
                         break;
@@ -138,17 +140,17 @@ abstract class RpcClientActor(IServiceProvider services, AkkaService akka, INeko
                             var context = new ScriptRpcContext(Self, runningScript.Actor);
                             _ = runningScript.Actor.Ask<ResponsePacket>(new RpcMessages.HandleRequest(context, request)).PipeTo(Self, runningScript.Actor,
                                 result => new RpcMessages.SendPacket(result),
-                                ex => new RpcMessages.SendPacket(new ResponsePacket(request.RequestId, new ErrorResult(ex.ToString())))
+                                ex => new RpcMessages.SendPacket(new ResponsePacket(request.RequestId, ex.ToRpcError()))
                             );
                             break;
                         }
 
                         case State.RunningApi runningApi:
                         {
-                            var context = new ApiRpcContext(Self, runningApi.UserData);
+                            var context = new ApiRpcContext(Self, runningApi.User);
                             _ = akka.AskAsync(new RpcMessages.HandleRequest(context, request).ToApi().WithReply<ResponsePacket>()).PipeTo(Self, Self,
                                 result => new RpcMessages.SendPacket(result),
-                                ex => new RpcMessages.SendPacket(new ResponsePacket(request.RequestId, new ErrorResult(ex.ToString())))
+                                ex => new RpcMessages.SendPacket(new ResponsePacket(request.RequestId, ex.ToRpcError()))
                             );
                             break;
                         }

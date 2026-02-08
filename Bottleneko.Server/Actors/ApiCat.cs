@@ -1,12 +1,13 @@
 using Akka.Actor;
 using Bottleneko.Actors;
-using Bottleneko.Api.Rpc;
 using Bottleneko.Database;
+using Bottleneko.Database.Schema;
 using Bottleneko.Logging;
 using Bottleneko.Messages;
 using Bottleneko.Protocols;
 using Bottleneko.Rpc;
-using Bottleneko.Server.Rpc;
+using Bottleneko.Rpc.Services;
+using Bottleneko.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -14,13 +15,8 @@ using System.Security.Claims;
 
 namespace Bottleneko.Server.Actors;
 
-record ApiUserData(ClaimsPrincipal? Authentication);
-
-class ApiCat(IServiceProvider services, INekoLogger logger) : NekoActor(services)
+class ApiCat(IServiceProvider services, INekoLogger logger, AkkaService akka) : NekoActor(services)
 {
-    public record CreateMessagesSubscription(IActorRef Connection, ChatMessageFilter Filter, SubscriptionId SubscriptionId);
-    public record CreateLogSubscription(IActorRef Connection, LogFilter Filter, SubscriptionId SubscriptionId);
-
     public INekoLogger Logger { get; } = logger;
 
     private NekoDbContext _db = null!;
@@ -29,8 +25,9 @@ class ApiCat(IServiceProvider services, INekoLogger logger) : NekoActor(services
 
     private void RegisterRpcServices(IActorRef self)
     {
-        _services.Register(new LoggingRpcService(this, self));
+        _services.Register(new LoggingRpcService(self, Logger));
         _services.Register(new MessagesRpcService(self));
+        _services.Register(new ConnectionsRpcService(Services, Logger, akka));
     }
 
     public override Task InitAsync(IActorRef self)
@@ -60,6 +57,22 @@ class ApiCat(IServiceProvider services, INekoLogger logger) : NekoActor(services
         return new ClaimsPrincipal([.. identities]);
     }
 
+    private static async Task<UserEntity?> GetUserAsync(ClaimsPrincipal? claims)
+    {
+        if (claims is null)
+        {
+            return null;
+        }
+
+        using var db =  NekoDbContext.Get();
+        return await db.Users.SingleOrDefaultAsync(u => u.Id.ToString() == claims.Identity!.Name && !u.IsDeleted);
+    }
+
+    private async Task<UserEntity?> AuthenticateUserAsync(string accessToken)
+    {
+        return await GetUserAsync(await AuthenticateAsync(accessToken));
+    }
+
     public async Task<ClaimsIdentity?> GetIdentityAsync(string login, string password)
     {
         login = login.Trim().ToLowerInvariant();
@@ -83,19 +96,19 @@ class ApiCat(IServiceProvider services, INekoLogger logger) : NekoActor(services
             case ApiMessages.Authenticate authenticate:
                 if (authenticate.AccessToken == "anonymous")
                 {
-                    Sender.Tell(new ApiUserData(null));
+                    Sender.Tell(new ApiMessages.AuthenticationResult(null));
                 }
                 else
                 {
-                    _ = AuthenticateAsync(authenticate.AccessToken).PipeTo(Sender, Self, result => result is null ? new Status.Failure(new Exception("Invalid access token")) : new ApiUserData(result));
+                    _ = AuthenticateUserAsync(authenticate.AccessToken).PipeTo(Sender, Self, result => result is null ? new Status.Failure(new Exception("Invalid access token")) : new ApiMessages.AuthenticationResult(result));
                 }
                 break;
 
-            case CreateMessagesSubscription createMessagesSubscription:
+            case RpcMessages.CreateMessagesSubscription createMessagesSubscription:
                 Sender.Tell(CreateChild<MessagesSubscriptionActor>([createMessagesSubscription.Connection, createMessagesSubscription.Filter, createMessagesSubscription.SubscriptionId, true]));
                 break;
 
-            case CreateLogSubscription createLogsSubscription:
+            case RpcMessages.CreateLogSubscription createLogsSubscription:
                 Sender.Tell(CreateChild<LogSubscriptionActor>([createLogsSubscription.Connection, createLogsSubscription.Filter, createLogsSubscription.SubscriptionId, true]));
                 break;
 

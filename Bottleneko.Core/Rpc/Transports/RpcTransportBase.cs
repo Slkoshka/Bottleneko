@@ -1,9 +1,9 @@
 using Bottleneko.Actors;
 using Bottleneko.Messages;
 
-namespace Bottleneko.Rpc;
+namespace Bottleneko.Rpc.Transports;
 
-abstract class RpcTransportActor(IServiceProvider services) : NekoActor(services)
+abstract class RpcTransportBase(IServiceProvider services) : NekoActor(services)
 {
     protected abstract void Shutdown();
 

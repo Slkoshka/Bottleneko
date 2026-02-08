@@ -1,4 +1,5 @@
-﻿using Bottleneko.Database;
+﻿using Bottleneko.Api.Rpc;
+using Bottleneko.Database;
 using Bottleneko.Database.Options;
 using Bottleneko.Database.Schema;
 using Bottleneko.Server.Utils;

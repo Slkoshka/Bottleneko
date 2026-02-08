@@ -15,7 +15,7 @@
 
     const subscriber = new ChatMessagesSubscriber();
     $effect(() => {
-        subscriber.subscribe({ connectionId: props.connectionId ?? null });
+        subscriber.subscribe({ connectionId: props.connectionId ?? null, protocol: null });
     });
 </script>
 

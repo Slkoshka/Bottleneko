@@ -14,7 +14,6 @@ public enum ScriptStatus
 }
 
 [JsonDerivedType(typeof(JsScriptCode), "JavaScript")]
-[SerializeAsJson]
 public abstract record ScriptCode();
 
 public record JsScriptCode(string Source) : ScriptCode;

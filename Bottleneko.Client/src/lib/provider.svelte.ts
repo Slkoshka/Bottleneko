@@ -1,5 +1,4 @@
 import { RequestError } from '$lib/api/errors';
-import { ErrorCode } from '$lib/api/responses';
 import type { MutationRequestProperties, RequestProperties } from '$lib/api/utils';
 import { SvelteDate, SvelteMap } from 'svelte/reactivity';
 import { authState } from './features/auth.svelte';
@@ -47,7 +46,7 @@ export class RemoteData<T> {
             this.setData(await this.fetch({ signal }));
             this.notFound = false;
         } catch (err: unknown) {
-            if (err instanceof RequestError && err.code === ErrorCode.NotFound) {
+            if (err instanceof RequestError && err.code === 'NotFound') {
                 this.notFound = true;
                 this.setData(null);
             } else {

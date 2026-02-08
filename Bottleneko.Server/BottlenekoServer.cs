@@ -1,4 +1,5 @@
 ﻿using Bottleneko.Actors;
+using Bottleneko.Api.Rpc;
 using Bottleneko.Database;
 using Bottleneko.Database.Options;
 using Bottleneko.Helpers;
@@ -8,6 +9,7 @@ using Bottleneko.Scripting.Deno;
 using Bottleneko.Server.Actors;
 using Bottleneko.Server.Controllers;
 using Bottleneko.Services;
+using Bottleneko.Utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http.Features;
@@ -37,7 +39,7 @@ public class BottlenekoServer : IAsyncDisposable
         else
         {
             context.Response.StatusCode = 400;
-            await context.Response.WriteAsJsonAsync(new NekoController.ErrorResponse(NekoController.ErrorCode.SetupRequired, "Server has not been set up"));
+            await context.Response.WriteAsJsonAsync(new ErrorResult(ErrorCode.SetupRequired, "Server has not been set up"));
         }
     }
 
@@ -55,25 +57,24 @@ public class BottlenekoServer : IAsyncDisposable
                 {
                     case DuplicateNameException:
                         context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                        await context.Response.WriteAsJsonAsync(new NekoController.ErrorResponse(NekoController.ErrorCode.DuplicateName, errorFeature.Error.Message));
                         break;
 
                     case KeyNotFoundException:
                     case RouteNotFoundException:
                         context.Response.StatusCode = StatusCodes.Status404NotFound;
-                        await context.Response.WriteAsJsonAsync(new NekoController.ErrorResponse(NekoController.ErrorCode.NotFound, errorFeature.Error.Message));
                         break;
 
                     default:
                         logger.LogError(StatusCodes.Status500InternalServerError, errorFeature.Error, "An unhandled exception has occured: {Exception}", errorFeature.Error.Message);
-                        await context.Response.WriteAsJsonAsync(new NekoController.ErrorResponse(NekoController.ErrorCode.InternalError, errorFeature.Error.Message));
                         break;
                 }
+
+                await context.Response.WriteAsJsonAsync(errorFeature.Error.ToRpcError());
             }
             else
             {
                 logger.LogError(StatusCodes.Status500InternalServerError, "An unknown error has occured");
-                await context.Response.WriteAsJsonAsync(new NekoController.ErrorResponse(NekoController.ErrorCode.InternalError, "Unknown error"));
+                await context.Response.WriteAsJsonAsync(new ErrorResult(ErrorCode.InternalError, "Unknown error"));
             }
         });
     }

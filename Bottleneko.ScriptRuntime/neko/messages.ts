@@ -4,7 +4,7 @@ import runtime, { type NekoRuntime } from './runtime.ts';
 
 const makeListener = (rpc: NekoRpc, callback: (message: ChatMessageDto) => Promise<void> | void, filter: ChatMessageFilter) => {
     return rpc.watch(
-        [{ filter: filter ?? { connectionId: null } }],
+        [{ filter: filter ?? { connectionId: null, protocol: null } }],
         rpc.messages.subscribe,
         rpc.messages.unsubscribe,
         (letter) => callback((letter as ChatMessageLetter).content)
@@ -20,7 +20,7 @@ class Messages {
 
     get received() {
         return {
-            listen: (callback: Parameters<typeof makeListener>[1]) => makeListener(this.#runtime.rpc, callback, { connectionId: null }),
+            listen: (callback: Parameters<typeof makeListener>[1]) => makeListener(this.#runtime.rpc, callback, { connectionId: null, protocol: null }),
 
             filteredBy: (filter: ChatMessageFilter) => {
                 return {

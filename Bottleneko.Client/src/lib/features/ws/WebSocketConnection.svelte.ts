@@ -15,6 +15,7 @@ import { onDestroy } from 'svelte';
 import deepEqual from 'deep-equal';
 import { SvelteMap } from 'svelte/reactivity';
 import AbstractRpc, { type ResultType } from '$lib/api/rpc.gen';
+import { RequestError } from '$lib/api/errors';
 
 export const state = $state({
     connection: null as WebSocketConnection | null,
@@ -156,7 +157,9 @@ export class WebSocketConnection extends AbstractRpc {
                             if (packet.result.$type === 'Success') {
                                 request.resolve(packet.result.data);
                             } else {
-                                request.reject(packet.result.message);
+                                request.reject(
+                                    new RequestError(packet.result.message, packet.result.code, packet.result.extra),
+                                );
                             }
                         }
                         break;

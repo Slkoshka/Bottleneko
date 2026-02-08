@@ -1,4 +1,5 @@
 ﻿using Bottleneko.Api.Dtos;
+using Bottleneko.Api.Rpc;
 using Bottleneko.Database;
 using Bottleneko.Database.Options;
 using Bottleneko.Database.Schema;
@@ -238,7 +239,7 @@ public class SystemController(IHostApplicationLifetime appLifetime, NekoDbContex
         var isSetUp = NekoOptions.GetOptionOrDefault<OptionSetUp>().IsSetUp;
         if (isSetUp)
         {
-            return Error(ErrorCode.InvalidOperation, "Server already set up");
+            return Error(ErrorCode.InvalidOperation, "Server is already configured");
         }
         else
         {

@@ -1,6 +1,6 @@
 import { authState } from '../features/auth.svelte';
+import type { ErrorResult } from './bottleneko.gen';
 import { APIError, InvalidResponseError, RequestError, UnknownAPIError } from './errors';
-import type { ErrorResponse } from './responses';
 
 export interface MutationRequestProperties {
     body?: object;
@@ -43,11 +43,27 @@ export async function request<T>(method: string, endpoint: string, properties?: 
         return (await response.json()) as T;
     } else {
         if (response.headers.get('Content-Type')?.split(';')[0] !== 'application/json') {
-            throw new RequestError(response.statusText, response.status, null);
+            switch (response.status) {
+                case 401:
+                    throw new RequestError(response.statusText, 'Unauthorized', null);
+                case 403:
+                    throw new RequestError(response.statusText, 'Forbidden', null);
+                case 404:
+                    throw new RequestError(response.statusText, 'NotFound', null);
+                case 500:
+                    throw new RequestError(response.statusText, 'InternalError', null);
+
+                default:
+                    if (response.status >= 400 && response.status <= 499) {
+                        throw new RequestError(response.statusText, 'InvalidOperation', null);
+                    } else {
+                        throw new RequestError(response.statusText, 'InternalError', null);
+                    }
+            }
         }
 
-        const error = (await response.json()) as ErrorResponse;
+        const error = (await response.json()) as ErrorResult;
 
-        throw new RequestError(error.description, error.code, error.extra);
+        throw new RequestError(error.message, error.code, error.extra);
     }
 }

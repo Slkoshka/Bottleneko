@@ -14,7 +14,7 @@
 
     onMount(async () => {
         const bindings = await getBindings();
-        const monaco = await import("monaco-editor");
+        const monaco = await import('monaco-editor');
 
         if (destroyed) {
             return;

@@ -1,4 +1,4 @@
-import { ErrorCode } from './responses';
+import type { ErrorCode } from './bottleneko.gen';
 
 export class APIError extends Error {}
 

@@ -71,16 +71,20 @@ public class Generator
         var destTypes = new Dictionary<Type, TypeDefinition>()
         {
             { typeof(bool), new BuiltinTypeDefinition("boolean") },
-            { typeof(int), new BuiltinTypeDefinition("number") },
-            { typeof(uint), new BuiltinTypeDefinition("number") },
-            { typeof(short), new BuiltinTypeDefinition("number") },
-            { typeof(ushort), new BuiltinTypeDefinition("number") },
             { typeof(byte), new BuiltinTypeDefinition("number") },
             { typeof(sbyte), new BuiltinTypeDefinition("number") },
+            { typeof(short), new BuiltinTypeDefinition("number") },
+            { typeof(ushort), new BuiltinTypeDefinition("number") },
+            { typeof(int), new BuiltinTypeDefinition("number") },
+            { typeof(uint), new BuiltinTypeDefinition("number") },
+            { typeof(long), new BuiltinTypeDefinition("string") },
+            { typeof(ulong), new BuiltinTypeDefinition("string") },
             { typeof(float), new BuiltinTypeDefinition("number") },
             { typeof(double), new BuiltinTypeDefinition("number") },
+            { typeof(object), new BuiltinTypeDefinition("object") },
             { typeof(string), new BuiltinTypeDefinition("string") },
             { typeof(DateTime), new BuiltinTypeDefinition("string") },
+            { typeof(TimeSpan), new BuiltinTypeDefinition("number") },
         };
 
         void ProcessType(Type type)

@@ -1,7 +1,6 @@
 import type { UserDto } from '$lib/api/bottleneko.gen';
 import api from '../api';
 import { RequestError } from '../api/errors';
-import { ErrorCode } from '../api/responses';
 
 const storageAccessTokenKey = 'neko-access-token';
 
@@ -42,11 +41,11 @@ export const login = async (accessToken: string | null) => {
     } catch (err: unknown) {
         if (err instanceof RequestError) {
             switch (err.code) {
-                case ErrorCode.Unauthorized:
+                case 'Unauthorized':
                     authState.data = { status: 'login-required', me: null };
                     break;
 
-                case ErrorCode.SetupRequired:
+                case 'SetupRequired':
                     authState.data = { status: 'setup-required', me: null };
                     break;
 

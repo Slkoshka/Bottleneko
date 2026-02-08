@@ -9,15 +9,6 @@ namespace Bottleneko.SourceGenerator;
 [Generator]
 public class RpcContractGenerator : IIncrementalGenerator
 {
-    private const string ATTRIBUTE_SOURCE = @"namespace Bottleneko.Api.Rpc;
-
-[AttributeUsage(AttributeTargets.Interface, AllowMultiple = false)]
-public class RpcServiceAttribute(RpcService service) : System.Attribute
-{
-    public RpcService Service { get; } = service;
-}
-";
-
     private const string METHOD_INFO_SOURCE = @"namespace Bottleneko.Api.Rpc;
 
 [Hidden]
@@ -26,7 +17,6 @@ public record RpcMethod(RpcService Service, string MethodName, Type RequestType,
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        context.RegisterPostInitializationOutput(ctx => ctx.AddSource("RpcServiceAttribute.cs", SourceText.From(ATTRIBUTE_SOURCE, Encoding.UTF8)));
         context.RegisterPostInitializationOutput(ctx => ctx.AddSource("RpcMethod.cs", SourceText.From(METHOD_INFO_SOURCE, Encoding.UTF8)));
 
         var interfaceSymbols = context.SyntaxProvider
@@ -100,9 +90,9 @@ public record RpcMethod(RpcService Service, string MethodName, Type RequestType,
                     
                     var isVoidMethod = returnType is null;
 
-                    if (methodSymbol.Parameters.Length == 0 || methodSymbol.Parameters[0].Type.ToDisplayString() != "Bottleneko.Api.Rpc.RpcContext")
+                    if (methodSymbol.Parameters.Length == 0 || methodSymbol.Parameters[0].Type.ToDisplayString() != "Bottleneko.Api.Rpc.IRpcContext")
                     {
-                        throw new Exception("First argument of RpcService should have RpcContext type");
+                        throw new Exception("First argument of RpcService should have IRpcContext type");
                     }
 
                     contract.AppendLine($"        public record {serviceType}{methodName}Request({string.Join(", ", methodSymbol.Parameters.Skip(1).Select(parameter => $"{parameter.Type.ToDisplayString()} {Capitalize(parameter.Name)}"))}) : Bottleneko.Api.Rpc.RpcRequest;");
@@ -155,13 +145,13 @@ public record RpcMethod(RpcService Service, string MethodName, Type RequestType,
                 }
             }
 
-            contract.AppendLine($"        async Task<Bottleneko.Api.Rpc.ResponsePacket> Bottleneko.Api.Rpc.IRpcService.ExecuteAsync(Bottleneko.Api.Rpc.RpcContext context, Bottleneko.Api.Rpc.RequestPacket packet)");
+            contract.AppendLine($"        async Task<Bottleneko.Api.Rpc.ResponsePacket> Bottleneko.Api.Rpc.IRpcService.ExecuteAsync(Bottleneko.Api.Rpc.IRpcContext context, Bottleneko.Api.Rpc.RequestPacket packet)");
             contract.AppendLine("        {");
             contract.AppendLine("            switch (packet.Request)");
             contract.AppendLine("            {");
             contract.Append(execute.ToString());
             contract.AppendLine("                default:");
-            contract.AppendLine("                    return new(packet.RequestId, new Bottleneko.Api.Rpc.ErrorResult(\"Unknown method\"));");
+            contract.AppendLine("                    return new(packet.RequestId, new Bottleneko.Api.Rpc.ErrorResult(Bottleneko.Api.Rpc.ErrorCode.Unsupported, \"Unknown method\"));");
             contract.AppendLine("            }");
             contract.AppendLine("        }");
             contract.AppendLine();

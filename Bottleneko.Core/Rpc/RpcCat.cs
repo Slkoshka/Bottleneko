@@ -1,7 +1,7 @@
 using Akka.Actor;
 using Bottleneko.Actors;
-using Bottleneko.Api.Rpc;
 using Bottleneko.Messages;
+using Bottleneko.Rpc.Transports;
 using Bottleneko.Utils;
 
 namespace Bottleneko.Rpc;
@@ -23,11 +23,11 @@ class RpcCat(IServiceProvider services, NekoEnvironment environment) : NekoActor
         }
         else if (OperatingSystem.IsLinux())
         {
-            return CreateChild<UnixSocketRpcActor>(["bottleneko-rpc", true], "transport");
+            return CreateChild<UnixSocketRpcTransport>(["bottleneko-rpc", true], "transport");
         }
         else if (OperatingSystem.IsMacOS())
         {
-            return CreateChild<UnixSocketRpcActor>([Path.Combine(environment.DataPath, "rpc.socket"), false], "transport");
+            return CreateChild<UnixSocketRpcTransport>([Path.Combine(environment.DataPath, "rpc.socket"), false], "transport");
         }
         else
         {
@@ -59,7 +59,7 @@ class RpcCat(IServiceProvider services, NekoEnvironment environment) : NekoActor
                 break;
             
             case RpcMessages.CreateRpcAdapter createRpcAdapter:
-                Sender.Tell(CreateChild<AdapterRpcClientActor>([createRpcAdapter.SendCallback]));
+                Sender.Tell(CreateChild<AdapterRpcClient>([createRpcAdapter.SendCallback]));
                 break;
 
             case Terminated t:

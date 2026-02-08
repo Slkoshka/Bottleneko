@@ -4,5 +4,5 @@ namespace Bottleneko.Rpc;
 
 public interface IConnectionClosedListener
 {
-    void OnConnectionClosed(RpcContext context);
+    void OnConnectionClosed(IRpcContext context);
 }

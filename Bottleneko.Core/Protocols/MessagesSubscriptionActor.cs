@@ -24,7 +24,17 @@ public class MessagesSubscriptionActor(IServiceProvider services, AkkaService ak
     protected override async IAsyncEnumerable<Letter[]> GetNewMessagesAsync()
     {
         await using var db = NekoDbContext.Get();
-        var newMessages = await db.ChatMessages.OrderByDescending(m => m.Id).Where(m => (!_lastMessageId.HasValue || m.Id > _lastMessageId.Value) && (filter.ConnectionId == null || m.ConnectionId == long.Parse(filter.ConnectionId))).Take(100).ToArrayAsync();
+
+        var newMessages = await db.ChatMessages
+            .OrderByDescending(m => m.Id)
+            .Where(m =>
+                (!_lastMessageId.HasValue || m.Id > _lastMessageId.Value) &&
+                (filter.Protocol == null || m.Connection.Protocol == filter.Protocol.Value) &&
+                (filter.ConnectionId == null || m.ConnectionId == long.Parse(filter.ConnectionId))
+            )
+            .Take(100)
+            .ToArrayAsync();
+
         if (newMessages.Length > 0)
         {
             yield return newMessages.Select(msg => new ChatMessageLetter(msg.ToDto())).Cast<Letter>().ToArray();

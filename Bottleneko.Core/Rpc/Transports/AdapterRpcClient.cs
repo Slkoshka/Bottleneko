@@ -5,9 +5,9 @@ using Bottleneko.Messages;
 using Bottleneko.Services;
 using Bottleneko.Utils;
 
-namespace Bottleneko.Rpc;
+namespace Bottleneko.Rpc.Transports;
 
-class AdapterRpcClientActor(IServiceProvider services, AkkaService akka, INekoLogger logger, Func<Packet, Task> sendCallback) : RpcClientActor(services, akka, logger)
+class AdapterRpcClient(IServiceProvider services, AkkaService akka, INekoLogger logger, Func<Packet, Task> sendCallback) : RpcClientBase(services, akka, logger)
 {
     record Connected : SingletonMessage<Connected>;
     record ConnectionError(Exception Exception);

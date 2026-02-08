@@ -6,7 +6,6 @@
     import api from '$lib/api';
     import { authState, login } from '$lib/features/auth.svelte';
     import { RequestError } from '$lib/api/errors';
-    import { ErrorCode } from '$lib/api/responses';
     import { onDestroy } from 'svelte';
     import { FormState } from '$lib/FormState.svelte';
 
@@ -26,11 +25,11 @@
         override onRequestError(err: unknown) {
             if (err instanceof RequestError) {
                 switch (err.code) {
-                    case ErrorCode.Unauthorized:
+                    case 'Unauthorized':
                         this.showError('Invalid username or password');
                         return;
 
-                    case ErrorCode.SetupRequired:
+                    case 'SetupRequired':
                         authState.data = { status: 'setup-required', me: null };
                         return;
                 }
