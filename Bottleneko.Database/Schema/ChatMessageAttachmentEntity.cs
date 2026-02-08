@@ -15,10 +15,10 @@ public class ChatMessageAttachmentEntity
     public ChatMessageEntity Message { get; set; } = null!;
     [MaxLength(64)]
     public required string ContentType { get; set; }
-    // ReSharper disable once EntityFramework.ModelValidation.UnlimitedStringLength
     public string? FileName { get; set; }
-    // ReSharper disable once EntityFramework.ModelValidation.UnlimitedStringLength
     public string? Url { get; set; }
+    [AutoInclude]
     public DiscordChatMessageAttachmentEntity? Discord { get; set; } = null;
+    [AutoInclude]
     public TelegramChatMessageAttachmentEntity? Telegram { get; set; } = null;
 }

@@ -372,6 +372,26 @@ class TelegramConnection(StaticConnectionCreationData<TelegramProtocolConfigurat
                     sender.Tell($"https://api.telegram.org/file/bot{Configuration.Token}/{(await _bot.GetFile(attachment.Telegram.TelegramFileId)).FilePath}");
                     break;
                 }
+
+            case ConnectionMessages.SendText sendText:
+                {
+                    await using var db = NekoDbContext.Get();
+                    if (db.Chats.SingleOrDefault(chat => chat.Id == sendText.ChatId) is { Telegram: { } chat })
+                    {
+                        if (sendText.ReplyToMessageId is not null)
+                        {
+                            if (db.ChatMessages.SingleOrDefault(message => message.Id == sendText.ReplyToMessageId) is { Telegram: { } telegramMessage })
+                            {
+                                await _bot.SendMessage(new ChatId(chat.TelegramId), sendText.Text, replyParameters: new ReplyParameters() { MessageId = (int)telegramMessage.TelegramId, AllowSendingWithoutReply = false });
+                            }
+                        }
+                        else
+                        {
+                            await _bot.SendMessage(new ChatId(chat.TelegramId), sendText.Text);
+                        }
+                    }
+                    break;
+                }
         }
     }
 

@@ -18,4 +18,4 @@ public abstract record ScriptCode();
 
 public record JsScriptCode(string Source) : ScriptCode;
 
-public record ScriptDto(string Id, string Name, string Description, bool AutoStart, ScriptCode Code, ScriptStatus Status);
+public record ScriptDto(long Id, string Name, string Description, bool AutoStart, ScriptCode Code, ScriptStatus Status);

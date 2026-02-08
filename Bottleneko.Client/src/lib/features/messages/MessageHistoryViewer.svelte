@@ -40,7 +40,7 @@
                                 {:else}
                                     <span
                                         ><strong>{letter.content.author.name}</strong> in
-                                        <strong>{letter.content.chat.name}</strong></span
+                                        <strong>{letter.content.chat.displayName}</strong></span
                                     >
                                 {/if}
                             </div>

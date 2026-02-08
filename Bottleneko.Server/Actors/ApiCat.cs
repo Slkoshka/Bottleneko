@@ -25,8 +25,8 @@ class ApiCat(IServiceProvider services, INekoLogger logger, AkkaService akka) : 
 
     private void RegisterRpcServices(IActorRef self)
     {
-        _services.Register(new LoggingRpcService(self, Logger));
-        _services.Register(new MessagesRpcService(self));
+        _services.Register(new LoggingRpcService(Logger, self));
+        _services.Register(new MessagesRpcService(akka, self));
         _services.Register(new ConnectionsRpcService(Services, Logger, akka));
     }
 

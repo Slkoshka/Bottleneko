@@ -178,6 +178,11 @@ class DiscordConnection(StaticConnectionCreationData<DiscordProtocolConfiguratio
                 DiscordGuildId = guildId,
                 DiscordChannelId = message.Channel.Id,
                 DiscordMessageId = message.Id,
+                IsPinned = message.IsPinned,
+                IsEveryoneMentioned = message.MentionedEveryone,
+                ChannelMentions = [.. message.MentionedChannels.Select(channel => channel.Id)],
+                RoleMentions = [.. message.MentionedRoleIds],
+                UserMentions = [.. message.MentionedRoleIds],
             };
         var replyTo = message.Type == MessageType.Reply ? await message.Channel.GetMessageAsync(message.Reference.MessageId.Value, CacheMode.AllowDownload) : null;
         var chatMessage = new ChatMessageEntity()
@@ -209,6 +214,10 @@ class DiscordConnection(StaticConnectionCreationData<DiscordProtocolConfiguratio
                     DiscordGuildId = guildId,
                     DiscordChannelId = message.Channel.Id,
                     DiscordAttachmentId = attachment.Id,
+                    Title = attachment.Title,
+                    Description = attachment.Description,
+                    Url = attachment.Url,
+                    ProxyUrl = attachment.ProxyUrl,
                 },
             })],
             Discord = discordChatMessage,
@@ -397,6 +406,32 @@ class DiscordConnection(StaticConnectionCreationData<DiscordProtocolConfiguratio
                         break;
                     }
                     sender.Tell(msg.Attachments.SingleOrDefault(a => a.Id == attachment.Discord.DiscordAttachmentId)?.ProxyUrl);
+                    break;
+                }
+
+            case ConnectionMessages.SendText sendText:
+                {
+                    await using var db = NekoDbContext.Get();
+                    if (db.Chats.SingleOrDefault(chat => chat.Id == sendText.ChatId) is { Discord: { } discordChat })
+                    {
+                        if (await _rest.GetChannelAsync(discordChat.DiscordChannelId) is ITextChannel channel)
+                        {
+                            if (sendText.ReplyToMessageId is not null)
+                            {
+                                if (db.ChatMessages.SingleOrDefault(message => message.Id == sendText.ReplyToMessageId) is { Discord: { } discordMessage })
+                                {
+                                    if (await channel.GetMessageAsync(discordMessage.DiscordMessageId) is { } originalMessage)
+                                    {
+                                        await channel.SendMessageAsync(sendText.Text, messageReference: new MessageReference(originalMessage.Id, originalMessage.Channel.Id, originalMessage.Channel is IGuildChannel guildChannel ? guildChannel.GuildId : null, true));
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                await channel.SendMessageAsync(sendText.Text);
+                            }
+                        }
+                    }
                     break;
                 }
         }

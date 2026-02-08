@@ -5,6 +5,7 @@ using Bottleneko.Database.Options;
 using Bottleneko.Helpers;
 using Bottleneko.Logging;
 using Bottleneko.Protocols;
+using Bottleneko.Rpc.Converters;
 using Bottleneko.Scripting.Deno;
 using Bottleneko.Server.Actors;
 using Bottleneko.Server.Controllers;
@@ -96,6 +97,8 @@ public class BottlenekoServer : IAsyncDisposable
         {
             options.JsonSerializerOptions.AllowOutOfOrderMetadataProperties = true;
             options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            options.JsonSerializerOptions.Converters.Add(new RpcLongConverter());
+            options.JsonSerializerOptions.Converters.Add(new RpcULongConverter());
         });
 
         builder.Services

@@ -15,4 +15,5 @@ public static class ConnectionMessages
     public record GetStatus() : SingletonMessage<GetStatus>;
     public record GetAttachment(long AttachmentId) : IHandledByConnection;
     public record ProxyUpdated(long ProxyId) : IHandledByConnection;
+    public record SendText(long ChatId, string Text, long? ReplyToMessageId) : IHandledByConnection;
 }

@@ -1,14 +1,9 @@
-import neko from 'neko';
-import log from 'neko/log';
-import when from 'neko/when';
+import { messages, log } from 'neko';
 
-when.connection.messageReceived(
-    (msg) => {
-        log.info(`Received '${msg.text}' from ${msg.author.displayName}`);
+await messages.received.listen(async (msg) => {
+    log.info(`Received '${msg.text}' from ${msg.author.name}`);
 
-        msg.reply('321');
-    },
-    {
-        text: '123',
-    },
-);
+    if (msg.text === '123') {
+        await msg.replyText('321');
+    }
+});

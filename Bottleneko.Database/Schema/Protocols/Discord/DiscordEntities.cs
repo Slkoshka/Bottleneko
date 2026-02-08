@@ -10,6 +10,7 @@ public class DiscordChatEntity
     public ChatEntity Chat { get; set; } = null!;
     public long ConnectionId { get; set; }
     public ConnectionEntity Connection { get; set; } = null!;
+
     public required ulong? DiscordGuildId { get; set; }
     public required ulong DiscordChannelId { get; set; }
 }
@@ -22,6 +23,7 @@ public class DiscordChatterEntity
     public ChatterEntity Chatter { get; set; } = null!;
     public long ConnectionId { get; set; }
     public ConnectionEntity Connection { get; set; } = null!;
+
     public required ulong DiscordUserId { get; set; }
 }
 
@@ -33,9 +35,14 @@ public class DiscordChatMessageAttachmentEntity
     public ChatMessageAttachmentEntity ChatMessageAttachment { get; set; } = null!;
     public long ConnectionId { get; set; }
     public ConnectionEntity Connection { get; set; } = null!;
+
     public required ulong? DiscordGuildId { get; set; }
     public required ulong DiscordChannelId { get; set; }
     public required ulong DiscordAttachmentId { get; set; }
+    public required string? Title { get; set; }
+    public required string? Description { get; set; }
+    public required string Url { get; set; }
+    public required string ProxyUrl { get; set; }
 }
 
 [Index(nameof(ConnectionId), nameof(DiscordMessageId), nameof(DiscordGuildId), nameof(DiscordChannelId), IsUnique = true)]
@@ -46,7 +53,13 @@ public class DiscordChatMessageEntity
     public ChatMessageEntity ChatMessage { get; set; } = null!;
     public long ConnectionId { get; set; }
     public ConnectionEntity Connection { get; set; } = null!;
+
     public required ulong? DiscordGuildId { get; set; }
     public required ulong DiscordChannelId { get; set; }
     public required ulong DiscordMessageId { get; set; }
+    public required bool IsPinned { get; set; }
+    public required bool IsEveryoneMentioned { get; set; }
+    public required ulong[] ChannelMentions { get; set; }
+    public required ulong[] RoleMentions { get; set; }
+    public required ulong[] UserMentions { get; set; }
 }

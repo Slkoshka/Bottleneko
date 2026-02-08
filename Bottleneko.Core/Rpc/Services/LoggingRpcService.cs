@@ -6,7 +6,7 @@ using Bottleneko.Messages;
 
 namespace Bottleneko.Rpc.Services;
 
-public class LoggingRpcService(IActorRef actor, INekoLogger logger) : ILoggingService
+public class LoggingRpcService(INekoLogger logger, IActorRef actor) : ILoggingService
 {
     private readonly SubscriptionManager _subscriptions = new();
 
@@ -37,7 +37,7 @@ public class LoggingRpcService(IActorRef actor, INekoLogger logger) : ILoggingSe
             case { CallerRole: RpcCallerRole.Anonymous }: throw new RpcAuthenticationRequiredException();
 
             case ApiRpcContext ctx:
-                return await _subscriptions.SubscribeAsync(ctx.Connection, id => actor.Ask<IActorRef>(new RpcMessages.CreateLogSubscription(ctx.Connection, filter, id)));
+                return await _subscriptions.SubscribeAsync(ctx.RpcConnection, id => actor.Ask<IActorRef>(new RpcMessages.CreateLogSubscription(ctx.RpcConnection, filter, id)));
         }
     }
 
@@ -49,7 +49,7 @@ public class LoggingRpcService(IActorRef actor, INekoLogger logger) : ILoggingSe
             case { CallerRole: RpcCallerRole.Anonymous }: throw new RpcAuthenticationRequiredException();
 
             case ApiRpcContext ctx:
-                _subscriptions.Unsubscribe(ctx.Connection, subscriptionId);
+                _subscriptions.Unsubscribe(ctx.RpcConnection, subscriptionId);
                 break;
         }
     }

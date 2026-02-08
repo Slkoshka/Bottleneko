@@ -9,4 +9,4 @@ public enum ProxyType
     Socks5,
 }
 
-public record ProxyDto(string Id, string Name, ProxyType Type, string Hostname, int Port, bool IsAuthRequired, string? Username, string? Password);
+public record ProxyDto(long Id, string Name, ProxyType Type, string Hostname, int Port, bool IsAuthRequired, string? Username, string? Password);

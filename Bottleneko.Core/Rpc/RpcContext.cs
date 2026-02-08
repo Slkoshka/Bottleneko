@@ -4,7 +4,7 @@ using Bottleneko.Database.Schema;
 
 namespace Bottleneko.Rpc;
 
-public abstract record RpcContext(IActorRef Connection, RpcCallerRole CallerRole) : IRpcContext
+public abstract record RpcContext(IActorRef RpcConnection, RpcCallerRole CallerRole) : IRpcContext
 {
     public void RequireRole(params Span<RpcCallerRole> roles)
     {
@@ -15,6 +15,6 @@ public abstract record RpcContext(IActorRef Connection, RpcCallerRole CallerRole
     }
 }
 
-public record ApiRpcContext(IActorRef Connection, UserEntity? User) : RpcContext(Connection, User is null ? RpcCallerRole.Anonymous : RpcCallerRole.User);
+public record ApiRpcContext(IActorRef RpcConnection, UserEntity? User) : RpcContext(RpcConnection, User is null ? RpcCallerRole.Anonymous : RpcCallerRole.User);
 
-public record ScriptRpcContext(IActorRef Connection, IActorRef Script) : RpcContext(Connection, RpcCallerRole.Script);
+public record ScriptRpcContext(IActorRef RpcConnection, IActorRef Script) : RpcContext(RpcConnection, RpcCallerRole.Script);

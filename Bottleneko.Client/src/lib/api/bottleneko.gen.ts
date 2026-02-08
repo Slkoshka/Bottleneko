@@ -75,6 +75,7 @@ export type RpcRequest
         | LoggingUnsubscribeRequest
         | MessagesSubscribeRequest
         | MessagesUnsubscribeRequest
+        | MessagesSendTextRequest
         | ScriptGetIdRequest
         | ScriptGetNameRequest;
 
@@ -94,6 +95,7 @@ export type RpcResponse
         | LoggingUnsubscribeResponse
         | MessagesSubscribeResponse
         | MessagesUnsubscribeResponse
+        | MessagesSendTextResponse
         | ScriptGetIdResponse
         | ScriptGetNameResponse;
 
@@ -333,6 +335,18 @@ export interface MessagesUnsubscribeRequest {
 
 export interface MessagesUnsubscribeResponse {
     $type: 'Messages/Unsubscribe';
+}
+
+export interface MessagesSendTextRequest {
+    $type: 'Messages/SendText';
+    chatId: string;
+    connectionId: string;
+    text: string;
+    replyToMessageId: string | null;
+}
+
+export interface MessagesSendTextResponse {
+    $type: 'Messages/SendText';
 }
 
 export interface ScriptGetIdRequest {
@@ -658,23 +672,157 @@ export interface TwitchProtocolConfiguration {
     proxyId: string | null;
 }
 
-export interface AttachmentDto {
+export type AttachmentDto
+    = DiscordAttachmentDto
+        | TelegramAttachmentDto
+        | TwitchAttachmentDto;
+
+export interface DiscordAttachmentDto {
+    $type: 'Discord';
+    discordId: string;
+    title: string | null;
+    description: string | null;
+    url: string;
+    proxyUrl: string;
     id: string;
     name: string | null;
     contentType: string;
 }
 
-export interface ChatterSummaryDto {
+export interface TelegramAttachmentDto {
+    $type: 'Telegram';
     id: string;
-    name: string;
+    name: string | null;
+    contentType: string;
+}
+
+export interface TwitchAttachmentDto {
+    $type: 'Twitch';
+    id: string;
+    name: string | null;
+    contentType: string;
 }
 
 export interface ChatSummaryDto {
     id: string;
-    name: string;
+    displayName: string;
 }
 
-export interface ChatMessageDto {
+export type ChatDto
+    = DiscordChatDto
+        | TelegramChatDto
+        | TwitchChatDto;
+
+export interface DiscordGuild {
+    discordId: string;
+    name: string;
+    description: string | null;
+    ownerId: string;
+}
+
+
+export type DiscordChannelType
+    = 'Text'
+        | 'DM'
+        | 'Voice'
+        | 'Group'
+        | 'Category'
+        | 'News'
+        | 'Store'
+        | 'NewsThread'
+        | 'PublicThread'
+        | 'PrivateThread'
+        | 'Stage'
+        | 'GuildDirectory'
+        | 'Forum'
+        | 'Media';
+export const DiscordChannelTypeValues : DiscordChannelType[] = [
+    'Text',
+    'DM',
+    'Voice',
+    'Group',
+    'Category',
+    'News',
+    'Store',
+    'NewsThread',
+    'PublicThread',
+    'PrivateThread',
+    'Stage',
+    'GuildDirectory',
+    'Forum',
+    'Media',
+];
+
+export interface DiscordChannel {
+    discordId: string;
+    name: string;
+    type: DiscordChannelType;
+}
+
+export interface DiscordChatDto {
+    $type: 'Discord';
+    guild: DiscordGuild | null;
+    channel: DiscordChannel;
+    id: string;
+    connectionId: string;
+    displayName: string;
+    isPrivate: boolean;
+}
+
+
+export type TelegramChatType
+    = 'Private'
+        | 'Group'
+        | 'Channel'
+        | 'Supergroup'
+        | 'Sender';
+export const TelegramChatTypeValues : TelegramChatType[] = [
+    'Private',
+    'Group',
+    'Channel',
+    'Supergroup',
+    'Sender',
+];
+
+export interface TelegramChatDto {
+    $type: 'Telegram';
+    telegramId: string;
+    type: TelegramChatType;
+    title: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    isForum: boolean;
+    id: string;
+    connectionId: string;
+    displayName: string;
+    isPrivate: boolean;
+}
+
+export interface TwitchChatDto {
+    $type: 'Twitch';
+    twitchId: string;
+    name: string;
+    isWhisper: boolean;
+    id: string;
+    connectionId: string;
+    displayName: string;
+    isPrivate: boolean;
+}
+
+export type ChatMessageDto
+    = DiscordChatMessageDto
+        | TelegramChatMessageDto
+        | WhisperTwitchChatMessageDto
+        | ChannelTwitchChatMessageDto;
+
+export interface DiscordChatMessageDto {
+    $type: 'Discord';
+    discordId: string;
+    isPinned: boolean;
+    isEveryoneMentioned: boolean;
+    channelMentions: string[];
+    roleMentions: string[];
+    userMentions: string[];
     id: string;
     connectionId: string;
     timestamp: string;
@@ -685,6 +833,110 @@ export interface ChatMessageDto {
     isSpecial: boolean;
     isDirect: boolean;
     isMissed: boolean;
+}
+
+export interface TelegramChatMessageDto {
+    $type: 'Telegram';
+    id: string;
+    connectionId: string;
+    timestamp: string;
+    chat: ChatSummaryDto;
+    author: ChatterSummaryDto;
+    textContent: string | null;
+    attachments: AttachmentDto[];
+    isSpecial: boolean;
+    isDirect: boolean;
+    isMissed: boolean;
+}
+
+export interface TwitchChatBadge {
+    twitchId: string;
+    info: string;
+    setId: string;
+}
+
+export interface WhisperTwitchChatMessageDto {
+    $type: 'Twitch.Whisper';
+    twitchId: string;
+    id: string;
+    connectionId: string;
+    timestamp: string;
+    chat: ChatSummaryDto;
+    author: ChatterSummaryDto;
+    textContent: string | null;
+    attachments: AttachmentDto[];
+    isSpecial: boolean;
+    isDirect: boolean;
+    isMissed: boolean;
+}
+
+export interface ChannelTwitchChatMessageDto {
+    $type: 'Twitch.Channel';
+    badges: TwitchChatBadge[];
+    color: string;
+    cheerBits: number | null;
+    channelPointsCustomRewardId: string | null;
+    isSubscriber: boolean;
+    isModerator: boolean;
+    isBroadcaster: boolean;
+    isVip: boolean;
+    isStaff: boolean;
+    twitchId: string;
+    id: string;
+    connectionId: string;
+    timestamp: string;
+    chat: ChatSummaryDto;
+    author: ChatterSummaryDto;
+    textContent: string | null;
+    attachments: AttachmentDto[];
+    isSpecial: boolean;
+    isDirect: boolean;
+    isMissed: boolean;
+}
+
+export interface ChatterSummaryDto {
+    id: string;
+    name: string;
+}
+
+export type ChatterDto
+    = DiscordChatterDto
+        | TelegramChatterDto
+        | TwitchChatterDto;
+
+export interface DiscordChatterDto {
+    $type: 'Discord';
+    discordId: string;
+    discriminator: string | null;
+    globalName: string;
+    localName: string;
+    id: string;
+    displayName: string;
+    username: string;
+    isBot: boolean;
+}
+
+export interface TelegramChatterDto {
+    $type: 'Telegram';
+    telegramId: string;
+    firstName: string;
+    lastName: string | null;
+    languageCode: string | null;
+    hasPremium: boolean;
+    addedToAttachmentMenu: boolean;
+    id: string;
+    displayName: string;
+    username: string;
+    isBot: boolean;
+}
+
+export interface TwitchChatterDto {
+    $type: 'Twitch';
+    twitchId: string;
+    id: string;
+    displayName: string;
+    username: string;
+    isBot: boolean;
 }
 
 
@@ -722,7 +974,33 @@ export interface ExtendedConnectionStatus {
     statusChangeDelay: number;
 }
 
-export interface ConnectionDto {
+export type ConnectionDto
+    = DiscordConnectionDto
+        | TelegramConnectionDto
+        | TwitchConnectionDto;
+
+export interface DiscordConnectionDto {
+    $type: 'Discord';
+    id: string;
+    name: string;
+    protocol: Protocol;
+    autoStart: boolean;
+    config: ProtocolConfiguration;
+    extendedStatus: ExtendedConnectionStatus;
+}
+
+export interface TelegramConnectionDto {
+    $type: 'Telegram';
+    id: string;
+    name: string;
+    protocol: Protocol;
+    autoStart: boolean;
+    config: ProtocolConfiguration;
+    extendedStatus: ExtendedConnectionStatus;
+}
+
+export interface TwitchConnectionDto {
+    $type: 'Twitch';
     id: string;
     name: string;
     protocol: Protocol;

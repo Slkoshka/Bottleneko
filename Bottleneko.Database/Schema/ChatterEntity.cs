@@ -10,12 +10,13 @@ public class ChatterEntity
     public required long ConnectionId { get; set; }
     [AutoInclude]
     public ConnectionEntity Connection { get; set; } = null!;
-    // ReSharper disable once EntityFramework.ModelValidation.UnlimitedStringLength
     public required string DisplayName { get; set; }
-    // ReSharper disable once EntityFramework.ModelValidation.UnlimitedStringLength
     public required string Username { get; set; }
     public required bool IsBot { get; set; }
+    [AutoInclude]
     public DiscordChatterEntity? Discord { get; set; } = null;
+    [AutoInclude]
     public TelegramChatterEntity? Telegram { get; set; } = null;
+    [AutoInclude]
     public TwitchChatterEntity? Twitch { get; set; } = null;
 }

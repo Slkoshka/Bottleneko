@@ -1,23 +1,20 @@
-import neko from 'neko';
-import log from 'neko/log';
-import when from 'neko/when';
+import { messages, log } from 'neko';
 
 const regex = /^remind me in (?:(?<seconds>1) second|(?<seconds>\d+) seconds)$/;
 
-when.connection.messageReceived(
-    async (msg) => {
-        // Event callbacks can be async functions
-        const match = regex.exec(msg.text); // Match the regular expression (the text filter guarantees that we have a valid match)
-        const seconds = Number.parseInt(match.groups.seconds); // This should be the number of seconds parsed as an integer
-        const milliseconds = seconds * 1000; // neko.wait() expects the time in milliseconds
+await messages.received.listen(async (msg) => {
+    // Event callbacks can be async functions
+    const match = regex.exec(msg.text);
+    if (match === null) {
+        return;
+    }
 
-        log.info(`Waiting ${milliseconds} ms...`);
+    const seconds = Number.parseInt(match.groups.seconds); // This should be the number of seconds parsed as an integer
+    const milliseconds = seconds * 1000; // neko.wait() expects the time in milliseconds
 
-        await neko.wait(milliseconds); // Now we wait
+    log.info(`Waiting ${milliseconds} ms...`);
 
-        msg.reply('meow!');
-    },
-    {
-        text: regex,
-    },
-);
+    await new Promise((resolve) => setTimeout(resolve, milliseconds)); // Now we wait
+
+    await msg.replyText('meow!');
+});

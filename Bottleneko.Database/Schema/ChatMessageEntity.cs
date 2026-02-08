@@ -21,7 +21,6 @@ public class ChatMessageEntity
     public long AuthorId { get; set; }
     [AutoInclude]
     public ChatterEntity Author { get; set; } = null!;
-    // ReSharper disable once EntityFramework.ModelValidation.UnlimitedStringLength
     public required string? TextContent { get; set; }
     [AutoInclude]
     public ICollection<ChatMessageAttachmentEntity> Attachments { get; set; } = [];
@@ -33,7 +32,10 @@ public class ChatMessageEntity
     public required bool IsOffline { get; set; }
     public long? ReplyToId { get; set; } = null;
     public ChatMessageEntity? ReplyTo { get; set; } = null;
+    [AutoInclude]
     public DiscordChatMessageEntity? Discord { get; set; } = null;
+    [AutoInclude]
     public TelegramChatMessageEntity? Telegram { get; set; } = null;
+    [AutoInclude]
     public TwitchChatMessageEntity? Twitch { get; set; } = null;
 }

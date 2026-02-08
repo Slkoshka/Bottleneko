@@ -372,6 +372,20 @@ class TwitchConnection(StaticConnectionCreationData<TwitchProtocolConfiguration>
                 TwitchChatId = message.BroadcasterUserId,
                 TwitchId = message.MessageId,
                 IsWhisper = false,
+                Badges = [.. message.Badges.Select(badge => new TwitchChatBadgeEntity()
+                {
+                    TwitchId = badge.Id,
+                    Info = badge.Info,
+                    TwitchSetId = badge.SetId,
+                })],
+                Color = message.Color,
+                CheerBits = message.Cheer?.Bits,
+                ChannelPointsCustomRewardId = message.ChannelPointsCustomRewardId,
+                IsSubscriber = message.IsSubscriber,
+                IsModerator = message.IsModerator,
+                IsBroadcaster = message.IsBroadcaster,
+                IsVip = message.IsVip,
+                IsStaff = message.IsStaff,
             };
         var msg = new ChatMessageEntity()
         {
@@ -479,6 +493,14 @@ class TwitchConnection(StaticConnectionCreationData<TwitchProtocolConfiguration>
                 TwitchChatId = message.FromUserId,
                 TwitchId = message.WhisperId,
                 IsWhisper = true,
+                Color = null,
+                CheerBits = null,
+                ChannelPointsCustomRewardId = null,
+                IsSubscriber = null,
+                IsModerator = null,
+                IsBroadcaster = null,
+                IsVip = null,
+                IsStaff = null,
             };
         var msg = new ChatMessageEntity()
         {
@@ -673,6 +695,44 @@ class TwitchConnection(StaticConnectionCreationData<TwitchProtocolConfiguration>
                     if (!string.IsNullOrEmpty(Configuration.ProxyId) && long.TryParse(Configuration.ProxyId, out var proxyId) && proxyId == proxyUpdated.ProxyId)
                     {
                         RequestRestart(true);
+                    }
+                    break;
+                }
+
+            case ConnectionMessages.SendText sendText:
+                {
+                    await using var db = NekoDbContext.Get();
+                    if (db.Chats.SingleOrDefault(chat => chat.Id == sendText.ChatId) is { Twitch: { } chat })
+                    {
+                        if (sendText.ReplyToMessageId is not null)
+                        {
+                            if (db.ChatMessages.SingleOrDefault(message => message.Id == sendText.ReplyToMessageId) is { Twitch: { } twitchMessage })
+                            {
+                                if (twitchMessage.IsWhisper)
+                                {
+                                    await WithApi(api => api.Helix.Whispers.SendWhisperAsync(_me.Id, twitchMessage.TwitchChatId, sendText.Text, false));
+                                }
+                                else
+                                {
+                                    await WithApi(api => api.Helix.Chat.SendChatMessage(new SendChatMessageRequest()
+                                    {
+                                        BroadcasterId = chat.TwitchId,
+                                        SenderId = _me.Id,
+                                        Message = sendText.Text,
+                                        ReplyParentMessageId = twitchMessage.TwitchId,
+                                    }));
+                                }
+                            }
+                        }
+                        else
+                        {
+                            await WithApi(api => api.Helix.Chat.SendChatMessage(new SendChatMessageRequest()
+                            {
+                                BroadcasterId = chat.TwitchId,
+                                SenderId = _me.Id,
+                                Message = sendText.Text,
+                            }));
+                        }
                     }
                     break;
                 }

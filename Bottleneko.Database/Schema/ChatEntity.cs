@@ -11,9 +11,11 @@ public class ChatEntity
     [AutoInclude]
     public ConnectionEntity Connection { get; set; } = null!;
     public required bool IsPrivate { get; set; }
-    // ReSharper disable once EntityFramework.ModelValidation.UnlimitedStringLength
     public required string DisplayName { get; set; }
+    [AutoInclude]
     public DiscordChatEntity? Discord { get; set; } = null;
+    [AutoInclude]
     public TelegramChatEntity? Telegram { get; set; } = null;
+    [AutoInclude]
     public TwitchChatEntity? Twitch { get; set; } = null;
 }

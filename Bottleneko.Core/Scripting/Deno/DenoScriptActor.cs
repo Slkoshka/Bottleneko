@@ -16,7 +16,6 @@ namespace Bottleneko.Scripting.Deno;
 
 class DenoScriptActor(IServiceProvider services, AkkaService akka, DenoScriptEngine engine, NekoEnvironment environment, INekoLogger logger, long id, string name, string source) : NekoActor(services)
 {
-    public record CreateMessagesSubscription(IActorRef Connection, ChatMessageFilter Filter, SubscriptionId SubscriptionId);
     record Start(RpcEndPoint EndPoint, string AccessToken);
 
     public INekoLogger Logger { get; } = logger;
@@ -31,9 +30,9 @@ class DenoScriptActor(IServiceProvider services, AkkaService akka, DenoScriptEng
 
     private void RegisterRpcServices(IActorRef self)
     {
-        _services.Register(new LoggingRpcService(self, Logger));
+        _services.Register(new LoggingRpcService(Logger, self));
         _services.Register(new ScriptRpcService(this));
-        _services.Register(new MessagesRpcService(self));
+        _services.Register(new MessagesRpcService(akka, self));
         _services.Register(new ConnectionsRpcService(Services, Logger, akka));
     }
 
@@ -160,7 +159,7 @@ class DenoScriptActor(IServiceProvider services, AkkaService akka, DenoScriptEng
                 _services.HandleConnectionClosed(connectionClosed.Context);
                 break;
 
-            case CreateMessagesSubscription createMessagesSubscription:
+            case RpcMessages.CreateMessagesSubscription createMessagesSubscription:
                 Sender.Tell(CreateChild<MessagesSubscriptionActor>([createMessagesSubscription.Connection, createMessagesSubscription.Filter, createMessagesSubscription.SubscriptionId, false]));
                 break;
 

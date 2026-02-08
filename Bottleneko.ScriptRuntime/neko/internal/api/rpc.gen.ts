@@ -26,6 +26,7 @@ export default abstract class AbstractRpc {
     messages = {
         async subscribe(args: Omit<bottleneko.MessagesSubscribeRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.MessagesSubscribeResponse>({ $type: 'Messages/Subscribe', ...args }); },
         async unsubscribe(args: Omit<bottleneko.MessagesUnsubscribeRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.MessagesUnsubscribeResponse>({ $type: 'Messages/Unsubscribe', ...args }); },
+        async sendText(args: Omit<bottleneko.MessagesSendTextRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.MessagesSendTextResponse>({ $type: 'Messages/SendText', ...args }); },
     };
     script = {
         async getId(args: Omit<bottleneko.ScriptGetIdRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.ScriptGetIdResponse>({ $type: 'Script/GetId', ...args }); },

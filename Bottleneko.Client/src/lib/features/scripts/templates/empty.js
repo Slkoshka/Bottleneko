@@ -1,5 +1,3 @@
-import neko from 'neko';
-import log from 'neko/log';
-import when from 'neko/when';
+import { connections, messages, log } from 'neko';
 
 // your code goes here

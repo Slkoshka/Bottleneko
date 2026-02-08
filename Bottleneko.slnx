@@ -31,9 +31,5 @@
   <Project Path="Bottleneko.Common/Bottleneko.Common.csproj" />
   <Project Path="Bottleneko.Core/Bottleneko.Core.csproj" />
   <Project Path="Bottleneko.Database/Bottleneko.Database.csproj" />
-  <Project Path="Bottleneko.ScriptAPI/Bottleneko.ScriptAPI.esproj">
-    <Build />
-    <Deploy />
-  </Project>
   <Project Path="Bottleneko.Server/Bottleneko.Server.csproj" />
 </Solution>

@@ -10,6 +10,7 @@ public class TelegramChatEntity
     public ChatEntity Chat { get; set; } = null!;
     public long ConnectionId { get; set; }
     public ConnectionEntity Connection { get; set; } = null!;
+
     public required long TelegramId { get; set; }
 }
 
@@ -21,6 +22,7 @@ public class TelegramChatterEntity
     public ChatterEntity Chatter { get; set; } = null!;
     public long ConnectionId { get; set; }
     public ConnectionEntity Connection { get; set; } = null!;
+
     public required long TelegramId { get; set; }
 }
 
@@ -44,12 +46,11 @@ public class TelegramChatMessageAttachmentEntity
     public ChatMessageAttachmentEntity ChatMessageAttachment { get; set; } = null!;
     public long ConnectionId { get; set; }
     public ConnectionEntity Connection { get; set; } = null!;
+
     public required TelegramChatMessageAttachmentType TelegramAttachmentType { get; set; }
     public required long TelegramChatId { get; set; }
     public required long TelegramMessageId { get; set; }
-    // ReSharper disable once EntityFramework.ModelValidation.UnlimitedStringLength
     public required string TelegramFileId { get; set; }
-    // ReSharper disable once EntityFramework.ModelValidation.UnlimitedStringLength
     public required string TelegramFileUniqueId { get; set; }
 }
 
@@ -61,8 +62,8 @@ public class TelegramChatMessageEntity
     public ChatMessageEntity ChatMessage { get; set; } = null!;
     public long ConnectionId { get; set; }
     public ConnectionEntity Connection { get; set; } = null!;
+
     public required long TelegramChatId { get; set; }
     public required long TelegramId { get; set; }
-    // ReSharper disable once EntityFramework.ModelValidation.UnlimitedStringLength
     public required string? TelegramMediaGroupId { get; set; }
 }
