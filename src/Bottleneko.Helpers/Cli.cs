@@ -3,17 +3,47 @@ using System.Text;
 
 namespace Bottleneko.Helpers;
 
+enum CliMode
+{
+    Interactive,
+    InteractiveNoColor,
+    Plain,
+}
+
+class CliStyle(CliMode mode)
+{
+    public CliMode Mode => mode;
+    public string RED => mode == CliMode.Interactive ? "\e[0;31m" : "";
+    public string BOLD_RED => mode == CliMode.Interactive ? "\e[1;31m" : "";
+    public string BOLD_GREEN => mode == CliMode.Interactive ? "\e[1;32m" : "";
+    public string BOLD_YELLOW => mode == CliMode.Interactive ? "\e[1;33m" : "";
+    public string RESET => mode != CliMode.Plain ? "\e[0m" : "";
+    public string ERASE_FROM_CURSOR => mode != CliMode.Plain ? "\e[0K" : "";
+    public string TO_START => mode != CliMode.Plain ? "\e[0G" : "";
+    public string SAVE_POS => mode != CliMode.Plain ? "\e7" : "";
+    public string RESTORE_POS => mode != CliMode.Plain ? "\e8" : "";
+    public string MoveUp(int positions) => mode != CliMode.Plain ? $"\e[{positions}A" : "";
+}
+
 public static class Cli
 {
-    private const string RED = "\e[0;31m";
-    private const string BOLD_RED = "\e[1;31m";
-    private const string BOLD_GREEN = "\e[1;32m";
-    private const string BOLD_YELLOW = "\e[1;33m";
-    private const string RESET = "\e[0m";
-    private const string ERASE_FROM_CURSOR = "\e[0K";
-    private const string TO_START = "\e[0G";
-    private const string SAVE_POS = "\e7";
-    private const string RESTORE_POS = "\e8";
+    private static readonly CliStyle Style = GetCliStyle();
+
+    private static CliStyle GetCliStyle()
+    {
+        if (Console.IsOutputRedirected)
+        {
+            return new(CliMode.Plain);
+        }
+        else if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("NO_COLOR")))
+        {
+            return new(CliMode.Interactive);
+        }
+        else
+        {
+            return new(CliMode.InteractiveNoColor);
+        }
+    }
 
     private static int _stepDepth = 0;
     private static readonly List<int> _subSteps = [];
@@ -29,7 +59,11 @@ public static class Cli
 
         void UpdateStatus(bool isError)
         {
-            Console.Write($"{SAVE_POS}\e[{_subSteps[^1]}A");
+            if (Style.Mode != CliMode.Plain)
+            {
+                Console.Write($"{Style.SAVE_POS}{Style.MoveUp(_subSteps[^1])}");
+            }
+
             var subStepsCount = _subSteps[^1];
             _subSteps.RemoveAt(_subSteps.Count - 1);
             if (_subSteps.Count > 0)
@@ -38,10 +72,13 @@ public static class Cli
             }
             _stepDepth--;
 
-            Console.Write($"{TO_START}{(isError ? BOLD_RED : BOLD_GREEN)}{indent}{(isError ? '○' : '●')} {name}{RESET}{ERASE_FROM_CURSOR}{RESTORE_POS}");
+            if (Style.Mode != CliMode.Plain)
+            {
+                Console.Write($"{Style.TO_START}{(isError ? Style.BOLD_RED : Style.BOLD_GREEN)}{indent}{(isError ? '○' : '●')} {name}{Style.RESET}{Style.ERASE_FROM_CURSOR}{Style.RESTORE_POS}");
+            }
         }
 
-        Console.WriteLine($"{BOLD_YELLOW}{indent}○ {name}...{RESET}");
+        Console.WriteLine($"{Style.BOLD_YELLOW}{indent}○ {name}...{Style.RESET}");
 
         T result;
 
@@ -64,7 +101,7 @@ public static class Cli
             else
             {
                 Console.WriteLine();
-                Console.WriteLine($"{RED}{e}{RESET}");
+                Console.WriteLine($"{Style.RED}{e}{Style.RESET}");
                 Console.WriteLine();
 
                 Environment.Exit(1);
@@ -95,8 +132,16 @@ public static class Cli
                 StartInfo = startInfo,
             };
 
-            process.ErrorDataReceived += (_, e) => output.AppendLine(e.Data);
-            process.OutputDataReceived += (_, e) => output.AppendLine(e.Data);
+            if (Style.Mode == CliMode.Plain)
+            {
+                process.ErrorDataReceived += (_, e) => { output.AppendLine(e.Data); Console.WriteLine(e.Data); };
+                process.OutputDataReceived += (_, e) => { output.AppendLine(e.Data); Console.WriteLine(e.Data); };
+            }
+            else
+            {
+                process.ErrorDataReceived += (_, e) => output.AppendLine(e.Data);
+                process.OutputDataReceived += (_, e) => output.AppendLine(e.Data);
+            }
 
             process.Start();
             process.BeginOutputReadLine();
@@ -105,7 +150,14 @@ public static class Cli
 
             if (process.ExitCode != 0)
             {
-                throw new Exception($"{executable} exited with code {process.ExitCode}\n\nCommand output:\n{output.ToString().TrimEnd()}");
+                if (Style.Mode == CliMode.Plain)
+                {
+                    throw new Exception($"{executable} exited with code {process.ExitCode}");
+                }
+                else
+                {
+                    throw new Exception($"{executable} exited with code {process.ExitCode}\n\nCommand output:\n{output.ToString().TrimEnd()}");
+                }
             }
 
             return output.ToString();
