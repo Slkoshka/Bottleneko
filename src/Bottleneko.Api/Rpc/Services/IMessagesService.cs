@@ -17,6 +17,6 @@ namespace Bottleneko.Api.Rpc.Services
     {
         Task<SubscriptionId> SubscribeAsync(IRpcContext context, ChatMessageFilter filter);
         void Unsubscribe(IRpcContext context, SubscriptionId subscriptionId);
-        Task SendTextAsync(IRpcContext context, long chatId, long connectionId, string text, long? replyToMessageId);
+        Task SendTextAsync(IRpcContext context, long connectionId, long chatId, string text, long? replyToMessageId);
     }
 }
