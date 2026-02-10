@@ -10,6 +10,9 @@
     ".": "./index.ts",
     "./runtime": "./runtime.ts",
     "./log": "./log.ts",
-    "./messages": "./messages.ts"
+    "./messages": "./messages.ts",
+    "./connections": "./connections.ts",
+    "./chatters": "./chatters.ts",
+    "./script": "./script.ts"
   }
 }
