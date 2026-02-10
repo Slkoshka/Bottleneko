@@ -7,6 +7,7 @@ namespace Bottleneko.Actors;
 
 public abstract class SubscriptionActor(IServiceProvider services, IActorRef connection, SubscriptionId subscriptionId) : NekoActor(services), IWithTimers
 {
+    record InitialSend : SingletonMessage<InitialSend>;
     record SendNewMessages : SingletonMessage<SendNewMessages>;
     record SendMessagesFinished : SingletonMessage<SendMessagesFinished>;
 
@@ -17,12 +18,21 @@ public abstract class SubscriptionActor(IServiceProvider services, IActorRef con
 
     public override Task InitAsync(IActorRef self)
     {
-        self.Tell(SendNewMessages.Instance);
+        self.Tell(InitialSend.Instance);
 
         return Task.CompletedTask;
     }
 
+    protected abstract IAsyncEnumerable<Letter[]> InitialMessagesAsync();
     protected abstract IAsyncEnumerable<Letter[]> GetNewMessagesAsync();
+
+    private async Task SendInitialMessagesAsync()
+    {
+        await foreach (var mail in InitialMessagesAsync())
+        {
+            connection.Tell(new RpcMessages.SendPacket(new MailPacket(subscriptionId, mail)));
+        }
+    }
 
     private async Task SendMessagesAsync()
     {
@@ -41,6 +51,12 @@ public abstract class SubscriptionActor(IServiceProvider services, IActorRef con
     {
         switch (message)
         {
+            case InitialSend:
+                _hasPendingMessages = false;
+                _isSendingMessages = true;
+                _ = SendInitialMessagesAsync().PipeTo(Self, Self, () => SendMessagesFinished.Instance);
+                break;
+
             case SendNewMessages:
                 if (_isSendingMessages)
                 {
@@ -49,6 +65,7 @@ public abstract class SubscriptionActor(IServiceProvider services, IActorRef con
                 else
                 {
                     _hasPendingMessages = false;
+                    _isSendingMessages = true;
                     _ = SendMessagesAsync().PipeTo(Self, Self, () => SendMessagesFinished.Instance);
                 }
                 break;

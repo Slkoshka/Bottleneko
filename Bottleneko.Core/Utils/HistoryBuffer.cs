@@ -52,6 +52,12 @@ public abstract class HistoryBuffer<TItem, TFilter>(int capacity)
         return false;
     }
 
+    /// <summary>
+    /// Return last N messages (N is the size of target). target[^1] is the latest message
+    /// </summary>
+    /// <param name="target">Target buffer</param>
+    /// <param name="filter">Do not return messages that do not pass this filter</param>
+    /// <returns>Number of written messages</returns>
     public int GetLast(Memory<TItem> target, TFilter filter)
     {
         var written = 0;
@@ -71,6 +77,13 @@ public abstract class HistoryBuffer<TItem, TFilter>(int capacity)
         return written;
     }
 
+    /// <summary>
+    /// Return N new messages (N is the size of target). target[0] is the oldest message
+    /// </summary>
+    /// <param name="id">Only return messages newer than this ID. If it is null or does not exist in the internal buffer, this function will return all messages</param>
+    /// <param name="target">Target buffer</param>
+    /// <param name="filter">Do not return messages that do not pass this filter</param>
+    /// <returns>Number of written messages</returns>
     public int GetSince(string? id, Memory<TItem> target, TFilter filter)
     {
         var written = 0;

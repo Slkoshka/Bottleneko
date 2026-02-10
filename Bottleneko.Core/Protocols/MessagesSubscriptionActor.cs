@@ -11,7 +11,6 @@ namespace Bottleneko.Protocols;
 
 public class MessagesSubscriptionActor(IServiceProvider services, AkkaService akka, IActorRef connection, ChatMessageFilter filter, SubscriptionId subscriptionId, bool includeHistory) : SubscriptionActor(services, connection, subscriptionId)
 {
-    private bool _isInitialSend = includeHistory;
     private long? _lastMessageId;
 
     public override async Task InitAsync(IActorRef self)
@@ -19,6 +18,39 @@ public class MessagesSubscriptionActor(IServiceProvider services, AkkaService ak
         _ = await akka.AskAsync(new EventBusMessages.Subscribe(self, "internal/connection/message_received").ToEventBus().WithReply<object>());
 
         await base.InitAsync(self);
+    }
+
+    protected override async  IAsyncEnumerable<Letter[]> InitialMessagesAsync()
+    {
+        await using var db = NekoDbContext.Get();
+
+        var newMessages = await db.ChatMessages
+            .OrderByDescending(m => m.Id)
+            .Where(m =>
+                (!_lastMessageId.HasValue || m.Id > _lastMessageId.Value) &&
+                (filter.Protocol == null || m.Connection.Protocol == filter.Protocol.Value) &&
+                (filter.ConnectionId == null || m.ConnectionId == long.Parse(filter.ConnectionId))
+            )
+            .Take(100)
+            .ToArrayAsync();
+        
+        if (includeHistory)
+        {
+            if (newMessages.Length > 0)
+            {
+                yield return newMessages.Select(msg => new ChatMessageLetter(msg.ToDto())).Cast<Letter>().ToArray();
+                _lastMessageId = newMessages[0].Id;
+            }
+
+            yield return [];
+        }
+        else
+        {
+            if (newMessages.Length > 0)
+            {
+                _lastMessageId = newMessages[0].Id;
+            }
+        }
     }
 
     protected override async IAsyncEnumerable<Letter[]> GetNewMessagesAsync()
@@ -39,12 +71,6 @@ public class MessagesSubscriptionActor(IServiceProvider services, AkkaService ak
         {
             yield return newMessages.Select(msg => new ChatMessageLetter(msg.ToDto())).Cast<Letter>().ToArray();
             _lastMessageId = newMessages[0].Id;
-        }
-
-        if (_isInitialSend)
-        {
-            yield return [];
-            _isInitialSend = false;
         }
     }
 
