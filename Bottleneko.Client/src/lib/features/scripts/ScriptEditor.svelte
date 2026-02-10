@@ -7,11 +7,9 @@
 
     const props: Props = $props();
 
-    const formState = $derived(
-        new FormState(EditedScriptSchema, props.script, async (data) => {
-            await props.onsaved($state.snapshot(data));
-        }),
-    );
+    const formState = new FormState(EditedScriptSchema, props.script, async (data) => {
+        await props.onsaved($state.snapshot(data));
+    });
 </script>
 
 <Form
