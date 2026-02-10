@@ -52,7 +52,6 @@
     {#key page.params.connectionTab}
         <TabView
             loading={isLoading}
-            fill-screen
             ontabchanged={(tab) =>
                 goto(
                     resolve('/connections/[connectionId]/[connectionTab=connectionTab]', {

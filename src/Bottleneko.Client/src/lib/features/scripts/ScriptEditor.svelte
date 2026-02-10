@@ -46,6 +46,7 @@
             bind:value={formState.data.description}
             invalid={!!formState.validationErrors.description}
             disabled={formState.isLoading}
+            style="resize: none"
         />
         <FormFeedback valid={!formState.validationErrors.description}>
             {formState.validationErrors.description}
