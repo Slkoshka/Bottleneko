@@ -6,7 +6,7 @@ using Bottleneko.Logging;
 using Bottleneko.Api.Rpc;
 using Bottleneko.Api;
 
-namespace Bottleneko.CodeGenerator;
+namespace Bottleneko.BindingsGenerator;
 
 record TypeDefinition(string Name);
 record BuiltinTypeDefinition(string Name) : TypeDefinition(Name);

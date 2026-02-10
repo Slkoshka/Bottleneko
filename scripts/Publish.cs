@@ -1,5 +1,5 @@
 #!/usr/bin/dotnet run
-#:project ../Bottleneko.Helpers/Bottleneko.Helpers.csproj
+#:project ../src/Bottleneko.Helpers/Bottleneko.Helpers.csproj
 #:package System.CommandLine@2.*-*
 #:property PublishAot=false
 
@@ -74,14 +74,14 @@ rootCommand.SetAction(async parseResult =>
     Step("Cleaning up files from previous runs", () =>
     {
         Delete(output, recursive: true);
-        Delete("./Bottleneko.Client/build", recursive: true);
+        Delete("./src/Bottleneko.Client/build", recursive: true);
     });
 
     Step("Bottleneko.Client", () =>
     {
         Directory.CreateDirectory(output);
-        Run("npm", ["install"], workingDir: "./Bottleneko.Client", "Installing dependencies");
-        Run("npm", ["run", "build"], workingDir: "./Bottleneko.Client", "Building Bottleneko.Client");
+        Run("npm", ["install"], workingDir: "./src/Bottleneko.Client", "Installing dependencies");
+        Run("npm", ["run", "build"], workingDir: "./src/Bottleneko.Client", "Building Bottleneko.Client");
     });
 
     foreach (var platform in platforms.Where(platform => targetPlatform == "all" || (targetPlatform == "current" && platform.Check()) || targetPlatform == platform.Id))
@@ -91,12 +91,12 @@ rootCommand.SetAction(async parseResult =>
             var platformOutput = targetPlatform == "all" ? Path.Combine(output, platform.Id) : output;
 
             Directory.CreateDirectory(platformOutput);
-            Run("dotnet", ["publish", "./Bottleneko.Server", "-c", "Release", "-r", platform.Id, $"/p:VersionSuffix={versionSuffix}", "/p:WarningLevel=0", "--self-contained", "-o", platformOutput], description: $"Building Bottleneko.Server");
+            Run("dotnet", ["publish", "./src/Bottleneko.Server", "-c", "Release", "-r", platform.Id, $"/p:VersionSuffix={versionSuffix}", "/p:WarningLevel=0", "--self-contained", "-o", platformOutput], description: $"Building Bottleneko.Server");
 
             Directory.CreateDirectory(Path.Combine(platformOutput, "wwwroot"));
             Step($"Copying Bottleneko.Client files", () =>
             {
-                CopyFiles("./Bottleneko.Client/build", Path.Combine(platformOutput, "wwwroot"), "*", recursive: true);
+                CopyFiles("./src/Bottleneko.Client/build", Path.Combine(platformOutput, "wwwroot"), "*", recursive: true);
             });
 
             await Step("Getting Deno", async() =>

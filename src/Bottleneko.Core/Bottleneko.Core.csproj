@@ -7,14 +7,6 @@
   <Import Project="$(MSBuildProjectDirectory)\..\Bottleneko.Common.props" />
 
   <ItemGroup>
-    <None Remove="Scripting\Js\API\**\*.js" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Scripting\Js\API\**\*.js" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Update="script_runtime.zip" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
@@ -43,8 +35,8 @@
     <ProjectReference Include="..\Bottleneko.Common\Bottleneko.Common.csproj" />
     <ProjectReference Include="..\Bottleneko.Database\Bottleneko.Database.csproj" />
     <ProjectReference Include="..\Bottleneko.Helpers\Bottleneko.Helpers.csproj" />
-    <ProjectReference Include="..\External\TwitchLib\TwitchLib.EventSub.Websockets\TwitchLib.EventSub.Websockets\TwitchLib.EventSub.Websockets.csproj" />
-    <ProjectReference Include="..\External\TwitchLib\TwitchLib.Api\TwitchLib.Api\TwitchLib.Api.csproj" />
+    <ProjectReference Include="..\..\External\TwitchLib\TwitchLib.EventSub.Websockets\TwitchLib.EventSub.Websockets\TwitchLib.EventSub.Websockets.csproj" />
+    <ProjectReference Include="..\..\External\TwitchLib\TwitchLib.Api\TwitchLib.Api\TwitchLib.Api.csproj" />
   </ItemGroup>
 
 </Project>

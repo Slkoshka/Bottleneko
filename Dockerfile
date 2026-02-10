@@ -4,7 +4,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 
 ARG VERSION_SUFFIX="-local"
 
-WORKDIR /src
+WORKDIR /build
 
 # Install dependencies
 ARG DEBIAN_FRONTEND=noninteractive

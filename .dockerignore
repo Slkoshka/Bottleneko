@@ -1,9 +1,9 @@
 .git
 publish
-*/bin
-*/obj
-*/dist
-*/node_modules
+src/*/bin
+src/*/obj
+src/*/dist
+src/*/node_modules
 **/bottleneko.db*
 .vs
 **/Dockerfile
