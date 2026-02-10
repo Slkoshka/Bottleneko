@@ -25,6 +25,7 @@ public class DiscordChatterEntity
     public ConnectionEntity Connection { get; set; } = null!;
 
     public required ulong DiscordUserId { get; set; }
+    public required string? Discriminator { get; set; }
 }
 
 [Index(nameof(ConnectionId), nameof(DiscordAttachmentId), IsUnique = true)]

@@ -60,7 +60,9 @@ export interface AuthenticatePacket {
 }
 
 export type RpcRequest
-    = ConnectionsListRequest
+    = ChattersListRequest
+        | ChattersGetRequest
+        | ConnectionsListRequest
         | ConnectionsGetRequest
         | ConnectionsUpdateRequest
         | ConnectionsDeleteRequest
@@ -80,7 +82,9 @@ export type RpcRequest
         | ScriptGetNameRequest;
 
 export type RpcResponse
-    = ConnectionsListResponse
+    = ChattersListResponse
+        | ChattersGetResponse
+        | ConnectionsListResponse
         | ConnectionsGetResponse
         | ConnectionsUpdateResponse
         | ConnectionsDeleteResponse
@@ -146,11 +150,13 @@ export type RpcService
     = 'Logging'
         | 'Messages'
         | 'Connections'
+        | 'Chatters'
         | 'Script';
 export const RpcServiceValues : RpcService[] = [
     'Logging',
     'Messages',
     'Connections',
+    'Chatters',
     'Script',
 ];
 
@@ -180,6 +186,25 @@ export interface ChatMessageLetter {
 export interface ChatMessageFilter {
     protocol: Protocol | null;
     connectionId: string | null;
+}
+
+export interface ChattersListRequest {
+    $type: 'Chatters/List';
+}
+
+export interface ChattersListResponse {
+    $type: 'Chatters/List';
+    result: ChatterDto[];
+}
+
+export interface ChattersGetRequest {
+    $type: 'Chatters/Get';
+    id: string;
+}
+
+export interface ChattersGetResponse {
+    $type: 'Chatters/Get';
+    result: ChatterDto;
 }
 
 export interface ConnectionTestResult {
@@ -828,6 +853,7 @@ export interface DiscordChatMessageDto {
     timestamp: string;
     chat: ChatSummaryDto;
     author: ChatterSummaryDto;
+    customAuthorName: string | null;
     textContent: string | null;
     attachments: AttachmentDto[];
     isSpecial: boolean;
@@ -842,6 +868,7 @@ export interface TelegramChatMessageDto {
     timestamp: string;
     chat: ChatSummaryDto;
     author: ChatterSummaryDto;
+    customAuthorName: string | null;
     textContent: string | null;
     attachments: AttachmentDto[];
     isSpecial: boolean;
@@ -863,6 +890,7 @@ export interface WhisperTwitchChatMessageDto {
     timestamp: string;
     chat: ChatSummaryDto;
     author: ChatterSummaryDto;
+    customAuthorName: string | null;
     textContent: string | null;
     attachments: AttachmentDto[];
     isSpecial: boolean;
@@ -887,6 +915,7 @@ export interface ChannelTwitchChatMessageDto {
     timestamp: string;
     chat: ChatSummaryDto;
     author: ChatterSummaryDto;
+    customAuthorName: string | null;
     textContent: string | null;
     attachments: AttachmentDto[];
     isSpecial: boolean;
@@ -896,7 +925,9 @@ export interface ChannelTwitchChatMessageDto {
 
 export interface ChatterSummaryDto {
     id: string;
-    name: string;
+    displayName: string;
+    username: string;
+    isBot: boolean;
 }
 
 export type ChatterDto
@@ -908,8 +939,6 @@ export interface DiscordChatterDto {
     $type: 'Discord';
     discordId: string;
     discriminator: string | null;
-    globalName: string;
-    localName: string;
     id: string;
     displayName: string;
     username: string;

@@ -25,7 +25,14 @@ public static class DbConversionExtensions
                     ConnectionId = msg.ConnectionId,
                     Timestamp = DateTime.SpecifyKind(msg.RemoteTimestamp, DateTimeKind.Utc),
                     Chat = new ChatSummaryDto(msg.Chat.Id, msg.Chat.DisplayName),
-                    Author = new ChatterSummaryDto(msg.Author.Id.ToString(), msg.Author.DisplayName),
+                    Author = new ChatterSummaryDto
+                    {
+                        Id = msg.Author.Id,
+                        DisplayName = msg.Author.DisplayName,
+                        Username = msg.Author.Username,
+                        IsBot = msg.Author.IsBot,
+                    },
+                    CustomAuthorName = msg.CustomAuthorName,
                     TextContent = msg.TextContent,
                     Attachments = [.. msg.Attachments.Select(attachment => new DiscordAttachmentDto
                     {
@@ -58,7 +65,14 @@ public static class DbConversionExtensions
                     ConnectionId = msg.ConnectionId,
                     Timestamp = DateTime.SpecifyKind(msg.RemoteTimestamp, DateTimeKind.Utc),
                     Chat = new ChatSummaryDto(msg.Chat.Id, msg.Chat.DisplayName),
-                    Author = new ChatterSummaryDto(msg.Author.Id.ToString(), msg.Author.DisplayName),
+                    Author = new ChatterSummaryDto
+                    {
+                        Id = msg.Author.Id,
+                        DisplayName = msg.Author.DisplayName,
+                        Username = msg.Author.Username,
+                        IsBot = msg.Author.IsBot,
+                    },
+                    CustomAuthorName = msg.CustomAuthorName,
                     TextContent = msg.TextContent,
                     Attachments = [.. msg.Attachments.Select(attachment => new TelegramAttachmentDto
                     {
@@ -78,7 +92,14 @@ public static class DbConversionExtensions
                     ConnectionId = msg.ConnectionId,
                     Timestamp = DateTime.SpecifyKind(msg.RemoteTimestamp, DateTimeKind.Utc),
                     Chat = new ChatSummaryDto(msg.Chat.Id, msg.Chat.DisplayName),
-                    Author = new ChatterSummaryDto(msg.Author.Id.ToString(), msg.Author.DisplayName),
+                    Author = new ChatterSummaryDto
+                    {
+                        Id = msg.Author.Id,
+                        DisplayName = msg.Author.DisplayName,
+                        Username = msg.Author.Username,
+                        IsBot = msg.Author.IsBot,
+                    },
+                    CustomAuthorName = msg.CustomAuthorName,
                     TextContent = msg.TextContent,
                     Attachments = [.. msg.Attachments.Select(attachment => new TwitchAttachmentDto
                     {
@@ -100,7 +121,14 @@ public static class DbConversionExtensions
                     ConnectionId = msg.ConnectionId,
                     Timestamp = DateTime.SpecifyKind(msg.RemoteTimestamp, DateTimeKind.Utc),
                     Chat = new ChatSummaryDto(msg.Chat.Id, msg.Chat.DisplayName),
-                    Author = new ChatterSummaryDto(msg.Author.Id.ToString(), msg.Author.DisplayName),
+                    Author = new ChatterSummaryDto
+                    {
+                        Id = msg.Author.Id,
+                        DisplayName = msg.Author.DisplayName,
+                        Username = msg.Author.Username,
+                        IsBot = msg.Author.IsBot,
+                    },
+                    CustomAuthorName = msg.CustomAuthorName,
                     TextContent = msg.TextContent,
                     Attachments = [.. msg.Attachments.Select(attachment => new TwitchAttachmentDto
                     {
@@ -122,6 +150,51 @@ public static class DbConversionExtensions
                     IsBroadcaster = twitch.IsBroadcaster!.Value,
                     IsVip = twitch.IsVip!.Value,
                     IsStaff = twitch.IsStaff!.Value,
+                };
+
+            default:
+                throw new NotImplementedException();
+        }
+    }
+
+    public static ChatterDto ToDto(this ChatterEntity chatter)
+    {
+        switch (chatter)
+        {
+            case { Discord: { } discord }:
+                return new DiscordChatterDto()
+                {
+                    Id = chatter.Id,
+                    DisplayName = chatter.DisplayName,
+                    Username = chatter.Username,
+                    IsBot = chatter.IsBot,
+                    DiscordId = discord.DiscordUserId,
+                    Discriminator = discord.Discriminator,
+                };
+
+            case { Telegram: { } telegram }:
+                return new TelegramChatterDto()
+                {
+                    Id = chatter.Id,
+                    DisplayName = chatter.DisplayName,
+                    Username = chatter.Username,
+                    IsBot = chatter.IsBot,
+                    TelegramId = telegram.TelegramId,
+                    FirstName = telegram.FirstName,
+                    LastName = telegram.LastName,
+                    LanguageCode = telegram.LanguageCode,
+                    HasPremium = telegram.HasPremium,
+                    AddedToAttachmentMenu = telegram.AddedToAttachmentMenu,
+                };
+
+            case { Twitch: { } twitch }:
+                return new TwitchChatterDto()
+                {
+                    Id = chatter.Id,
+                    DisplayName = chatter.DisplayName,
+                    Username = chatter.Username,
+                    IsBot = chatter.IsBot,
+                    TwitchId = twitch.TwitchId,
                 };
 
             default:

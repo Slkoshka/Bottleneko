@@ -149,6 +149,7 @@ class DiscordConnection(StaticConnectionCreationData<DiscordProtocolConfiguratio
         {
             ConnectionId = ConnectionId,
             DiscordUserId = user.Id,
+            Discriminator = user.Discriminator == "0000" ? null : user.Discriminator,
         };
         var chatter = new ChatterEntity()
         {
@@ -193,6 +194,7 @@ class DiscordConnection(StaticConnectionCreationData<DiscordProtocolConfiguratio
             Chat = chat,
             ChatId = chat.Id,
             Author = author,
+            CustomAuthorName = message.Author is IGuildUser guildUser ? guildUser.DisplayName : null,
             AuthorId = author.Id,
             TextContent = string.IsNullOrEmpty(message.Content) ? null : message.Content,
             IsSpecial = message.Type is not MessageType.Default and not MessageType.Reply,

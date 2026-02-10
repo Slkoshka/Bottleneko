@@ -123,6 +123,11 @@ class TelegramConnection(StaticConnectionCreationData<TelegramProtocolConfigurat
         {
             ConnectionId = ConnectionId,
             TelegramId = message.From.Id,
+            FirstName = message.From.FirstName,
+            LastName = message.From.LastName,
+            LanguageCode = message.From.LanguageCode,
+            HasPremium = message.From.IsPremium,
+            AddedToAttachmentMenu = message.From.AddedToAttachmentMenu,
         };
         var author = new ChatterEntity()
         {
@@ -160,6 +165,7 @@ class TelegramConnection(StaticConnectionCreationData<TelegramProtocolConfigurat
             Chat = chat,
             ChatId = chat.Id,
             Author = author,
+            CustomAuthorName = null,
             AuthorId = author.Id,
             TextContent = message.Text ?? message.Caption,
             IsSpecial = message.IsServiceMessage || message.ForwardFromMessageId is not null,

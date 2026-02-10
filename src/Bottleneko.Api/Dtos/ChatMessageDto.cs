@@ -13,6 +13,7 @@ public abstract record ChatMessageDto
     public required DateTime Timestamp { get; init; }
     public required ChatSummaryDto Chat { get; init; }
     public required ChatterSummaryDto Author { get; init; }
+    public required string? CustomAuthorName { get; init; }
     public required string? TextContent { get; init; }
     public required AttachmentDto[] Attachments { get; init; }
     public required bool IsSpecial { get; init; }

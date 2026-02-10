@@ -2,12 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace Bottleneko.Api.Dtos;
 
-public record ChatterSummaryDto(string Id, string Name);
-
-[JsonDerivedType(typeof(DiscordChatterDto), "Discord")]
-[JsonDerivedType(typeof(TelegramChatterDto), "Telegram")]
-[JsonDerivedType(typeof(TwitchChatterDto), "Twitch")]
-public abstract record ChatterDto
+public record ChatterSummaryDto
 {
     public required long Id { get; init; }
     public required string DisplayName { get; init; }
@@ -15,12 +10,17 @@ public abstract record ChatterDto
     public required bool IsBot { get; init; }
 }
 
+[JsonDerivedType(typeof(DiscordChatterDto), "Discord")]
+[JsonDerivedType(typeof(TelegramChatterDto), "Telegram")]
+[JsonDerivedType(typeof(TwitchChatterDto), "Twitch")]
+public abstract record ChatterDto : ChatterSummaryDto
+{
+}
+
 public record DiscordChatterDto : ChatterDto
 {
     public required ulong DiscordId { get; init; }
     public required string? Discriminator { get; init; }
-    public required string GlobalName { get; init; }
-    public required string LocalName { get; init; }
 }
 
 public record TelegramChatterDto : ChatterDto

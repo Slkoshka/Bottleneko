@@ -8,7 +8,6 @@ using Bottleneko.Messages;
 using Bottleneko.Rpc;
 using Bottleneko.Services;
 using Bottleneko.Protocols;
-using Bottleneko.Api.Rpc;
 using Bottleneko.Rpc.Services;
 using Bottleneko.Rpc.Services.Scripts;
 
@@ -34,6 +33,7 @@ class DenoScriptActor(IServiceProvider services, AkkaService akka, DenoScriptEng
         _services.Register(new ScriptRpcService(this));
         _services.Register(new MessagesRpcService(akka, self));
         _services.Register(new ConnectionsRpcService(Services, Logger, akka));
+        _services.Register(new ChattersRpcService());
     }
 
     private async Task DeployAsync()

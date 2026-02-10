@@ -24,6 +24,11 @@ public class TelegramChatterEntity
     public ConnectionEntity Connection { get; set; } = null!;
 
     public required long TelegramId { get; set; }
+    public required string FirstName { get; init; } = "";
+    public required string? LastName { get; init; } = null;
+    public required string? LanguageCode { get; init; } = null;
+    public required bool HasPremium { get; init; } = false;
+    public required bool AddedToAttachmentMenu { get; init; } = false;
 }
 
 public enum TelegramChatMessageAttachmentType

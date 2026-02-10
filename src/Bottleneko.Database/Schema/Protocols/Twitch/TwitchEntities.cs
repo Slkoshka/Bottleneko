@@ -26,7 +26,6 @@ public class TwitchChatterEntity
     public ConnectionEntity Connection { get; set; } = null!;
 
     public required string TwitchId { get; set; }
-    public required string TwitchName { get; set; }
 }
 
 [Index(nameof(TwitchChatMessageId), IsUnique = false)]

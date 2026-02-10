@@ -314,9 +314,7 @@ class TwitchConnection(StaticConnectionCreationData<TwitchProtocolConfiguration>
         {
             ConnectionId = ConnectionId,
             TwitchId = message.BroadcasterUserId,
-            TwitchName = message.BroadcasterUserName,
         };
-        twitchBroadcaster.TwitchName = message.BroadcasterUserName;
         var broadcaster = new ChatterEntity()
         {
             Id = twitchBroadcaster.ChatterId,
@@ -340,9 +338,7 @@ class TwitchConnection(StaticConnectionCreationData<TwitchProtocolConfiguration>
         {
             ConnectionId = ConnectionId,
             TwitchId = message.ChatterUserId,
-            TwitchName = message.ChatterUserName,
         };
-        twitchAuthor.TwitchName = message.ChatterUserName;
         var author = new ChatterEntity()
         {
             Id = twitchAuthor.ChatterId,
@@ -394,6 +390,7 @@ class TwitchConnection(StaticConnectionCreationData<TwitchProtocolConfiguration>
             RemoteTimestamp = ((WebsocketEventSubMetadata)args.Metadata).MessageTimestamp,
             Chat = chat,
             Author = author,
+            CustomAuthorName = null,
             TextContent = message.Message.Text,
             IsSpecial = false,
             IsDirect = message.Message.Fragments.Any(fragment => fragment.Type.Equals("mention", StringComparison.OrdinalIgnoreCase) && fragment.Mention?.UserId == _me.Id) || message.Reply?.ParentUserId == _me.Id,
@@ -461,9 +458,7 @@ class TwitchConnection(StaticConnectionCreationData<TwitchProtocolConfiguration>
         {
             ConnectionId = ConnectionId,
             TwitchId = message.FromUserId,
-            TwitchName = message.FromUserName,
         };
-        twitchAuthor.TwitchName = message.FromUserName;
         var author = new ChatterEntity()
         {
             Id = twitchAuthor.ChatterId,
@@ -511,6 +506,7 @@ class TwitchConnection(StaticConnectionCreationData<TwitchProtocolConfiguration>
             ChatId = chat.Id,
             Author = author,
             AuthorId = author.Id,
+            CustomAuthorName = null,
             TextContent = message.Whisper.Text,
             IsSpecial = false,
             IsDirect = true,

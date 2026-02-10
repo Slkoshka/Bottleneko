@@ -28,6 +28,7 @@ class ApiCat(IServiceProvider services, INekoLogger logger, AkkaService akka) : 
         _services.Register(new LoggingRpcService(Logger, self));
         _services.Register(new MessagesRpcService(akka, self));
         _services.Register(new ConnectionsRpcService(Services, Logger, akka));
+        _services.Register(new ChattersRpcService());
     }
 
     public override Task InitAsync(IActorRef self)
@@ -59,13 +60,13 @@ class ApiCat(IServiceProvider services, INekoLogger logger, AkkaService akka) : 
 
     private static async Task<UserEntity?> GetUserAsync(ClaimsPrincipal? claims)
     {
-        if (claims is null)
+        if (claims is null || claims.Identity?.Name is null)
         {
             return null;
         }
 
         using var db =  NekoDbContext.Get();
-        return await db.Users.SingleOrDefaultAsync(u => u.Id.ToString() == claims.Identity!.Name && !u.IsDeleted);
+        return await db.Users.SingleOrDefaultAsync(u => u.Id.ToString() == claims.Identity.Name && !u.IsDeleted);
     }
 
     private async Task<UserEntity?> AuthenticateUserAsync(string accessToken)

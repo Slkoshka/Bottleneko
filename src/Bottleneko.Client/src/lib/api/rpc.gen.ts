@@ -6,6 +6,10 @@ import type * as bottleneko from './bottleneko.gen';
 export type ResultType<T, Default> = 'result' extends keyof T ? T['result'] : Default;
 
 export default abstract class AbstractRpc {
+    chatters = {
+        async list(args: Omit<bottleneko.ChattersListRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.ChattersListResponse>({ $type: 'Chatters/List', ...args }); },
+        async get(args: Omit<bottleneko.ChattersGetRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.ChattersGetResponse>({ $type: 'Chatters/Get', ...args }); },
+    };
     connections = {
         async list(args: Omit<bottleneko.ConnectionsListRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.ConnectionsListResponse>({ $type: 'Connections/List', ...args }); },
         async get(args: Omit<bottleneko.ConnectionsGetRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.ConnectionsGetResponse>({ $type: 'Connections/Get', ...args }); },
@@ -35,6 +39,7 @@ export default abstract class AbstractRpc {
     #subscriptions = new Map<string, (letter: bottleneko.Letter) => Promise<void> | void>();
 
     constructor() {
+        this.chatters = Object.fromEntries(Object.entries(this.chatters).map(([name, method]) => [name, method.bind(this)])) as typeof this.chatters;
         this.connections = Object.fromEntries(Object.entries(this.connections).map(([name, method]) => [name, method.bind(this)])) as typeof this.connections;
         this.logging = Object.fromEntries(Object.entries(this.logging).map(([name, method]) => [name, method.bind(this)])) as typeof this.logging;
         this.messages = Object.fromEntries(Object.entries(this.messages).map(([name, method]) => [name, method.bind(this)])) as typeof this.messages;

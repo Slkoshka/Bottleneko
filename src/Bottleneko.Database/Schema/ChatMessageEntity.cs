@@ -21,6 +21,7 @@ public class ChatMessageEntity
     public long AuthorId { get; set; }
     [AutoInclude]
     public ChatterEntity Author { get; set; } = null!;
+    public required string? CustomAuthorName { get; set; } = null;
     public required string? TextContent { get; set; }
     [AutoInclude]
     public ICollection<ChatMessageAttachmentEntity> Attachments { get; set; } = [];

@@ -35,11 +35,11 @@
                                 {#if letter.content.isDirect}
                                     <span
                                         ><strong>Direct message</strong> from
-                                        <strong>{letter.content.author.name}</strong></span
+                                        <strong>{letter.content.author.displayName}</strong></span
                                     >
                                 {:else}
                                     <span
-                                        ><strong>{letter.content.author.name}</strong> in
+                                        ><strong>{letter.content.author.displayName}</strong> in
                                         <strong>{letter.content.chat.displayName}</strong></span
                                     >
                                 {/if}

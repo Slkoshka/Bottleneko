@@ -1,16 +1,19 @@
-import type { ConnectionDto, DiscordConnectionDto, ExtendedConnectionStatus, TelegramConnectionDto } from './internal/api/bottleneko.gen.ts';
+import type { ConnectionDto, DiscordConnectionDto, ExtendedConnectionStatus, Protocol, TelegramConnectionDto } from './internal/api/bottleneko.gen.ts';
 import type NekoRpc from './internal/rpc/index.ts';
 import runtime, { type NekoRuntime } from './runtime.ts';
 
 export abstract class Connection {
     #rpc: NekoRpc;
+    protocol: Protocol;
     id: string;
     name: string;
     autoStart: boolean;
     status: ExtendedConnectionStatus;
 
-    constructor(rpc: NekoRpc, connection: ConnectionDto) {
+    constructor(rpc: NekoRpc, protocol: Protocol, connection: ConnectionDto) {
         this.#rpc = rpc;
+
+        this.protocol = protocol;
         this.id = connection.id;
         this.name = connection.name;
         this.autoStart = connection.autoStart;
@@ -37,19 +40,19 @@ export abstract class Connection {
 
 export class DiscordConnection extends Connection {
     constructor(rpc: NekoRpc, connection: DiscordConnectionDto) {
-        super(rpc, connection);
+        super(rpc, 'Discord', connection);
     }
 }
 
 export class TelegramConnection extends Connection {
     constructor(rpc: NekoRpc, connection: TelegramConnectionDto) {
-        super(rpc, connection);
+        super(rpc, 'Telegram', connection);
     }
 }
 
 export class TwitchConnection extends Connection {
     constructor(rpc: NekoRpc, connection: ConnectionDto) {
-        super(rpc, connection);
+        super(rpc, 'Twitch', connection);
     }
 }
 

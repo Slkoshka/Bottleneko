@@ -1,5 +1,6 @@
+import { ChatterSummary } from "./chatters.ts";
 import connections from "./connections.ts";
-import type { AttachmentDto, ChannelTwitchChatMessageDto, ChatMessageDto, ChatMessageFilter, ChatMessageLetter, ChatSummaryDto, ChatterSummaryDto, DiscordChatMessageDto, TelegramChatMessageDto, TwitchChatBadge, WhisperTwitchChatMessageDto } from "./internal/api/bottleneko.gen.ts";
+import type { AttachmentDto, ChannelTwitchChatMessageDto, ChatMessageDto, ChatMessageFilter, ChatMessageLetter, ChatSummaryDto, DiscordChatMessageDto, Protocol, TelegramChatMessageDto, TwitchChatBadge, WhisperTwitchChatMessageDto } from "./internal/api/bottleneko.gen.ts";
 import type NekoRpc from "./internal/rpc/index.ts";
 import runtime, { type NekoRuntime } from './runtime.ts';
 
@@ -15,25 +16,27 @@ const makeListener = (rpc: NekoRpc, callback: (message: ChatMessage) => Promise<
 export abstract class ChatMessage {
     #rpc: NekoRpc;
 
+    protocol: Protocol;
     id: string;
     connectionId: string;
     timestamp: string;
     chat: ChatSummaryDto;
-    author: ChatterSummaryDto;
+    author: ChatterSummary;
     text: string | null;
     attachments: AttachmentDto[];
     isSpecial: boolean;
     isDirect: boolean;
     isMissed: boolean;
 
-    constructor(rpc: NekoRpc, message: ChatMessageDto) {
+    constructor(rpc: NekoRpc, protocol: Protocol, message: ChatMessageDto) {
         this.#rpc = rpc;
 
+        this.protocol = protocol;
         this.id = message.id;
         this.connectionId = message.connectionId;
         this.timestamp = message.timestamp;
         this.chat = message.chat;
-        this.author = message.author;
+        this.author = new ChatterSummary(message.author);
         this.text = message.textContent;
         this.attachments = message.attachments;
         this.isSpecial = message.isSpecial;
@@ -75,7 +78,7 @@ export class DiscordChatMessage extends ChatMessage {
     };
 
     constructor(rpc: NekoRpc, message: DiscordChatMessageDto) {
-        super(rpc, message);
+        super(rpc, 'Discord', message);
 
         this.discordId = message.discordId;
         this.isPinned = message.isPinned;
@@ -90,7 +93,7 @@ export class DiscordChatMessage extends ChatMessage {
 
 export class TelegramChatMessage extends ChatMessage {
     constructor(rpc: NekoRpc, message: TelegramChatMessageDto) {
-        super(rpc, message);
+        super(rpc, 'Telegram', message);
     }
 }
 
@@ -98,7 +101,7 @@ export abstract class TwitchChatMessage extends ChatMessage {
     twitchId: string;
 
     constructor(rpc: NekoRpc, message: ChannelTwitchChatMessageDto | WhisperTwitchChatMessageDto) {
-        super(rpc, message);
+        super(rpc, 'Twitch', message);
 
         this.twitchId = message.twitchId;
     }
