@@ -96,11 +96,11 @@ public class Generator
 
             if (type is { IsEnum: true })
             {
-                destTypes.Add(type, new EnumDefinition(type.Name, Enum.GetNames(type)));
+                destTypes.Add(type, new EnumDefinition(type.Name, [.. Enum.GetNames(type).Order()]));
             }
             else if (type is { IsClass: true, IsAbstract: true, IsSealed: false, IsGenericType: false } && !type.IsAssignableTo(typeof(Attribute)) && type.GetCustomAttributes<JsonDerivedTypeAttribute>().ToArray() is { Length: > 0 } derivedTypes)
             {
-                destTypes.Add(type, new UnionDefinition(type.Name, [.. derivedTypes.Select(derived => new UnionSubTypeDefinition(derived.DerivedType, derived.TypeDiscriminator as string ?? throw new Exception("Invalid type discriminator")))]));
+                destTypes.Add(type, new UnionDefinition(type.Name, [.. derivedTypes.OrderBy(type => type.DerivedType.FullName).Select(derived => new UnionSubTypeDefinition(derived.DerivedType, derived.TypeDiscriminator as string ?? throw new Exception("Invalid type discriminator")))]));
             }
             else if (type is { IsClass: true, IsAbstract: false, IsGenericType: false } && !type.IsAssignableTo(typeof(Attribute)))
             {
@@ -109,22 +109,27 @@ public class Generator
                         .GetProperties(BindingFlags.Instance | BindingFlags.Public)
                         .Where(property => property is { CanRead: true, IsSpecialName: false } && property.GetCustomAttribute<HiddenAttribute>() is null)
                         .Select(property => ExtractField(property.Name, property.PropertyType, new NullabilityInfoContext().Create(property)))
+                        .OrderBy(property => property.Name)
                     ], []));
             }
             else if (type is { IsInterface: true, IsGenericType: false })
             {
                 if (type.GetCustomAttribute<RpcServiceAttribute>() is { } attr)
                 {
-                    foreach (var method in (type.GetMethod("GetMethods", BindingFlags.Public | BindingFlags.Static)?.Invoke(null, null) as RpcMethod[]) ?? [])
+                    var getMethods = type.GetMethod("GetMethods", BindingFlags.Public | BindingFlags.Static);
+                    if (getMethods is not null)
                     {
-                        if (!destRpcs.TryGetValue(method.Service, out var methodList))
+                        foreach (var method in (getMethods.Invoke(null, null) as RpcMethod[])!.OrderBy(method => method.MethodName))
                         {
-                            methodList = destRpcs[method.Service] = [];
+                            if (!destRpcs.TryGetValue(method.Service, out var methodList))
+                            {
+                                methodList = destRpcs[method.Service] = [];
+                            }
+                            methodList.Add((method.MethodName, method.RequestType.Name, method.ResponseType.Name));
                         }
-                        methodList.Add((method.MethodName, method.RequestType.Name, method.ResponseType.Name));
                     }
                 }
-                foreach (var subType in type.GetNestedTypes().Where(type => type.IsNestedPublic))
+                foreach (var subType in type.GetNestedTypes().Where(type => type.IsNestedPublic).OrderBy(type => type.FullName))
                 {
                     ProcessType(subType);
                 }
@@ -134,7 +139,7 @@ public class Generator
         foreach (var type in new[] {
                 typeof(Packet),
                 typeof(LogSeverity),
-            }.Select(type => type.Assembly).Distinct().SelectMany(assembly => assembly.GetTypes().Where(type => type.IsPublic)))
+            }.Select(type => type.Assembly).Distinct().SelectMany(assembly => assembly.GetTypes().Where(type => type.IsPublic).OrderBy(type => type.FullName)))
         {
             ProcessType(type);
         }

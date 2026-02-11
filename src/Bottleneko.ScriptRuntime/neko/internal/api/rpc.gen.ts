@@ -7,20 +7,20 @@ export type ResultType<T, Default> = 'result' extends keyof T ? T['result'] : De
 
 export default abstract class AbstractRpc {
     chatters = {
-        async list(args: Omit<bottleneko.ChattersListRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.ChattersListResponse>({ $type: 'Chatters/List', ...args }); },
         async get(args: Omit<bottleneko.ChattersGetRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.ChattersGetResponse>({ $type: 'Chatters/Get', ...args }); },
+        async list(args: Omit<bottleneko.ChattersListRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.ChattersListResponse>({ $type: 'Chatters/List', ...args }); },
     };
     connections = {
-        async list(args: Omit<bottleneko.ConnectionsListRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.ConnectionsListResponse>({ $type: 'Connections/List', ...args }); },
-        async get(args: Omit<bottleneko.ConnectionsGetRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.ConnectionsGetResponse>({ $type: 'Connections/Get', ...args }); },
-        async update(args: Omit<bottleneko.ConnectionsUpdateRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.ConnectionsUpdateResponse>({ $type: 'Connections/Update', ...args }); },
-        async delete(args: Omit<bottleneko.ConnectionsDeleteRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.ConnectionsDeleteResponse>({ $type: 'Connections/Delete', ...args }); },
         async add(args: Omit<bottleneko.ConnectionsAddRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.ConnectionsAddResponse>({ $type: 'Connections/Add', ...args }); },
+        async delete(args: Omit<bottleneko.ConnectionsDeleteRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.ConnectionsDeleteResponse>({ $type: 'Connections/Delete', ...args }); },
+        async get(args: Omit<bottleneko.ConnectionsGetRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.ConnectionsGetResponse>({ $type: 'Connections/Get', ...args }); },
         async getAttachmentUrl(args: Omit<bottleneko.ConnectionsGetAttachmentUrlRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.ConnectionsGetAttachmentUrlResponse>({ $type: 'Connections/GetAttachmentUrl', ...args }); },
-        async start(args: Omit<bottleneko.ConnectionsStartRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.ConnectionsStartResponse>({ $type: 'Connections/Start', ...args }); },
+        async list(args: Omit<bottleneko.ConnectionsListRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.ConnectionsListResponse>({ $type: 'Connections/List', ...args }); },
         async restart(args: Omit<bottleneko.ConnectionsRestartRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.ConnectionsRestartResponse>({ $type: 'Connections/Restart', ...args }); },
+        async start(args: Omit<bottleneko.ConnectionsStartRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.ConnectionsStartResponse>({ $type: 'Connections/Start', ...args }); },
         async stop(args: Omit<bottleneko.ConnectionsStopRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.ConnectionsStopResponse>({ $type: 'Connections/Stop', ...args }); },
         async test(args: Omit<bottleneko.ConnectionsTestRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.ConnectionsTestResponse>({ $type: 'Connections/Test', ...args }); },
+        async update(args: Omit<bottleneko.ConnectionsUpdateRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.ConnectionsUpdateResponse>({ $type: 'Connections/Update', ...args }); },
     };
     logging = {
         async log(args: Omit<bottleneko.LoggingLogRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.LoggingLogResponse>({ $type: 'Logging/Log', ...args }); },
@@ -28,9 +28,9 @@ export default abstract class AbstractRpc {
         async unsubscribe(args: Omit<bottleneko.LoggingUnsubscribeRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.LoggingUnsubscribeResponse>({ $type: 'Logging/Unsubscribe', ...args }); },
     };
     messages = {
+        async sendText(args: Omit<bottleneko.MessagesSendTextRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.MessagesSendTextResponse>({ $type: 'Messages/SendText', ...args }); },
         async subscribe(args: Omit<bottleneko.MessagesSubscribeRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.MessagesSubscribeResponse>({ $type: 'Messages/Subscribe', ...args }); },
         async unsubscribe(args: Omit<bottleneko.MessagesUnsubscribeRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.MessagesUnsubscribeResponse>({ $type: 'Messages/Unsubscribe', ...args }); },
-        async sendText(args: Omit<bottleneko.MessagesSendTextRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.MessagesSendTextResponse>({ $type: 'Messages/SendText', ...args }); },
     };
     script = {
         async getId(args: Omit<bottleneko.ScriptGetIdRequest, '$type'>) { return await (this as unknown as AbstractRpc).call<bottleneko.ScriptGetIdResponse>({ $type: 'Script/GetId', ...args }); },

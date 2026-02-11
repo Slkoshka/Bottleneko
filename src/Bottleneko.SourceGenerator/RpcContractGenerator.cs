@@ -129,7 +129,7 @@ public class RpcContractGenerator : IIncrementalGenerator
 
     private static void Execute(Compilation compilation, ImmutableArray<INamedTypeSymbol> interfaces, SourceProductionContext spc)
     {
-        foreach (var interfaceSymbol in interfaces)
+        foreach (var interfaceSymbol in interfaces.OrderBy(@interface => @interface.ToDisplayString()))
         {
             if (interfaceSymbol.GetAttributes().FirstOrDefault(attr => attr.AttributeClass?.ContainingNamespace.ToDisplayString() == "Bottleneko.Api.Rpc" && attr.AttributeClass?.Name == "RpcServiceAttribute") is not { } serviceAttribute)
             {
@@ -148,7 +148,8 @@ public class RpcContractGenerator : IIncrementalGenerator
                 .GetMembers()
                 .Where(member => member is IMethodSymbol { MethodKind: MethodKind.Ordinary, DeclaredAccessibility: Accessibility.Public, IsStatic: false } methodSymbol)
                 .Cast<IMethodSymbol>()
-                .Select(methodSymbol => ExtractMethodInfo(serviceType, methodSymbol));
+                .Select(methodSymbol => ExtractMethodInfo(serviceType, methodSymbol))
+                .OrderBy(method => method.Name);
 
             var @interface = new InterfaceDeclaration(interfaceSymbol.Name)
             {
