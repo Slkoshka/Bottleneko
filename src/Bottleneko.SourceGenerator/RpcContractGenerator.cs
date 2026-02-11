@@ -1,5 +1,9 @@
 using System.Collections.Immutable;
 using System.Text;
+using Bottleneko.SourceGenerator.Source;
+using Bottleneko.SourceGenerator.Source.Expressions;
+using Bottleneko.SourceGenerator.Source.Statements;
+using Bottleneko.SourceGenerator.Source.Types;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
@@ -9,15 +13,18 @@ namespace Bottleneko.SourceGenerator;
 [Generator]
 public class RpcContractGenerator : IIncrementalGenerator
 {
-    private const string METHOD_INFO_SOURCE = @"namespace Bottleneko.Api.Rpc;
-
-[Hidden]
-public record RpcMethod(RpcService Service, string MethodName, Type RequestType, Type ResponseType);
-";
-
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        context.RegisterPostInitializationOutput(ctx => ctx.AddSource("RpcMethod.cs", SourceText.From(METHOD_INFO_SOURCE, Encoding.UTF8)));
+        var rpcMethodInfo = SourceFile.Generate("Bottleneko.Api.Rpc", new RecordDeclaration("RpcMethod", [("RpcService", "Service"), ("string", "MethodName"), ("Type", "RequestType"), ("Type", "ResponseType")])
+        {
+            AccessModifier = AccessModifierType.Public,
+            Attributes =
+            {
+                "Bottleneko.Api.Hidden",
+            },
+        });
+
+        context.RegisterPostInitializationOutput(ctx => ctx.AddSource("RpcMethod.cs", SourceText.From(rpcMethodInfo, Encoding.UTF8)));
 
         var interfaceSymbols = context.SyntaxProvider
             .ForAttributeWithMetadataName("Bottleneko.Api.Rpc.RpcServiceAttribute", static (node, _) => node is InterfaceDeclarationSyntax, static (ctx, _) => (INamedTypeSymbol)ctx.TargetSymbol)
@@ -32,6 +39,94 @@ public record RpcMethod(RpcService Service, string MethodName, Type RequestType,
         return $"{char.ToUpperInvariant(s[0])}{s.Substring(1)}";
     }
 
+    record RpcMethodDefinition(string Name, RecordDeclaration Request, RecordDeclaration Response, SwitchCase ExecuteCase, IExpression MethodInfoExpression);
+
+    private static RpcMethodDefinition ExtractMethodInfo(string serviceType, IMethodSymbol methodSymbol)
+    {
+        var methodName = methodSymbol.Name.EndsWith("Async") ? methodSymbol.Name.Substring(0, methodSymbol.Name.Length - "Async".Length) : methodSymbol.Name;
+        var isAsyncMethod = methodSymbol.ReturnType.TypeKind == TypeKind.Class && methodSymbol.ReturnType.ContainingNamespace?.ToDisplayString() == "System.Threading.Tasks" && (methodSymbol.ReturnType.Name == "Task" || methodSymbol.ReturnType.Name == "ValueTask");
+        var returnType = methodSymbol.ReturnType.SpecialType == SpecialType.System_Void ? null : methodSymbol.ReturnType.ToDisplayString();
+
+        if (isAsyncMethod)
+        {
+            if (methodSymbol.ReturnType is INamedTypeSymbol namedReturnTypeSymbol && namedReturnTypeSymbol.IsGenericType && namedReturnTypeSymbol.TypeArguments.Length == 1)
+            {
+                // Generic [Value]Task
+                returnType = namedReturnTypeSymbol.TypeArguments[0].ToDisplayString();
+            }
+            else
+            {
+                // Non-generic [Value]Task
+                returnType = null;
+            }
+        }
+        
+        if (methodSymbol.Parameters.Length == 0 || methodSymbol.Parameters[0].Type.ToDisplayString() != "Bottleneko.Api.Rpc.IRpcContext")
+        {
+            throw new Exception("First argument of RpcService should have IRpcContext type");
+        }
+
+        var request = new RecordDeclaration($"{serviceType}{methodName}Request", new(methodSymbol.Parameters.Skip(1).Select(parameter => (Type: parameter.Type.ToDisplayString(), Name: Capitalize(parameter.Name)))))
+        {
+            BaseTypes = { "Bottleneko.Api.Rpc.RpcRequest" },
+        };
+        var response = new RecordDeclaration($"{serviceType}{methodName}Response", returnType is null ? null : new((Type: returnType, Name: "Result")))
+        {
+            BaseTypes = { "Bottleneko.Api.Rpc.RpcResponse" },
+        };
+
+        var callMethod = new CallExpression($"this.{methodSymbol.Name}")
+        {
+            Arguments =
+            [
+                new IdentifierExpression("context"),
+                ..methodSymbol.Parameters.Skip(1).Select(parameter => new IdentifierExpression($"request{methodName}.{Capitalize(parameter.Name)}")),
+            ],
+        };
+        IExpression resultExpression = isAsyncMethod ? new AwaitExpression(callMethod) : callMethod;
+        IStatement resultStatement = returnType is null ? new ExpressionStatement(resultExpression) : new VariableDeclaration("var", "result", resultExpression);
+
+        var returnStatement = new ReturnStatement(new NewExpression("Bottleneko.Api.Rpc.ResponsePacket")
+        {
+            Arguments =
+            {
+                new IdentifierExpression("packet.RequestId"),
+                new NewExpression("Bottleneko.Api.Rpc.SuccessResult")
+                {
+                    Arguments =
+                    {
+                        returnType is null ? new NewExpression($"{serviceType}{methodName}Response") : new NewExpression($"{serviceType}{methodName}Response")
+                        {
+                            Arguments =
+                            {
+                                new IdentifierExpression("result"),
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        var @case = new SwitchCase(new($"{request.Name}{(methodSymbol.Parameters.Length == 1 ? "" : $" request{methodName}")}"), Body: new()
+        {
+            resultStatement,
+            returnStatement,
+        });
+
+        var methodInfoExpression = new NewExpression("Bottleneko.Api.Rpc.RpcMethod")
+        {
+            Arguments =
+            {
+                new IdentifierExpression($"Bottleneko.Api.Rpc.RpcService.{serviceType}"),
+                new StringExpression(methodName),
+                new TypeofExpression(request.Name),
+                new TypeofExpression(response.Name),
+            },
+        };
+
+        return new(methodName, request, response, @case, methodInfoExpression);
+    }
+
     private static void Execute(Compilation compilation, ImmutableArray<INamedTypeSymbol> interfaces, SourceProductionContext spc)
     {
         foreach (var interfaceSymbol in interfaces)
@@ -41,10 +136,6 @@ public record RpcMethod(RpcService Service, string MethodName, Type RequestType,
                 continue;
             }
 
-            var contract = new StringBuilder();
-            var execute = new StringBuilder();
-            var methodList = new StringBuilder();
-
             if (serviceAttribute.ConstructorArguments[0].Type?.TypeKind != TypeKind.Enum || serviceAttribute.ConstructorArguments[0].Type is not INamedTypeSymbol serviceTypeEnum)
             {
                 continue;
@@ -53,156 +144,123 @@ public record RpcMethod(RpcService Service, string MethodName, Type RequestType,
             var serviceTypes = serviceTypeEnum.GetMembers().Where(member => member is IFieldSymbol { ConstantValue: not null }).Cast<IFieldSymbol>().ToImmutableDictionary(x => (int)x.ConstantValue!, x => x.Name);
             var serviceType = serviceTypes[(int)serviceAttribute.ConstructorArguments[0].Value!];
 
-            if (interfaceSymbol.ContainingNamespace?.IsGlobalNamespace == false)
+            var methods = interfaceSymbol
+                .GetMembers()
+                .Where(member => member is IMethodSymbol { MethodKind: MethodKind.Ordinary, DeclaredAccessibility: Accessibility.Public, IsStatic: false } methodSymbol)
+                .Cast<IMethodSymbol>()
+                .Select(methodSymbol => ExtractMethodInfo(serviceType, methodSymbol));
+
+            var @interface = new InterfaceDeclaration(interfaceSymbol.Name)
             {
-                contract.AppendLine($"namespace {interfaceSymbol.ContainingNamespace.ToDisplayString()}");
-                contract.AppendLine("{");
-            }
-
-            contract.AppendLine($"    public partial interface {interfaceSymbol.Name} : Bottleneko.Api.Rpc.IRpcService");
-            contract.AppendLine("    {");
-
-            var methods = new List<string>();
-
-            foreach (var member in interfaceSymbol.GetMembers())
-            {
-                if (member is IMethodSymbol { MethodKind: MethodKind.Ordinary, DeclaredAccessibility: Accessibility.Public, IsStatic: false } methodSymbol)
+                AccessModifier = AccessModifierType.Public,
+                IsPartial = true,
+                BaseTypes =
                 {
-                    var methodName = methodSymbol.Name.EndsWith("Async") ? methodSymbol.Name.Substring(0, methodSymbol.Name.Length - "Async".Length) : methodSymbol.Name;
-                    var isAsyncMethod = methodSymbol.ReturnType.TypeKind == TypeKind.Class && methodSymbol.ReturnType.ContainingNamespace?.ToDisplayString() == "System.Threading.Tasks" && (methodSymbol.ReturnType.Name == "Task" || methodSymbol.ReturnType.Name == "ValueTask");
-                    var returnType = methodSymbol.ReturnType.SpecialType == SpecialType.System_Void ? null : methodSymbol.ReturnType.ToDisplayString();
-
-                    methods.Add(methodName);
-
-                    if (isAsyncMethod)
+                    "Bottleneko.Api.Rpc.IRpcService",
+                },
+                Members =
+                [
+                    ..methods.SelectMany<RpcMethodDefinition, IMemberDeclaration>(method => [method.Request, method.Response]),
+                    new MethodDeclaration("Task<Bottleneko.Api.Rpc.ResponsePacket>", "Bottleneko.Api.Rpc.IRpcService.ExecuteAsync", new ArgumentsDeclaration()
                     {
-                        if (methodSymbol.ReturnType is INamedTypeSymbol namedReturnTypeSymbol && namedReturnTypeSymbol.IsGenericType && namedReturnTypeSymbol.TypeArguments.Length == 1)
-                        {
-                            // Generic [Value]Task
-                            returnType = namedReturnTypeSymbol.TypeArguments[0].ToDisplayString();
-                        }
-                        else
-                        {
-                            // Non-generic [Value]Task
-                            returnType = null;
-                        }
-                    }
-                    
-                    var isVoidMethod = returnType is null;
-
-                    if (methodSymbol.Parameters.Length == 0 || methodSymbol.Parameters[0].Type.ToDisplayString() != "Bottleneko.Api.Rpc.IRpcContext")
+                        ("Bottleneko.Api.Rpc.IRpcContext", "context"),
+                        ("Bottleneko.Api.Rpc.RequestPacket", "packet"),
+                    })
                     {
-                        throw new Exception("First argument of RpcService should have IRpcContext type");
-                    }
+                        IsAsync = true,
+                        Body =
+                        [
+                            new SwitchStatement(new IdentifierExpression("packet.Request"))
+                            {
+                                Cases =
+                                [
+                                    ..methods.Select(method => method.ExecuteCase),
+                                ],
+                                Default = new(new ReturnStatement(new NewExpression("Bottleneko.Api.Rpc.ResponsePacket")
+                                {
+                                    Arguments =
+                                    {
+                                        new IdentifierExpression("packet.RequestId"),
+                                        new NewExpression("Bottleneko.Api.Rpc.ErrorResult")
+                                        {
+                                            Arguments =
+                                            {
+                                                new IdentifierExpression("Bottleneko.Api.Rpc.ErrorCode.Unsupported"),
+                                                new StringExpression("Unknown method"),
+                                            }
+                                        },
+                                    },
+                                })),
+                            },
+                        ],
+                    },
 
-                    contract.AppendLine($"        public record {serviceType}{methodName}Request({string.Join(", ", methodSymbol.Parameters.Skip(1).Select(parameter => $"{parameter.Type.ToDisplayString()} {Capitalize(parameter.Name)}"))}) : Bottleneko.Api.Rpc.RpcRequest;");
-                    contract.AppendLine($"        public record {serviceType}{methodName}Response({(isVoidMethod ? "" : $"{returnType} Result")}) : Bottleneko.Api.Rpc.RpcResponse;");
-
-                    execute.AppendLine($"                case {serviceType}{methodName}Request{(methodSymbol.Parameters.Length == 1 ? "" : $" request{methodName}")}:");
-                    execute.AppendLine("                {");
-
-                    execute.Append("                    ");
-                    if (!isVoidMethod || isAsyncMethod)
+                    new MethodDeclaration("bool", "Bottleneko.Api.Rpc.IRpcService.IsMethodSupported", new(("Bottleneko.Api.Rpc.RequestPacket", "packet")))
                     {
-                        execute.Append("var result");
-                        if (isAsyncMethod)
-                        {
-                            execute.Append("Task");
-                        }
-                        execute.Append(" = ");
-                    }
-                    execute.Append($"this.{methodSymbol.Name}(context");
-                    if (methodSymbol.Parameters.Length > 1)
+                        Body =
+                        [
+                            new SwitchStatement(new IdentifierExpression("packet.Request"))
+                            {
+                                Cases =
+                                [
+                                    ..methods.Select(method => new SwitchCase(new(method.Request.Name), Body: new(new ReturnStatement(new BooleanExpression(true))))),
+                                ],
+                                Default = new(new ReturnStatement(new BooleanExpression(false))),
+                            },
+                        ],
+                    },
+
+                    new MethodDeclaration("Bottleneko.Api.Rpc.RpcMethod[]", "GetMethods", new())
                     {
-                        execute.Append(", ");
-                        execute.Append(string.Join(", ", methodSymbol.Parameters.Skip(1).Select(parameter => $"request{methodName}.{Capitalize(parameter.Name)}")));
-                    }
-                    execute.Append(");");
+                        Type = MethodType.Static,
+                        Body =
+                        [
+                            new ReturnStatement(new CollectionExpression(methods.Select(method => method.MethodInfoExpression))),
+                        ],
+                    },
+                ],
+            };
 
-                    if (isAsyncMethod)
+            var source = SourceFile.Generate([
+                interfaceSymbol.ContainingNamespace?.IsGlobalNamespace == false ? new ScopedNamespace(interfaceSymbol.ContainingNamespace.ToDisplayString(), @interface) : @interface,
+
+                new ScopedNamespace("Bottleneko.Api.Rpc")
+                {
+                    new RecordDeclaration("RpcRequest", null)
                     {
-                        execute.Append("                    ");
-                        if (!isVoidMethod)
-                        {
-                            execute.AppendLine("var result = ");
-                        }
-                        
-                        execute.AppendLine("await resultTask;");
-                    }
+                        AccessModifier = AccessModifierType.Public,
+                        IsPartial = true,
+                        Attributes = [.. methods.Select(method =>
+                            new AttributeSpecifier("System.Text.Json.Serialization.JsonDerivedType")
+                            {
+                                Arguments =
+                                {
+                                    new TypeofExpression($"{(interfaceSymbol.ContainingNamespace?.IsGlobalNamespace == false ? $"{interfaceSymbol.ContainingNamespace.ToDisplayString()}." : "")}{interfaceSymbol.Name}.{method.Request.Name}"),
+                                    new StringExpression($"{serviceType}/{method.Name}"),
+                                }
+                            }
+                        )],
+                    },
 
-                    if (isVoidMethod)
+                    new RecordDeclaration("RpcResponse", null)
                     {
-                        execute.AppendLine($"                    return new(packet.RequestId, new Bottleneko.Api.Rpc.SuccessResult(new {serviceType}{methodName}Response()));");
-                    }
-                    else
-                    {
-                        execute.AppendLine($"                    return new(packet.RequestId, new Bottleneko.Api.Rpc.SuccessResult(new {serviceType}{methodName}Response(result)));");
-                    }
-                    execute.AppendLine("                }");
-                    execute.AppendLine();
+                        AccessModifier = AccessModifierType.Public,
+                        IsPartial = true,
+                        Attributes = [.. methods.Select(method =>
+                            new AttributeSpecifier("System.Text.Json.Serialization.JsonDerivedType")
+                            {
+                                Arguments =
+                                {
+                                    new TypeofExpression($"{(interfaceSymbol.ContainingNamespace?.IsGlobalNamespace == false ? $"{interfaceSymbol.ContainingNamespace.ToDisplayString()}." : "")}{interfaceSymbol.Name}.{method.Response.Name}"),
+                                    new StringExpression($"{serviceType}/{method.Name}"),
+                                }
+                            }
+                        )],
+                    },
+                },
+            ]);
 
-                    methodList.AppendLine($"                new(Bottleneko.Api.Rpc.RpcService.{serviceType}, \"{methodName}\", typeof({serviceType}{methodName}Request), typeof({serviceType}{methodName}Response)),");
-                }
-            }
-
-            contract.AppendLine($"        async Task<Bottleneko.Api.Rpc.ResponsePacket> Bottleneko.Api.Rpc.IRpcService.ExecuteAsync(Bottleneko.Api.Rpc.IRpcContext context, Bottleneko.Api.Rpc.RequestPacket packet)");
-            contract.AppendLine("        {");
-            contract.AppendLine("            switch (packet.Request)");
-            contract.AppendLine("            {");
-            contract.Append(execute.ToString());
-            contract.AppendLine("                default:");
-            contract.AppendLine("                    return new(packet.RequestId, new Bottleneko.Api.Rpc.ErrorResult(Bottleneko.Api.Rpc.ErrorCode.Unsupported, \"Unknown method\"));");
-            contract.AppendLine("            }");
-            contract.AppendLine("        }");
-            contract.AppendLine();
-
-            contract.AppendLine($"        bool Bottleneko.Api.Rpc.IRpcService.IsMethodSupported(Bottleneko.Api.Rpc.RequestPacket packet)");
-            contract.AppendLine("        {");
-            contract.AppendLine("            switch (packet.Request)");
-            contract.AppendLine("            {");
-            foreach (var method in methods)
-            {
-                contract.AppendLine($"                case {serviceType}{method}Request:");
-                contract.AppendLine("                    return true;");
-            }
-            contract.AppendLine("                default:");
-            contract.AppendLine("                    return false;");
-            contract.AppendLine("            }");
-            contract.AppendLine("        }");
-            contract.AppendLine();
-
-            contract.AppendLine($"        static Bottleneko.Api.Rpc.RpcMethod[] GetMethods()");
-            contract.AppendLine("        {");
-            contract.AppendLine("            return [");
-            contract.Append(methodList.ToString());
-            contract.AppendLine("            ];");
-            contract.AppendLine("        }");
-            contract.AppendLine("    }");
-
-            if (interfaceSymbol.ContainingNamespace?.IsGlobalNamespace == false)
-            {
-                contract.AppendLine("}");
-            }
-
-            contract.AppendLine();
-            contract.AppendLine("namespace Bottleneko.Api.Rpc");
-            contract.AppendLine("{");
-            foreach (var method in methods)
-            {
-                contract.AppendLine($"    [System.Text.Json.Serialization.JsonDerivedType(typeof({(interfaceSymbol.ContainingNamespace?.IsGlobalNamespace == false ? $"{interfaceSymbol.ContainingNamespace.ToDisplayString()}." : "")}{interfaceSymbol.Name}.{serviceType}{method}Request), \"{serviceType}/{method}\")]");
-            }
-            contract.AppendLine("    public partial record RpcRequest;");
-
-            contract.AppendLine();
-
-            foreach (var method in methods)
-            {
-                contract.AppendLine($"    [System.Text.Json.Serialization.JsonDerivedType(typeof({(interfaceSymbol.ContainingNamespace?.IsGlobalNamespace == false ? $"{interfaceSymbol.ContainingNamespace.ToDisplayString()}." : "")}{interfaceSymbol.Name}.{serviceType}{method}Response), \"{serviceType}/{method}\")]");
-            }
-            contract.AppendLine("    public partial record RpcResponse;");
-            contract.AppendLine("}");
-
-            spc.AddSource($"{interfaceSymbol.Name}_Contract.cs", SourceText.From(contract.ToString(), Encoding.UTF8));
+            spc.AddSource($"{interfaceSymbol.Name}_Contract.cs", SourceText.From(source, Encoding.UTF8));
         }
     }
 }

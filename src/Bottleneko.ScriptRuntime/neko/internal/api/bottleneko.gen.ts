@@ -364,8 +364,8 @@ export interface MessagesUnsubscribeResponse {
 
 export interface MessagesSendTextRequest {
     $type: 'Messages/SendText';
-    chatId: string;
     connectionId: string;
+    chatId: string;
     text: string;
     replyToMessageId: string | null;
 }
