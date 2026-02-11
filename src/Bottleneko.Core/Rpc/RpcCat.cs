@@ -19,7 +19,7 @@ class RpcCat(IServiceProvider services, NekoEnvironment environment) : NekoActor
     {
         if (OperatingSystem.IsWindows())
         {
-            throw new PlatformNotSupportedException();
+            return CreateChild<NamedPipeRpcTransport>(["bottleneko-rpc"], "transport");
         }
         else if (OperatingSystem.IsLinux())
         {

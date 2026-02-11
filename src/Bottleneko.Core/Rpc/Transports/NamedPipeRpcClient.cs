@@ -1,32 +1,33 @@
-using System.Net.Sockets;
+using System.IO.Pipes;
 using Bottleneko.Logging;
 using Bottleneko.Services;
 
 namespace Bottleneko.Rpc.Transports;
 
-class SocketRpcClient(IServiceProvider services, AkkaService akka, INekoLogger logger, Socket socket) : SocketLikeRpcClient(services, akka, logger)
+class NamedPipeRpcClient(IServiceProvider services, AkkaService akka, INekoLogger logger, NamedPipeServerStream stream) : SocketLikeRpcClient(services, akka, logger)
 {
     protected override async Task<int> ReceiveAsync(Memory<byte> buffer, CancellationToken cancellationToken)
     {
-        return await socket.ReceiveAsync(buffer, cancellationToken);
+        return await stream.ReadAsync(buffer, cancellationToken);
     }
 
     protected override async Task<int> SendAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken)
     {
-        return await socket.SendAsync(buffer, cancellationToken);
+        await stream.WriteAsync(buffer, cancellationToken);
+        return buffer.Length;
     }
 
     protected override void PostStop()
     {
         try
         {
-            socket.Close();
+            stream.Close();
         }
         catch (Exception ex)
         {
-            Logger.LogWarning("Bottleneko.Rpc", "Failed to close socket", ex);
+            Logger.LogWarning("Bottleneko.Rpc", "Failed to close connection", ex);
         }
-        socket.Dispose();
+        stream.Dispose();
 
         base.PostStop();
     }
