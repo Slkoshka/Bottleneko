@@ -66,11 +66,11 @@ public class RpcContractGenerator : IIncrementalGenerator
             throw new Exception("First argument of RpcService should have IRpcContext type");
         }
 
-        var request = new RecordDeclaration($"{serviceType}{methodName}Request", new(methodSymbol.Parameters.Skip(1).Select(parameter => (Type: parameter.Type.ToDisplayString(), Name: Capitalize(parameter.Name)))))
+        var request = new RecordDeclaration($"{serviceType}{methodName}Request", [..methodSymbol.Parameters.Skip(1).Select(parameter => (Type: parameter.Type.ToDisplayString(), Name: Capitalize(parameter.Name)))])
         {
             BaseTypes = { "Bottleneko.Api.Rpc.RpcRequest" },
         };
-        var response = new RecordDeclaration($"{serviceType}{methodName}Response", returnType is null ? null : new((Type: returnType, Name: "Result")))
+        var response = new RecordDeclaration($"{serviceType}{methodName}Response", returnType is null ? null : [(Type: returnType, Name: "Result")])
         {
             BaseTypes = { "Bottleneko.Api.Rpc.RpcResponse" },
         };
@@ -107,27 +107,27 @@ public class RpcContractGenerator : IIncrementalGenerator
             },
         });
 
-        var @case = new SwitchCase(new($"{request.Name}{(methodSymbol.Parameters.Length == 1 ? "" : $" request{methodName}")}"), Body: new()
-        {
+        var @case = new SwitchCase(new($"{request.Name}{(methodSymbol.Parameters.Length == 1 ? "" : $" request{methodName}")}"), Body:
+        [
             resultStatement,
             returnStatement,
-        });
+        ]);
 
         var methodInfoExpression = new NewExpression("Bottleneko.Api.Rpc.RpcMethod")
         {
             Arguments =
-            {
+            [
                 new IdentifierExpression($"Bottleneko.Api.Rpc.RpcService.{serviceType}"),
                 new StringExpression(methodName),
                 new TypeofExpression(request.Name),
                 new TypeofExpression(response.Name),
-            },
+            ],
         };
 
         return new(methodName, request, response, @case, methodInfoExpression);
     }
 
-    private static void Execute(Compilation compilation, ImmutableArray<INamedTypeSymbol> interfaces, SourceProductionContext spc)
+    private static void Execute(Compilation _, ImmutableArray<INamedTypeSymbol> interfaces, SourceProductionContext spc)
     {
         foreach (var interfaceSymbol in interfaces.OrderBy(@interface => @interface.ToDisplayString()))
         {
@@ -156,17 +156,13 @@ public class RpcContractGenerator : IIncrementalGenerator
                 AccessModifier = AccessModifierType.Public,
                 IsPartial = true,
                 BaseTypes =
-                {
+                [
                     "Bottleneko.Api.Rpc.IRpcService",
-                },
+                ],
                 Members =
                 [
                     ..methods.SelectMany<RpcMethodDefinition, IMemberDeclaration>(method => [method.Request, method.Response]),
-                    new MethodDeclaration("Task<Bottleneko.Api.Rpc.ResponsePacket>", "Bottleneko.Api.Rpc.IRpcService.ExecuteAsync", new ArgumentsDeclaration()
-                    {
-                        ("Bottleneko.Api.Rpc.IRpcContext", "context"),
-                        ("Bottleneko.Api.Rpc.RequestPacket", "packet"),
-                    })
+                    new MethodDeclaration("Task<Bottleneko.Api.Rpc.ResponsePacket>", "Bottleneko.Api.Rpc.IRpcService.ExecuteAsync", [("Bottleneko.Api.Rpc.IRpcContext", "context"), ("Bottleneko.Api.Rpc.RequestPacket", "packet")])
                     {
                         IsAsync = true,
                         Body =
@@ -177,10 +173,10 @@ public class RpcContractGenerator : IIncrementalGenerator
                                 [
                                     ..methods.Select(method => method.ExecuteCase),
                                 ],
-                                Default = new(new ReturnStatement(new NewExpression("Bottleneko.Api.Rpc.ResponsePacket")
+                                Default = [new ReturnStatement(new NewExpression("Bottleneko.Api.Rpc.ResponsePacket")
                                 {
                                     Arguments =
-                                    {
+                                    [
                                         new IdentifierExpression("packet.RequestId"),
                                         new NewExpression("Bottleneko.Api.Rpc.ErrorResult")
                                         {
@@ -190,13 +186,13 @@ public class RpcContractGenerator : IIncrementalGenerator
                                                 new StringExpression("Unknown method"),
                                             }
                                         },
-                                    },
-                                })),
+                                    ],
+                                })],
                             },
                         ],
                     },
 
-                    new MethodDeclaration("bool", "Bottleneko.Api.Rpc.IRpcService.IsMethodSupported", new(("Bottleneko.Api.Rpc.RequestPacket", "packet")))
+                    new MethodDeclaration("bool", "Bottleneko.Api.Rpc.IRpcService.IsMethodSupported", [("Bottleneko.Api.Rpc.RequestPacket", "packet")])
                     {
                         Body =
                         [
@@ -204,14 +200,14 @@ public class RpcContractGenerator : IIncrementalGenerator
                             {
                                 Cases =
                                 [
-                                    ..methods.Select(method => new SwitchCase(new(method.Request.Name), Body: new(new ReturnStatement(new BooleanExpression(true))))),
+                                    ..methods.Select(method => new SwitchCase(new(method.Request.Name), Body: [new ReturnStatement(new BooleanExpression(true))])),
                                 ],
-                                Default = new(new ReturnStatement(new BooleanExpression(false))),
+                                Default = [new ReturnStatement(new BooleanExpression(false))],
                             },
                         ],
                     },
 
-                    new MethodDeclaration("Bottleneko.Api.Rpc.RpcMethod[]", "GetMethods", new())
+                    new MethodDeclaration("Bottleneko.Api.Rpc.RpcMethod[]", "GetMethods", [])
                     {
                         Type = MethodType.Static,
                         Body =
@@ -235,10 +231,10 @@ public class RpcContractGenerator : IIncrementalGenerator
                             new AttributeSpecifier("System.Text.Json.Serialization.JsonDerivedType")
                             {
                                 Arguments =
-                                {
+                                [
                                     new TypeofExpression($"{(interfaceSymbol.ContainingNamespace?.IsGlobalNamespace == false ? $"{interfaceSymbol.ContainingNamespace.ToDisplayString()}." : "")}{interfaceSymbol.Name}.{method.Request.Name}"),
                                     new StringExpression($"{serviceType}/{method.Name}"),
-                                }
+                                ],
                             }
                         )],
                     },
@@ -251,10 +247,10 @@ public class RpcContractGenerator : IIncrementalGenerator
                             new AttributeSpecifier("System.Text.Json.Serialization.JsonDerivedType")
                             {
                                 Arguments =
-                                {
+                                [
                                     new TypeofExpression($"{(interfaceSymbol.ContainingNamespace?.IsGlobalNamespace == false ? $"{interfaceSymbol.ContainingNamespace.ToDisplayString()}." : "")}{interfaceSymbol.Name}.{method.Response.Name}"),
                                     new StringExpression($"{serviceType}/{method.Name}"),
-                                }
+                                ]
                             }
                         )],
                     },

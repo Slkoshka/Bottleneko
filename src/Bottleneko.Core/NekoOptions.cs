@@ -22,9 +22,9 @@ public class NekoOptions
         return _options.GetValueOrDefault(name ?? typeof(T).Name) as T;
     }
 
-    public static T GetOptionOrDefault<T>(string? name = null) where T : Option, new() => GetOption<T>() ?? new T();
+    public static T GetOptionOrDefault<T>(string? name = null) where T : Option, new() => GetOption<T>(name) ?? new T();
 
-    public static T GetRequiredOption<T>(string? name = null) where T : Option => GetOption<T>() ?? throw new Exception($"Required option '{typeof(T).Name}' is missing");
+    public static T GetRequiredOption<T>(string? name = null) where T : Option => GetOption<T>(name) ?? throw new Exception($"Required option '{typeof(T).Name}' is missing");
 
     public static void SetOption(string? name, Option option)
     {

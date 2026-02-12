@@ -9,6 +9,7 @@ using Bottleneko.Rpc.Converters;
 using Bottleneko.Scripting.Deno;
 using Bottleneko.Server.Actors;
 using Bottleneko.Server.Controllers;
+using Bottleneko.Server.Utils;
 using Bottleneko.Services;
 using Bottleneko.Utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -214,7 +215,7 @@ public class BottlenekoServer : IAsyncDisposable
     {
         SystemController.Startup();
         _app = await SetupApplicationAsync(dataDir, bindAddresses);
-        await _app.RunAsync();
+        await _app.RunAsync(cancellationToken);
         return ExitCode;
     }
 

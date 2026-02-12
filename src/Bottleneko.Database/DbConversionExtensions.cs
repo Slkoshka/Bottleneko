@@ -16,25 +16,24 @@ public static class DbConversionExtensions
 
     public static ChatMessageDto ToDto(this ChatMessageEntity msg)
     {
-        switch (msg)
+        return msg switch
         {
-            case { Discord: { } discord }:
-                return new DiscordChatMessageDto()
+            { Discord: { } discord } => new DiscordChatMessageDto()
+            {
+                Id = msg.Id,
+                ConnectionId = msg.ConnectionId,
+                Timestamp = DateTime.SpecifyKind(msg.RemoteTimestamp, DateTimeKind.Utc),
+                Chat = new ChatSummaryDto(msg.Chat.Id, msg.Chat.DisplayName),
+                Author = new ChatterSummaryDto
                 {
-                    Id = msg.Id,
-                    ConnectionId = msg.ConnectionId,
-                    Timestamp = DateTime.SpecifyKind(msg.RemoteTimestamp, DateTimeKind.Utc),
-                    Chat = new ChatSummaryDto(msg.Chat.Id, msg.Chat.DisplayName),
-                    Author = new ChatterSummaryDto
-                    {
-                        Id = msg.Author.Id,
-                        DisplayName = msg.Author.DisplayName,
-                        Username = msg.Author.Username,
-                        IsBot = msg.Author.IsBot,
-                    },
-                    CustomAuthorName = msg.CustomAuthorName,
-                    TextContent = msg.TextContent,
-                    Attachments = [.. msg.Attachments.Select(attachment => new DiscordAttachmentDto
+                    Id = msg.Author.Id,
+                    DisplayName = msg.Author.DisplayName,
+                    Username = msg.Author.Username,
+                    IsBot = msg.Author.IsBot,
+                },
+                CustomAuthorName = msg.CustomAuthorName,
+                TextContent = msg.TextContent,
+                Attachments = [.. msg.Attachments.Select(attachment => new DiscordAttachmentDto
                     {
                         Id = attachment.Id,
                         Name = attachment.FileName,
@@ -46,202 +45,190 @@ public static class DbConversionExtensions
                         Url = attachment.Discord!.Url,
                         ProxyUrl = attachment.Discord!.ProxyUrl,
                     })],
-                    IsSpecial = msg.IsSpecial,
-                    IsDirect = msg.IsDirect,
-                    IsMissed = msg.IsOffline,
+                IsSpecial = msg.IsSpecial,
+                IsDirect = msg.IsDirect,
+                IsMissed = msg.IsOffline,
 
-                    DiscordId = discord.DiscordMessageId,
-                    IsPinned = discord.IsPinned,
-                    IsEveryoneMentioned = discord.IsEveryoneMentioned,
-                    ChannelMentions = discord.ChannelMentions,
-                    RoleMentions = discord.RoleMentions,
-                    UserMentions = discord.RoleMentions,
-                };
+                DiscordId = discord.DiscordMessageId,
+                IsPinned = discord.IsPinned,
+                IsEveryoneMentioned = discord.IsEveryoneMentioned,
+                ChannelMentions = discord.ChannelMentions,
+                RoleMentions = discord.RoleMentions,
+                UserMentions = discord.RoleMentions,
+            },
 
-            case { Telegram: { } telegram }:
-                return new TelegramChatMessageDto()
+            { Telegram: { } telegram } => new TelegramChatMessageDto()
+            {
+                Id = msg.Id,
+                ConnectionId = msg.ConnectionId,
+                Timestamp = DateTime.SpecifyKind(msg.RemoteTimestamp, DateTimeKind.Utc),
+                Chat = new ChatSummaryDto(msg.Chat.Id, msg.Chat.DisplayName),
+                Author = new ChatterSummaryDto
                 {
-                    Id = msg.Id,
-                    ConnectionId = msg.ConnectionId,
-                    Timestamp = DateTime.SpecifyKind(msg.RemoteTimestamp, DateTimeKind.Utc),
-                    Chat = new ChatSummaryDto(msg.Chat.Id, msg.Chat.DisplayName),
-                    Author = new ChatterSummaryDto
-                    {
-                        Id = msg.Author.Id,
-                        DisplayName = msg.Author.DisplayName,
-                        Username = msg.Author.Username,
-                        IsBot = msg.Author.IsBot,
-                    },
-                    CustomAuthorName = msg.CustomAuthorName,
-                    TextContent = msg.TextContent,
-                    Attachments = [.. msg.Attachments.Select(attachment => new TelegramAttachmentDto
+                    Id = msg.Author.Id,
+                    DisplayName = msg.Author.DisplayName,
+                    Username = msg.Author.Username,
+                    IsBot = msg.Author.IsBot,
+                },
+                CustomAuthorName = msg.CustomAuthorName,
+                TextContent = msg.TextContent,
+                Attachments = [.. msg.Attachments.Select(attachment => new TelegramAttachmentDto
                     {
                         Id = attachment.Id,
                         Name = attachment.FileName,
                         ContentType = attachment.ContentType,
                     })],
-                    IsSpecial = msg.IsSpecial,
-                    IsDirect = msg.IsDirect,
-                    IsMissed = msg.IsOffline,
-                };
-            
-            case { Twitch: { IsWhisper: true } twitch }:
-                return new WhisperTwitchChatMessageDto()
+                IsSpecial = msg.IsSpecial,
+                IsDirect = msg.IsDirect,
+                IsMissed = msg.IsOffline,
+            },
+
+            { Twitch: { IsWhisper: true } twitch } => new WhisperTwitchChatMessageDto()
+            {
+                Id = msg.Id,
+                ConnectionId = msg.ConnectionId,
+                Timestamp = DateTime.SpecifyKind(msg.RemoteTimestamp, DateTimeKind.Utc),
+                Chat = new ChatSummaryDto(msg.Chat.Id, msg.Chat.DisplayName),
+                Author = new ChatterSummaryDto
                 {
-                    Id = msg.Id,
-                    ConnectionId = msg.ConnectionId,
-                    Timestamp = DateTime.SpecifyKind(msg.RemoteTimestamp, DateTimeKind.Utc),
-                    Chat = new ChatSummaryDto(msg.Chat.Id, msg.Chat.DisplayName),
-                    Author = new ChatterSummaryDto
-                    {
-                        Id = msg.Author.Id,
-                        DisplayName = msg.Author.DisplayName,
-                        Username = msg.Author.Username,
-                        IsBot = msg.Author.IsBot,
-                    },
-                    CustomAuthorName = msg.CustomAuthorName,
-                    TextContent = msg.TextContent,
-                    Attachments = [.. msg.Attachments.Select(attachment => new TwitchAttachmentDto
+                    Id = msg.Author.Id,
+                    DisplayName = msg.Author.DisplayName,
+                    Username = msg.Author.Username,
+                    IsBot = msg.Author.IsBot,
+                },
+                CustomAuthorName = msg.CustomAuthorName,
+                TextContent = msg.TextContent,
+                Attachments = [.. msg.Attachments.Select(attachment => new TwitchAttachmentDto
                     {
                         Id = attachment.Id,
                         Name = attachment.FileName,
                         ContentType = attachment.ContentType,
                     })],
-                    IsSpecial = msg.IsSpecial,
-                    IsDirect = msg.IsDirect,
-                    IsMissed = msg.IsOffline,
+                IsSpecial = msg.IsSpecial,
+                IsDirect = msg.IsDirect,
+                IsMissed = msg.IsOffline,
 
-                    TwitchId = twitch.TwitchId,
-                };
+                TwitchId = twitch.TwitchId,
+            },
 
-            case { Twitch: { IsWhisper: false } twitch }:
-                return new ChannelTwitchChatMessageDto()
+            { Twitch: { IsWhisper: false } twitch } => new ChannelTwitchChatMessageDto()
+            {
+                Id = msg.Id,
+                ConnectionId = msg.ConnectionId,
+                Timestamp = DateTime.SpecifyKind(msg.RemoteTimestamp, DateTimeKind.Utc),
+                Chat = new ChatSummaryDto(msg.Chat.Id, msg.Chat.DisplayName),
+                Author = new ChatterSummaryDto
                 {
-                    Id = msg.Id,
-                    ConnectionId = msg.ConnectionId,
-                    Timestamp = DateTime.SpecifyKind(msg.RemoteTimestamp, DateTimeKind.Utc),
-                    Chat = new ChatSummaryDto(msg.Chat.Id, msg.Chat.DisplayName),
-                    Author = new ChatterSummaryDto
-                    {
-                        Id = msg.Author.Id,
-                        DisplayName = msg.Author.DisplayName,
-                        Username = msg.Author.Username,
-                        IsBot = msg.Author.IsBot,
-                    },
-                    CustomAuthorName = msg.CustomAuthorName,
-                    TextContent = msg.TextContent,
-                    Attachments = [.. msg.Attachments.Select(attachment => new TwitchAttachmentDto
+                    Id = msg.Author.Id,
+                    DisplayName = msg.Author.DisplayName,
+                    Username = msg.Author.Username,
+                    IsBot = msg.Author.IsBot,
+                },
+                CustomAuthorName = msg.CustomAuthorName,
+                TextContent = msg.TextContent,
+                Attachments = [.. msg.Attachments.Select(attachment => new TwitchAttachmentDto
                     {
                         Id = attachment.Id,
                         Name = attachment.FileName,
                         ContentType = attachment.ContentType,
                     })],
-                    IsSpecial = msg.IsSpecial,
-                    IsDirect = msg.IsDirect,
-                    IsMissed = msg.IsOffline,
+                IsSpecial = msg.IsSpecial,
+                IsDirect = msg.IsDirect,
+                IsMissed = msg.IsOffline,
 
-                    TwitchId = twitch.TwitchId,
-                    Badges = [.. twitch.Badges.Select(badge => new TwitchChatBadge(badge.TwitchId, badge.Info, badge.TwitchSetId))],
-                    Color = twitch.Color!,
-                    CheerBits = twitch.CheerBits,
-                    ChannelPointsCustomRewardId = twitch.ChannelPointsCustomRewardId,
-                    IsSubscriber = twitch.IsSubscriber!.Value,
-                    IsModerator = twitch.IsModerator!.Value,
-                    IsBroadcaster = twitch.IsBroadcaster!.Value,
-                    IsVip = twitch.IsVip!.Value,
-                    IsStaff = twitch.IsStaff!.Value,
-                };
+                TwitchId = twitch.TwitchId,
+                Badges = [.. twitch.Badges.Select(badge => new TwitchChatBadge(badge.TwitchId, badge.Info, badge.TwitchSetId))],
+                Color = twitch.Color!,
+                CheerBits = twitch.CheerBits,
+                ChannelPointsCustomRewardId = twitch.ChannelPointsCustomRewardId,
+                IsSubscriber = twitch.IsSubscriber!.Value,
+                IsModerator = twitch.IsModerator!.Value,
+                IsBroadcaster = twitch.IsBroadcaster!.Value,
+                IsVip = twitch.IsVip!.Value,
+                IsStaff = twitch.IsStaff!.Value,
+            },
 
-            default:
-                throw new NotImplementedException();
-        }
+            _ => throw new NotImplementedException(),
+        };
     }
 
     public static ChatterDto ToDto(this ChatterEntity chatter)
     {
-        switch (chatter)
+        return chatter switch
         {
-            case { Discord: { } discord }:
-                return new DiscordChatterDto()
-                {
-                    Id = chatter.Id,
-                    DisplayName = chatter.DisplayName,
-                    Username = chatter.Username,
-                    IsBot = chatter.IsBot,
-                    DiscordId = discord.DiscordUserId,
-                    Discriminator = discord.Discriminator,
-                };
+            { Discord: { } discord } => new DiscordChatterDto()
+            {
+                Id = chatter.Id,
+                DisplayName = chatter.DisplayName,
+                Username = chatter.Username,
+                IsBot = chatter.IsBot,
+                DiscordId = discord.DiscordUserId,
+                Discriminator = discord.Discriminator,
+            },
 
-            case { Telegram: { } telegram }:
-                return new TelegramChatterDto()
-                {
-                    Id = chatter.Id,
-                    DisplayName = chatter.DisplayName,
-                    Username = chatter.Username,
-                    IsBot = chatter.IsBot,
-                    TelegramId = telegram.TelegramId,
-                    FirstName = telegram.FirstName,
-                    LastName = telegram.LastName,
-                    LanguageCode = telegram.LanguageCode,
-                    HasPremium = telegram.HasPremium,
-                    AddedToAttachmentMenu = telegram.AddedToAttachmentMenu,
-                };
+            { Telegram: { } telegram } => new TelegramChatterDto()
+            {
+                Id = chatter.Id,
+                DisplayName = chatter.DisplayName,
+                Username = chatter.Username,
+                IsBot = chatter.IsBot,
+                TelegramId = telegram.TelegramId,
+                FirstName = telegram.FirstName,
+                LastName = telegram.LastName,
+                LanguageCode = telegram.LanguageCode,
+                HasPremium = telegram.HasPremium,
+                AddedToAttachmentMenu = telegram.AddedToAttachmentMenu,
+            },
 
-            case { Twitch: { } twitch }:
-                return new TwitchChatterDto()
-                {
-                    Id = chatter.Id,
-                    DisplayName = chatter.DisplayName,
-                    Username = chatter.Username,
-                    IsBot = chatter.IsBot,
-                    TwitchId = twitch.TwitchId,
-                };
+            { Twitch: { } twitch } => new TwitchChatterDto()
+            {
+                Id = chatter.Id,
+                DisplayName = chatter.DisplayName,
+                Username = chatter.Username,
+                IsBot = chatter.IsBot,
+                TwitchId = twitch.TwitchId,
+            },
 
-            default:
-                throw new NotImplementedException();
-        }
+            _ => throw new NotImplementedException(),
+        };
     }
 
     public static ConnectionDto ToDto(this ConnectionEntity connection, ExtendedConnectionStatus status)
     {
-        switch (connection.Protocol)
+        return connection.Protocol switch
         {
-            case Protocol.Discord:
-                return new DiscordConnectionDto()
-                {
-                    Id = connection.Id,
-                    Name = connection.Name,
-                    Protocol = connection.Protocol,
-                    AutoStart = connection.AutoStart,
-                    Config = connection.Configuration,
-                    ExtendedStatus = status,
-                };
+            Protocol.Discord => new DiscordConnectionDto()
+            {
+                Id = connection.Id,
+                Name = connection.Name,
+                Protocol = connection.Protocol,
+                AutoStart = connection.AutoStart,
+                Config = connection.Configuration,
+                ExtendedStatus = status,
+            },
 
-            case Protocol.Telegram:
-                return new DiscordConnectionDto()
-                {
-                    Id = connection.Id,
-                    Name = connection.Name,
-                    Protocol = connection.Protocol,
-                    AutoStart = connection.AutoStart,
-                    Config = connection.Configuration,
-                    ExtendedStatus = status,
-                };
+            Protocol.Telegram => new DiscordConnectionDto()
+            {
+                Id = connection.Id,
+                Name = connection.Name,
+                Protocol = connection.Protocol,
+                AutoStart = connection.AutoStart,
+                Config = connection.Configuration,
+                ExtendedStatus = status,
+            },
 
-            case Protocol.Twitch:
-                return new DiscordConnectionDto()
-                {
-                    Id = connection.Id,
-                    Name = connection.Name,
-                    Protocol = connection.Protocol,
-                    AutoStart = connection.AutoStart,
-                    Config = connection.Configuration,
-                    ExtendedStatus = status,
-                };
+            Protocol.Twitch => new DiscordConnectionDto()
+            {
+                Id = connection.Id,
+                Name = connection.Name,
+                Protocol = connection.Protocol,
+                AutoStart = connection.AutoStart,
+                Config = connection.Configuration,
+                ExtendedStatus = status,
+            },
 
-            default:
-                throw new NotImplementedException();
-        }
+            _ => throw new NotImplementedException(),
+        };
     }
 
     public static ScriptDto ToDto(this ScriptEntity script, ScriptStatus status)

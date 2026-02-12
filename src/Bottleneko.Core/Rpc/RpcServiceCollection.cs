@@ -7,7 +7,7 @@ public class RpcServiceCollection
 {
     record ServiceDefinition(Func<RequestPacket, bool> IsRequestSupported, Func<IRpcContext, RequestPacket, Task<ResponsePacket>> HandleRequest);
 
-    private List<ServiceDefinition> _services = [];
+    private readonly List<ServiceDefinition> _services = [];
 
     public void Register(IRpcService service)
     {

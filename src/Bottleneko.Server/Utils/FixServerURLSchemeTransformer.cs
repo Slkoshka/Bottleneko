@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 
-namespace Bottleneko.Server;
+namespace Bottleneko.Server.Utils;
 
 class FixServerURLSchemeTransformer : IOpenApiDocumentTransformer
 {

@@ -1,1 +1,1 @@
-dotnet run --file ./scripts/GenerateBindings.cs --no-cache
+& dotnet run --file ./scripts/GenerateBindings.cs --no-cache
