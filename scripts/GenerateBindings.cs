@@ -41,9 +41,14 @@ Pipeline.Start("Generating bindings", async display =>
 
             await display.Step("Adding files", async () =>
             {
-                foreach (var file in Directory.GetFiles("./src/Bottleneko.ScriptRuntime/dist", "*.*", SearchOption.AllDirectories))
+                foreach (var file in Directory.GetFiles("./src/Bottleneko.ScriptRuntime/dist", "*.*", SearchOption.AllDirectories).Order())
                 {
-                    await archive.CreateEntryFromFileAsync(file, Path.GetRelativePath("./src/Bottleneko.ScriptRuntime/dist", file).Replace("\\", "/"), CompressionLevel.SmallestSize);
+                    var entry = archive.CreateEntry(Path.GetRelativePath("./src/Bottleneko.ScriptRuntime/dist", file).Replace("\\", "/"), CompressionLevel.SmallestSize);
+                    entry.ExternalAttributes = 0;
+                    entry.LastWriteTime = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+                    using var stream = await entry.OpenAsync();
+                    using var source = File.OpenRead(file);
+                    await source.CopyToAsync(stream);
                 }
             });
         });
@@ -51,7 +56,7 @@ Pipeline.Start("Generating bindings", async display =>
 
     await display.Step("Packaging script runtime", async () =>
     {
-        var files = display.Run("git", ["ls-files", "-co", "--exclude-standard"], "./src/Bottleneko.ScriptRuntime", "Getting file listing").Split('\n');
+        var files = display.Run("git", ["ls-files", "-co", "--exclude-standard"], "./src/Bottleneko.ScriptRuntime", "Getting file listing").Split('\n').Order();
 
         await display.Step("Archiving files", async () =>
         {
@@ -66,7 +71,12 @@ Pipeline.Start("Generating bindings", async display =>
                     var relativePath = file.Replace("\\", "/");
                     if (relativePath.Contains('/'))
                     {
-                        await archive.CreateEntryFromFileAsync(Path.Combine(".", "src", "Bottleneko.ScriptRuntime", file), relativePath, CompressionLevel.SmallestSize);
+                        var entry = archive.CreateEntry(relativePath, CompressionLevel.SmallestSize);
+                        entry.ExternalAttributes = 0;
+                        entry.LastWriteTime = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+                        using var stream = await entry.OpenAsync();
+                        using var source = File.OpenRead(Path.Combine(".", "src", "Bottleneko.ScriptRuntime", file));
+                        await source.CopyToAsync(stream);
                     }
                 }
             });
