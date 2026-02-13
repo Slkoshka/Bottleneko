@@ -8,7 +8,7 @@ using System.IO.Compression;
 using System.Net.Http.Json;
 using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
-using static Bottleneko.Helpers.Cli;
+using Bottleneko.Helpers;
 using static Bottleneko.Helpers.FileSystem;
 
 var platformOption = new Option<string>("--platform")
@@ -63,60 +63,64 @@ rootCommand.SetAction(async parseResult =>
         ("win-x64", "deno-x86_64-pc-windows-msvc.zip", "deno.exe", () => OperatingSystem.IsWindows() && RuntimeInformation.ProcessArchitecture == Architecture.X64),
     };
 
-    Step("Checking prerequisites", () =>
+    Pipeline.Start("Publishing Bottleneko", async display =>
     {
-        if (!File.Exists("Bottleneko.slnx"))
+        display.Step("Checking prerequisites", () =>
         {
-            throw new Exception("This script must be run from the root directory of the project");
+            if (!File.Exists("Bottleneko.slnx"))
+            {
+                throw new Exception("This script must be run from the root directory of the project");
+            }
+        });
+
+        display.Step("Cleaning up files from previous runs", () =>
+        {
+            Delete(output, recursive: true);
+            Delete("./src/Bottleneko.Client/build", recursive: true);
+        });
+
+        display.Step("Bottleneko.Client", () =>
+        {
+            Directory.CreateDirectory(output);
+            display.Run("npm", ["install"], workingDir: "./src/Bottleneko.Client", "Installing dependencies");
+            display.Run("npm", ["run", "build"], workingDir: "./src/Bottleneko.Client", "Building Bottleneko.Client");
+        });
+
+        foreach (var platform in platforms.Where(platform => targetPlatform == "all" || (targetPlatform == "current" && platform.Check()) || targetPlatform == platform.Id))
+        {
+            await display.Step($"Platform {platform.Id}", async () =>
+            {
+                var platformOutput = targetPlatform == "all" ? Path.Combine(output, platform.Id) : output;
+
+                Directory.CreateDirectory(platformOutput);
+                display.Run("dotnet", ["publish", "./src/Bottleneko.Server", "-c", "Release", "-r", platform.Id, $"/p:VersionSuffix={versionSuffix}", "/p:WarningLevel=0", "--self-contained", "-o", platformOutput], description: $"Building Bottleneko.Server");
+
+                Directory.CreateDirectory(Path.Combine(platformOutput, "wwwroot"));
+                display.Step($"Copying Bottleneko.Client files", () =>
+                {
+                    CopyFiles("./src/Bottleneko.Client/build", Path.Combine(platformOutput, "wwwroot"), "*", recursive: true);
+                });
+
+                await display.Step("Getting Deno", async() =>
+                {
+                    var url = await display.Step("Checking latest Deno version on GitHub", async () =>
+                    {
+                        return (await http.GetFromJsonAsync<GitHubRelease>("https://api.github.com/repos/denoland/deno/releases/latest") ?? throw new Exception("Empty response")).Assets.Single(asset => asset.Name == platform.DenoAssetName).BrowserDownloadUrl;
+                    });
+
+                    await display.Step("Downloading Deno runtime", async () =>
+                    {
+                        using var stream = await http.GetStreamAsync(url);
+                        using var archive = new ZipArchive(stream);
+                        await (archive.GetEntry(platform.DenoFilename) ?? throw new Exception("Can't find Deno binary")).ExtractToFileAsync(Path.Combine(platformOutput, "deno"));
+                    });
+                });
+            });
         }
     });
-
-    Step("Cleaning up files from previous runs", () =>
-    {
-        Delete(output, recursive: true);
-        Delete("./src/Bottleneko.Client/build", recursive: true);
-    });
-
-    Step("Bottleneko.Client", () =>
-    {
-        Directory.CreateDirectory(output);
-        Run("npm", ["install"], workingDir: "./src/Bottleneko.Client", "Installing dependencies");
-        Run("npm", ["run", "build"], workingDir: "./src/Bottleneko.Client", "Building Bottleneko.Client");
-    });
-
-    foreach (var platform in platforms.Where(platform => targetPlatform == "all" || (targetPlatform == "current" && platform.Check()) || targetPlatform == platform.Id))
-    {
-        await Step($"Platform {platform.Id}", async () =>
-        {
-            var platformOutput = targetPlatform == "all" ? Path.Combine(output, platform.Id) : output;
-
-            Directory.CreateDirectory(platformOutput);
-            Run("dotnet", ["publish", "./src/Bottleneko.Server", "-c", "Release", "-r", platform.Id, $"/p:VersionSuffix={versionSuffix}", "/p:WarningLevel=0", "--self-contained", "-o", platformOutput], description: $"Building Bottleneko.Server");
-
-            Directory.CreateDirectory(Path.Combine(platformOutput, "wwwroot"));
-            Step($"Copying Bottleneko.Client files", () =>
-            {
-                CopyFiles("./src/Bottleneko.Client/build", Path.Combine(platformOutput, "wwwroot"), "*", recursive: true);
-            });
-
-            await Step("Getting Deno", async() =>
-            {
-                var url = await Step("Checking latest Deno version on GitHub", async () =>
-                {
-                    return (await http.GetFromJsonAsync<GitHubRelease>("https://api.github.com/repos/denoland/deno/releases/latest") ?? throw new Exception("Empty response")).Assets.Single(asset => asset.Name == platform.DenoAssetName).BrowserDownloadUrl;
-                });
-
-                await Step("Downloading Deno runtime", async () =>
-                {
-                    using var stream = await http.GetStreamAsync(url);
-                    using var archive = new ZipArchive(stream);
-                    await (archive.GetEntry(platform.DenoFilename) ?? throw new Exception("Can't find Deno binary")).ExtractToFileAsync(Path.Combine(platformOutput, "deno"));
-                });
-            });
-        });
-    }
 });
 
+Cli.PrintLogo();
 await rootCommand.Parse(args).InvokeAsync();
 
 record GitHubAsset([property: JsonPropertyName("name")] string Name, [property: JsonPropertyName("browser_download_url")] string BrowserDownloadUrl);

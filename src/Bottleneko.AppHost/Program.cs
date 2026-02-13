@@ -1,3 +1,5 @@
+Bottleneko.Helpers.Cli.PrintLogo();
+
 Environment.SetEnvironmentVariable("ASPIRE_ALLOW_UNSECURED_TRANSPORT", "true");
 
 var builder = DistributedApplication.CreateBuilder(args);

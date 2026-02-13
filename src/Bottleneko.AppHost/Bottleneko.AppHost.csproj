@@ -14,6 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Bottleneko.Client\Bottleneko.Client.esproj" />
     <ProjectReference Include="..\Bottleneko.Server\Bottleneko.Server.csproj" />
+    <ProjectReference Include="..\Bottleneko.Helpers\Bottleneko.Helpers.csproj" IsAspireProjectResource="false" />
   </ItemGroup>
 
   <Target Name="RestoreNpm" BeforeTargets="Build" Condition=" '$(DesignTimeBuild)' != 'true' ">

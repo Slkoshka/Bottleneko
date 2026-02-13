@@ -2,6 +2,7 @@ using Bottleneko.Server;
 using Spectre.Console.Cli;
 using System.ComponentModel;
 
+Bottleneko.Helpers.Cli.PrintLogo();
 var app = new CommandApp<DefaultCommand>();
 return app.Run(args);
 
