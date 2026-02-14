@@ -8,6 +8,7 @@
     import LogSourceDisplay from './LogSourceDisplay.svelte';
     import { blur } from 'svelte/transition';
     import { flip } from 'svelte/animate';
+    import LoadingBanner from '$lib/components/LoadingBanner.svelte';
 
     const props: Props = $props();
 
@@ -55,18 +56,26 @@
             </ButtonGroup>
         </CardHeader>
         <CardBody style="overflow: hidden scroll">
-            <div class="d-flex flex-column w-100">
-                {#each subscriber.mail as message (message.id)}
-                    <div class="font-monospace w-100 log-message" style="line-height: 1.2em; padding: 0.2em" in:blur|global={{ duration: 300 }} animate:flip={{ duration: 300 }}>
-                        <span style="color: #707070">{dateFormat(new Date(message.timestamp), 'yyyy-mm-dd HH:MM:ss.l')}</span>
-                        {#if props.sourceType !== 'Connection' && props.sourceType !== 'Script'}
-                        <div style="display: inline-block; width: 150px"><LogSourceDisplay sourceType={message.sourceType} sourceId={message.sourceId} /></div>
-                        {/if}
-                        <span style="color: #707070">{message.category}</span>
-                        <span style={severityStyle[message.severity]}>[{message.severity}]</span>
-                        <span style={`white-space: pre-wrap; word-break: break-all; ${messageStyle[message.severity]}`}>{message.text}</span>
+            <div class="d-flex flex-column w-100 h-100">
+                {#if subscriber.isLoading}
+                    <LoadingBanner size="xl" />
+                {:else if subscriber.mail.length === 0}
+                    <div class="w-100 h-100 d-flex justify-content-center align-items-center">
+                        <p class="text-secondary fst-italic" style="text-align: center">(no messages)</p>
                     </div>
-                {/each}
+                {:else}
+                    {#each subscriber.mail as message (message.id)}
+                        <div class="font-monospace w-100 log-message" style="line-height: 1.2em; padding: 0.2em" in:blur|global={{ duration: 300 }} animate:flip={{ duration: 300 }}>
+                            <span style="color: #707070">{dateFormat(new Date(message.timestamp), 'yyyy-mm-dd HH:MM:ss.l')}</span>
+                            {#if props.sourceType !== 'Connection' && props.sourceType !== 'Script'}
+                                <div style="display: inline-block; width: 150px"><LogSourceDisplay sourceType={message.sourceType} sourceId={message.sourceId} /></div>
+                            {/if}
+                            <span style="color: #707070">{message.category}</span>
+                            <span style={severityStyle[message.severity]}>[{message.severity}]</span>
+                            <span style={`white-space: pre-wrap; word-break: break-all; ${messageStyle[message.severity]}`}>{message.text}</span>
+                        </div>
+                    {/each}
+                {/if}
             </div>
         </CardBody>
     </Card>
