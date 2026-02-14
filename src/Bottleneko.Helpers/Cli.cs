@@ -61,6 +61,7 @@ public static class Cli
         {
             if (e.Data is not null)
             {
+                output.AppendLine(e.Data);
                 lineCallback?.Invoke(e.Data);
             }
         }
