@@ -5,10 +5,23 @@
 
 using System.IO.Compression;
 using System.Text;
+using System.Text.RegularExpressions;
 using Bottleneko.BindingsGenerator;
 using Bottleneko.Helpers;
 
 Cli.PrintLogo();
+
+static void CheckExports(string filename, string contents)
+{
+    var re = ImportRegex();
+    foreach (var match in re.Matches(contents).Cast<Match>())
+    {
+        if (match.Groups["ImportPath"].Value.Contains("/internal/") && match.Groups["ImportPath"].Value != "./internal/export.ts")
+        {
+            throw new Exception($"Detected illegal export: {filename} references {match.Groups["ImportPath"].Value}");
+        }
+    }
+}
 
 Pipeline.Start("Generating bindings", async display =>
 {
@@ -47,8 +60,17 @@ Pipeline.Start("Generating bindings", async display =>
                     entry.ExternalAttributes = 0;
                     entry.LastWriteTime = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
                     using var stream = await entry.OpenAsync();
-                    using var source = File.OpenRead(file);
-                    await source.CopyToAsync(stream);
+                    if (file.EndsWith(".ts", StringComparison.OrdinalIgnoreCase) && !file.Contains("internal"))
+                    {
+                        var source = await File.ReadAllTextAsync(file);
+                        CheckExports(file, source);
+                        await stream.WriteAsync(Encoding.UTF8.GetBytes(source));
+                    }
+                    else
+                    {
+                        using var source = File.OpenRead(file);
+                        await source.CopyToAsync(stream);
+                    }
                 }
             });
         });
@@ -75,11 +97,26 @@ Pipeline.Start("Generating bindings", async display =>
                         entry.ExternalAttributes = 0;
                         entry.LastWriteTime = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
                         using var stream = await entry.OpenAsync();
-                        using var source = File.OpenRead(Path.Combine(".", "src", "Bottleneko.ScriptRuntime", file));
-                        await source.CopyToAsync(stream);
+                        if (file.EndsWith(".ts", StringComparison.OrdinalIgnoreCase) && !file.Contains("internal"))
+                        {
+                            var source = await File.ReadAllTextAsync(Path.Combine(".", "src", "Bottleneko.ScriptRuntime", file));
+                            CheckExports(file, source);
+                            await stream.WriteAsync(Encoding.UTF8.GetBytes(source));
+                        }
+                        else
+                        {
+                            using var source = File.OpenRead(Path.Combine(".", "src", "Bottleneko.ScriptRuntime", file));
+                            await source.CopyToAsync(stream);
+                        }
                     }
                 }
             });
         });
     });
 });
+
+partial class Program
+{
+    [GeneratedRegex(@"^import(?:type\s+)?\s+.+?\s+from\s+(['""])(?<ImportPath>.+?)\1;?\s+$", RegexOptions.Multiline)]
+    private static partial Regex ImportRegex();
+}

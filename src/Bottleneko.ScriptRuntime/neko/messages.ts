@@ -1,73 +1,30 @@
-import { ChatterSummary } from "./chatters.ts";
-import connections from "./connections.ts";
-import type { AttachmentDto, ChannelTwitchChatMessageDto, ChatMessageDto, ChatMessageFilter, ChatMessageLetter, ChatSummaryDto, DiscordChatMessageDto, Protocol, TelegramChatMessageDto, TwitchChatBadge, WhisperTwitchChatMessageDto } from "./internal/api/bottleneko.gen.ts";
-import type NekoRpc from "./internal/rpc/index.ts";
-import runtime, { type NekoRuntime } from './runtime.ts';
+import { internal__MessagesImpl, type internal__ChatMessageFilter, type internal__TwitchChatBadge } from './internal/export.ts';
+import type { Protocol } from './connections.ts';
+import type { Attachment } from './attachments.ts';
+import type { ChatterSummary } from './chatters.ts';
+import type { ChatSummary } from "./chats.ts";
 
-const makeListener = (rpc: NekoRpc, callback: (message: ChatMessage) => Promise<void> | void, filter: ChatMessageFilter) => {
-    return rpc.watch(
-        [{ filter: filter ?? { connectionId: null, protocol: null } }],
-        rpc.messages.subscribe,
-        rpc.messages.unsubscribe,
-        (letter) => callback(ChatMessage.fromDto(rpc, (letter as ChatMessageLetter).content))
-    );
-};
+export type ChatMessageFilter = internal__ChatMessageFilter;
+export type TwitchChatBadge = internal__TwitchChatBadge;
 
-export abstract class ChatMessage {
-    #rpc: NekoRpc;
-
+export interface ChatMessage {
     protocol: Protocol;
     id: string;
     connectionId: string;
     timestamp: string;
-    chat: ChatSummaryDto;
+    chat: ChatSummary;
     author: ChatterSummary;
     text: string | null;
-    attachments: AttachmentDto[];
+    attachments: Attachment[];
     isSpecial: boolean;
     isDirect: boolean;
     isMissed: boolean;
-
-    constructor(rpc: NekoRpc, protocol: Protocol, message: ChatMessageDto) {
-        this.#rpc = rpc;
-
-        this.protocol = protocol;
-        this.id = message.id;
-        this.connectionId = message.connectionId;
-        this.timestamp = message.timestamp;
-        this.chat = message.chat;
-        this.author = new ChatterSummary(message.author);
-        this.text = message.textContent;
-        this.attachments = message.attachments;
-        this.isSpecial = message.isSpecial;
-        this.isDirect = message.isDirect;
-        this.isMissed = message.isMissed;
-    }
-
-    async replyText(text: string) {
-        await this.#rpc.messages.sendText({
-            connectionId: this.connectionId,
-            chatId: this.chat.id,
-            text,
-            replyToMessageId: this.id,
-        });
-    }
-
-    async getConnection() {
-        return await connections.get(this.connectionId);
-    }
-
-    static fromDto(rpc: NekoRpc, message: ChatMessageDto) {
-        switch (message.$type) {
-            case "Discord": return new DiscordChatMessage(rpc, message);
-            case "Telegram": return new TelegramChatMessage(rpc, message);
-            case "Twitch.Channel": return new ChannelTwitchChatMessage(rpc, message);
-            case "Twitch.Whisper": return new WhisperTwitchChatMessage(rpc, message);
-        }
-    }
+    
+    replyText(text: string): Promise<void>;
 }
 
-export class DiscordChatMessage extends ChatMessage {
+export interface DiscordChatMessage extends ChatMessage {
+    protocol: 'Discord';
     discordId: string;
     isPinned: boolean;
     mentions: {
@@ -76,38 +33,20 @@ export class DiscordChatMessage extends ChatMessage {
         roleIds: string[];
         userIds: string[];
     };
-
-    constructor(rpc: NekoRpc, message: DiscordChatMessageDto) {
-        super(rpc, 'Discord', message);
-
-        this.discordId = message.discordId;
-        this.isPinned = message.isPinned;
-        this.mentions = {
-            everyone: message.isEveryoneMentioned,
-            channelIds: message.channelMentions,
-            roleIds: message.roleMentions,
-            userIds: message.userMentions,
-        };
-    }
 }
 
-export class TelegramChatMessage extends ChatMessage {
-    constructor(rpc: NekoRpc, message: TelegramChatMessageDto) {
-        super(rpc, 'Telegram', message);
-    }
+export interface TelegramChatMessage extends ChatMessage {
+    protocol: 'Telegram';
 }
 
-export abstract class TwitchChatMessage extends ChatMessage {
+export interface TwitchChatMessage extends ChatMessage {
+    protocol: 'Twitch';
     twitchId: string;
-
-    constructor(rpc: NekoRpc, message: ChannelTwitchChatMessageDto | WhisperTwitchChatMessageDto) {
-        super(rpc, 'Twitch', message);
-
-        this.twitchId = message.twitchId;
-    }
+    isWhisper: boolean;
 }
 
-export class ChannelTwitchChatMessage extends TwitchChatMessage {
+export interface ChannelTwitchChatMessage extends TwitchChatMessage {
+    isWhisper: false;
     badges: TwitchChatBadge[];
     color: string;
     cheerBits: number | null;
@@ -119,48 +58,21 @@ export class ChannelTwitchChatMessage extends TwitchChatMessage {
         isVip: boolean;
         isStaff: boolean;
     }
-
-    constructor(rpc: NekoRpc, message: ChannelTwitchChatMessageDto) {
-        super(rpc, message);
-
-        this.badges = message.badges;
-        this.color = message.color;
-        this.cheerBits = message.cheerBits;
-        this.channelPointsCustomRewardId = message.channelPointsCustomRewardId;
-        this.roles = {
-            isSubscriber: message.isSubscriber,
-            isModerator: message.isModerator,
-            isBroadcaster: message.isBroadcaster,
-            isVip: message.isVip,
-            isStaff: message.isStaff,
-        };
-    }
 }
 
-export class WhisperTwitchChatMessage extends TwitchChatMessage {
-    constructor(rpc: NekoRpc, message: WhisperTwitchChatMessageDto) {
-        super(rpc, message);
-    }
+export interface WhisperTwitchChatMessage extends TwitchChatMessage {
+    isWhisper: true;
 }
 
-class Messages {
-    #runtime: NekoRuntime;
-
-    constructor(runtime: NekoRuntime) {
-        this.#runtime = runtime;
-    }
-
-    get received() {
-        return {
-            listen: (callback: Parameters<typeof makeListener>[1]) => makeListener(this.#runtime.rpc, callback, { connectionId: null, protocol: null }),
-
-            filteredBy: (filter: ChatMessageFilter) => {
-                return {
-                    listen: (callback: Parameters<typeof makeListener>[1]) => makeListener(this.#runtime.rpc, callback, filter),
-                };
-            },
-        }
-    }
+export interface ChatMessageReceivedEvent {
+    listen: (callback: (message: ChatMessage) => Promise<void>) => Promise<() => void>
 }
 
-export default new Messages(runtime);
+export interface Messages {
+    received: ChatMessageReceivedEvent & {
+        filteredBy: (filter: ChatMessageFilter) => ChatMessageReceivedEvent;
+    };
+
+}
+
+export default internal__MessagesImpl as Messages;

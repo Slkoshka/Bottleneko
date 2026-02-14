@@ -1,24 +1,9 @@
-import runtime, { type NekoRuntime } from './runtime.ts';
+import { internal__ScriptImpl } from './internal/export.ts';
 
-class Script {
-    #runtime: NekoRuntime;
-
-    constructor(runtime: NekoRuntime) {
-        this.#runtime = runtime;
-    }
-
-    async getId() {
-        return await this.#runtime.rpc.script.getId({});
-    }
-
-    async getName() {
-        return await this.#runtime.rpc.script.getName({});
-    }
-
-    stop() {
-        this.#runtime.stop();
-    }
+export interface Script {
+    getId: () => Promise<string>;
+    getName: () => Promise<string>;
+    stop: () => void;
 }
 
-export default new Script(runtime);
-
+export default internal__ScriptImpl as Script;

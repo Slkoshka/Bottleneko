@@ -41,7 +41,7 @@ class DenoScriptActor(IServiceProvider services, AkkaService akka, DenoScriptEng
         FileSystem.Delete(_scriptDirectory, recursive: true);
         Directory.CreateDirectory(_scriptDirectory);
 
-        await File.WriteAllTextAsync(Path.Combine(_scriptDirectory, "entrypoint.ts"), "import runtime from 'neko/runtime'; import './index.ts';");
+        await File.WriteAllTextAsync(Path.Combine(_scriptDirectory, "entrypoint.ts"), "import runtime from 'neko/runtime'; await runtime.init(); await import('./index.ts');");
 
         var (denoJsonContents, denoJsonFileName) = (File.Exists(Path.Combine(_scriptDirectory, "deno.json")), File.Exists(Path.Combine(_scriptDirectory, "deno.jsonc"))) switch
         {

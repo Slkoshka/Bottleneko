@@ -1,75 +1,33 @@
-import type { ConnectionDto, DiscordConnectionDto, ExtendedConnectionStatus, Protocol, TelegramConnectionDto } from './internal/api/bottleneko.gen.ts';
-import type NekoRpc from './internal/rpc/index.ts';
-import runtime, { type NekoRuntime } from './runtime.ts';
+import { internal__ConnectionsImpl, type internal__ExtendedConnectionStatus, type internal__Protocol } from './internal/export.ts';
 
-export abstract class Connection {
-    #rpc: NekoRpc;
+export type Protocol = internal__Protocol;
+export type ExtendedConnectionStatus = internal__ExtendedConnectionStatus;
+
+export interface Connection {
     protocol: Protocol;
     id: string;
     name: string;
     autoStart: boolean;
     status: ExtendedConnectionStatus;
 
-    constructor(rpc: NekoRpc, protocol: Protocol, connection: ConnectionDto) {
-        this.#rpc = rpc;
-
-        this.protocol = protocol;
-        this.id = connection.id;
-        this.name = connection.name;
-        this.autoStart = connection.autoStart;
-        this.status = connection.extendedStatus;
-    }
-
-    async sendText(chatId: string, text: string) {
-        await this.#rpc.messages.sendText({
-            connectionId: this.id,
-            chatId,
-            text,
-            replyToMessageId: null,
-        });
-    }
-
-    static fromDto(rpc: NekoRpc, connection: ConnectionDto) {
-            switch (connection.$type) {
-                case "Discord": return new DiscordConnection(rpc, connection);
-                case "Telegram": return new TelegramConnection(rpc, connection);
-                case "Twitch": return new TwitchConnection(rpc, connection);
-            }
-        }
+    sendText: (chatId: string, text: string) => Promise<void>;
 }
 
-export class DiscordConnection extends Connection {
-    constructor(rpc: NekoRpc, connection: DiscordConnectionDto) {
-        super(rpc, 'Discord', connection);
-    }
+export interface DiscordConnection extends Connection {
+    protocol: 'Discord';
 }
 
-export class TelegramConnection extends Connection {
-    constructor(rpc: NekoRpc, connection: TelegramConnectionDto) {
-        super(rpc, 'Telegram', connection);
-    }
+export interface TelegramConnection extends Connection {
+    protocol: 'Telegram';
 }
 
-export class TwitchConnection extends Connection {
-    constructor(rpc: NekoRpc, connection: ConnectionDto) {
-        super(rpc, 'Twitch', connection);
-    }
+export interface TwitchConnection extends Connection {
+    protocol: 'Twitch';
 }
 
-class Connections {
-    #runtime: NekoRuntime;
-
-    constructor(runtime: NekoRuntime) {
-        this.#runtime = runtime;
-    }
-
-    async get(id: ConnectionDto['id']) {
-        return Connection.fromDto(this.#runtime.rpc, await this.#runtime.rpc.connections.get({ id }));
-    }
-
-    async list() {
-        return (await this.#runtime.rpc.connections.list({ })).map(connection => Connection.fromDto(this.#runtime.rpc, connection));
-    }
+export interface Connections {
+    get: (id: string) => Promise<Connection>;
+    list: () => Promise<Connection[]>;
 }
 
-export default new Connections(runtime);
+export default internal__ConnectionsImpl as Connections;
