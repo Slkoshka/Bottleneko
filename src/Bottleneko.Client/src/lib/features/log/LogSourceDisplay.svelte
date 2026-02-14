@@ -11,17 +11,17 @@
 </script>
 
 {#if props.sourceType === 'System'}
-    <Button class="px-1 py-0" color="primary" size="sm">System</Button>
+    <Button class="text-collapse w-100 px-1 py-0" color="primary" size="sm">System</Button>
 {:else if props.sourceType === 'Connection'}
     {@const connection = Connections.provider?.list?.find((connection) => connection.data.id === props.sourceId)}
     {#if connection}
-        <Button href={`/connections/${props.sourceId}`} color="success" size="sm" class="px-1 py-0">
+        <Button href={`/connections/${props.sourceId}`} color="success" size="sm" class="text-collapse w-100 px-1 py-0">
             <ProtocolIcon protocol={connection.data.protocol} />
             {connection.data.name}
         </Button>
     {:else}
-        <div bind:this={button}>
-            <Button color="success" size="sm" class="px-1 py-0" disabled>
+        <div class="w-100" bind:this={button}>
+            <Button color="success" size="sm" class="text-collapse w-100 px-1 py-0" disabled>
                 Connection #{props.sourceId}
             </Button>
         </div>
@@ -33,12 +33,12 @@
 {:else if props.sourceType === 'Script'}
     {@const script = Scripts.provider?.list?.find((script) => script.data.id === props.sourceId)}
     {#if script}
-        <Button href={`/scripts/${props.sourceId}`} color="warning" size="sm" class="px-1 py-0">
+        <Button href={`/scripts/${props.sourceId}`} color="warning" size="sm" class="text-collapse w-100 px-1 py-0">
             {script.data.name}
         </Button>
     {:else}
-        <div bind:this={button}>
-            <Button color="warning" size="sm" class="px-1 py-0" disabled>
+        <div class="w-100"  bind:this={button}>
+            <Button color="warning" size="sm" class="text-collapse w-100 px-1 py-0" disabled>
                 Script #{props.sourceId}
             </Button>
         </div>

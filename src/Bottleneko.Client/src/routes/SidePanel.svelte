@@ -119,7 +119,7 @@
     </NavItem>
 {/snippet}
 
-<aside class="d-flex flex-column p-3 shadow" style:background-color="#111">
+<aside class="d-flex flex-column p-3 shadow" style:background-color="#171717">
     <a href={resolve('/')} class="text-white text-decoration-none brand">
         <span style:font-size="2rem" style:font-weight="bold">
             {#each brand.formatted as element (element)}

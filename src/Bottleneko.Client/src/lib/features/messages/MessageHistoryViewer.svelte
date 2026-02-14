@@ -19,7 +19,7 @@
     });
 </script>
 
-<div style="overflow-y: scroll" class="h-100 card p-1">
+<div style="overflow-y: scroll; background-color: #141417" class="h-100 card p-1">
     {#if subscriber.mail.length > 0}
         {#each subscriber.mail as letter (letter.content.id)}
             <div
