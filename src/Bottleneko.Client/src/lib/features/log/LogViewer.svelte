@@ -65,14 +65,26 @@
                     </div>
                 {:else}
                     {#each subscriber.mail as message (message.id)}
-                        <div class="font-monospace w-100 log-message" style="line-height: 1.2em; padding: 0.2em" in:blur|global={{ duration: 300 }} animate:flip={{ duration: 300 }}>
-                            <span style="color: #707070">{dateFormat(new Date(message.timestamp), 'yyyy-mm-dd HH:MM:ss.l')}</span>
+                        <div
+                            class="font-monospace w-100 log-message"
+                            style="line-height: 1.2em; padding: 0.2em"
+                            in:blur|global={{ duration: 300 }}
+                            animate:flip={{ duration: 300 }}
+                        >
+                            <span style="color: #707070"
+                                >{dateFormat(new Date(message.timestamp), 'yyyy-mm-dd HH:MM:ss.l')}</span
+                            >
                             {#if props.sourceType !== 'Connection' && props.sourceType !== 'Script'}
-                                <div style="display: inline-block; width: 150px"><LogSourceDisplay sourceType={message.sourceType} sourceId={message.sourceId} /></div>
+                                <div style="display: inline-block; width: 150px">
+                                    <LogSourceDisplay sourceType={message.sourceType} sourceId={message.sourceId} />
+                                </div>
                             {/if}
                             <span style="color: #707070">{message.category}</span>
                             <span style={severityStyle[message.severity]}>[{message.severity}]</span>
-                            <span style={`white-space: pre-wrap; word-break: break-all; ${messageStyle[message.severity]}`}>{message.text}</span>
+                            <span
+                                style={`white-space: pre-wrap; word-break: break-all; ${messageStyle[message.severity]}`}
+                                >{message.text}</span
+                            >
                         </div>
                     {/each}
                 {/if}

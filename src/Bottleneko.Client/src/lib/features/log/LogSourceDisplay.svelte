@@ -37,7 +37,7 @@
             {script.data.name}
         </Button>
     {:else}
-        <div class="w-100"  bind:this={button}>
+        <div class="w-100" bind:this={button}>
             <Button color="warning" size="sm" class="text-collapse w-100 px-1 py-0" disabled>
                 Script #{props.sourceId}
             </Button>
