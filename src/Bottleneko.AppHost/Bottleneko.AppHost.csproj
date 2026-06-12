@@ -1,4 +1,4 @@
-<Project Sdk="Aspire.AppHost.Sdk/13.1.0">
+<Project Sdk="Aspire.AppHost.Sdk/13.4.3">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -8,7 +8,10 @@
   <Import Project="$(MSBuildProjectDirectory)\..\Bottleneko.Common.props" />
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.JavaScript" Version="13.1.0" />
+    <PackageReference Include="Aspire.Hosting.JavaScript" Version="13.4.3" />
+
+    <!-- https://github.com/microsoft/aspire/issues/18153 -->
+    <PackageReference Include="MessagePack" Version="2.5.302" />
   </ItemGroup>
 
   <ItemGroup>

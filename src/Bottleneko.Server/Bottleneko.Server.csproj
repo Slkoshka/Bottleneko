@@ -7,19 +7,12 @@
   <Import Project="$(MSBuildProjectDirectory)\..\Bottleneko.Common.props" />
 
   <ItemGroup>
-    <PackageReference Include="Akka" Version="1.5.46" />
-    <PackageReference Include="Akka.DependencyInjection" Version="1.5.46" />
+    <PackageReference Include="Akka" Version="1.5.68" />
+    <PackageReference Include="Akka.DependencyInjection" Version="1.5.68" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="$(AspNetVersion)" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="$(AspNetVersion)" />
-    <PackageReference Include="Spectre.Console.Cli" Version="0.50" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.0" />
-  </ItemGroup>
-
-  <!-- https://github.com/dotnet/docs/issues/44886 -->
-  <ItemGroup>
-    <PackageReference Include="System.Linq.Async" Version="6.0.1">
-      <ExcludeAssets>all</ExcludeAssets>
-    </PackageReference>
+    <PackageReference Include="Spectre.Console.Cli" Version="0.55" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.1" />
   </ItemGroup>
 
   <ItemGroup>

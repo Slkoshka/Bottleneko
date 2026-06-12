@@ -13,7 +13,8 @@
     <TabView
         title="Settings"
         fill-screen
-        ontabchanged={(tab) => goto(resolve('/settings/[settingsTab=settingsTab]', { settingsTab: tab as string }))}
+        ontabchanged={(tab) =>
+            goto(resolve('/settings/[settingsTab=settingsTab]', { settingsTab: tab as 'network' | 'users' | 'logs' }))}
     >
         <Tab id="network" icon="hdd-network" title="Network" default={page.params.settingsTab === 'network'}>
             <ProxySettings />

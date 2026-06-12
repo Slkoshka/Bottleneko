@@ -57,7 +57,7 @@
                 goto(
                     resolve('/connections/[connectionId]/[connectionTab=connectionTab]', {
                         connectionId: connection?.data.id ?? '',
-                        connectionTab: tab as string,
+                        connectionTab: tab as 'messages' | 'logs' | 'parameters',
                     }),
                 )}
         >

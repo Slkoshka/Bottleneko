@@ -38,6 +38,7 @@
         chart?.destroy();
     });
 
+    // svelte-ignore state_referenced_locally
     const labelsChangesTracker = new ChangesTracker<Props['labels']>((_, labels) => {
         if (chart) {
             chart.data.labels = labels;
@@ -48,6 +49,7 @@
         labelsChangesTracker.set(props.labels);
     });
 
+    // svelte-ignore state_referenced_locally
     const valuesChangesTracker = new ChangesTracker<Props['values']>((_, values) => {
         if (chart) {
             /* eslint-disable svelte/prefer-svelte-reactivity */

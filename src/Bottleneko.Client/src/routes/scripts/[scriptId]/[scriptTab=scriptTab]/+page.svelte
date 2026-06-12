@@ -48,7 +48,7 @@
                 goto(
                     resolve('/scripts/[scriptId]/[scriptTab=scriptTab]', {
                         scriptId: script?.data.id ?? '',
-                        scriptTab: tab as string,
+                        scriptTab: tab as 'logs' | 'edit',
                     }),
                 )}
         >

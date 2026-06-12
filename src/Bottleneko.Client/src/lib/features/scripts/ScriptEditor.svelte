@@ -7,6 +7,7 @@
 
     const props: Props = $props();
 
+    // svelte-ignore state_referenced_locally
     const formState = new FormState(EditedScriptSchema, props.script, async (data) => {
         await props.onsaved($state.snapshot(data));
     });

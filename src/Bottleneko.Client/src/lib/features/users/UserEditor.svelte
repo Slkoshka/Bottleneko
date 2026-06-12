@@ -26,6 +26,7 @@
         }),
     );
 
+    // svelte-ignore state_referenced_locally
     const userChangesTracker = new ChangesTracker<UserDto | null>((_, value) => {
         if (!value) {
             formState.data = FormSchema.getDefault();
@@ -39,6 +40,7 @@
         userChangesTracker.set(props.user);
     });
 
+    // svelte-ignore state_referenced_locally
     const showChangesTracker = new ChangesTracker<boolean>((_, value) => {
         if (value) {
             userChangesTracker.forceUpdate(props.user);

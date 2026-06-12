@@ -16,6 +16,7 @@ export class FormState<Schema extends yup.Schema<object, yup.AnyObject, object>>
         private sendCallback?: (data: yup.InferType<Schema>) => Promise<void>,
     ) {
         this.schema = schema;
+        /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
         this.data = $state(
             structuredClone($state.snapshot(initialValue ?? this.getDefault())),
         ) as unknown as yup.InferType<Schema>;

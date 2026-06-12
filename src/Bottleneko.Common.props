@@ -10,6 +10,6 @@
     <LangVersion>latest</LangVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 
-    <AspNetVersion>10.0.1</AspNetVersion>
+    <AspNetVersion>10.0.9</AspNetVersion>
   </PropertyGroup>
 </Project>

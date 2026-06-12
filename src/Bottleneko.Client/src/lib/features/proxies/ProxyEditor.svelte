@@ -11,6 +11,7 @@
     const formState = $derived(new FormState(FormSchema, props.proxy ?? undefined, props.onsuccess));
     let stage: ProxyEditorStage = $state({ id: 'select-type', type: 'Http' });
 
+    // svelte-ignore state_referenced_locally
     const changesTracker = new ChangesTracker<ProxyDto | null>((_, value) => {
         if (!value) {
             stage = { id: 'select-type', type: 'Http' };

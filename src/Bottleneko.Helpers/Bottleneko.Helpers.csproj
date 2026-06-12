@@ -3,7 +3,7 @@
   <Import Project="$(MSBuildProjectDirectory)\..\Bottleneko.Common.props" />
 
   <ItemGroup>
-    <PackageReference Include="Spectre.Console" Version="0.54.0" />
+    <PackageReference Include="Spectre.Console" Version="0.57.0" />
   </ItemGroup>
 
 </Project>

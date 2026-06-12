@@ -32,6 +32,7 @@
     import TwitchChannelEditor from './TwitchChannelEditor.svelte';
 
     const props: Props = $props();
+    // svelte-ignore state_referenced_locally
     const formState = new FormState(
         FormSchema,
         props.definition?.config.$type === 'Twitch'

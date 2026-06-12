@@ -20,9 +20,9 @@ class DefaultCommand : AsyncCommand<DefaultCommand.Settings>
         public required string? BindAddresses { get; init; }
     }
 
-    public override async Task<int> ExecuteAsync(CommandContext context, Settings settings)
+    protected override async Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellationToken)
     {
         await using var server = new BottlenekoServer();
-        return await server.StartAsync(settings.DataPath, string.IsNullOrWhiteSpace(settings.BindAddresses) ? [] : settings.BindAddresses.Split(","));
+        return await server.StartAsync(settings.DataPath, string.IsNullOrWhiteSpace(settings.BindAddresses) ? [] : settings.BindAddresses.Split(","), cancellationToken);
     }
 }

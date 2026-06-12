@@ -76,6 +76,7 @@
     icon: string | null,
     matches?: { routes?: Parameters<typeof match>[0]; options?: Parameters<typeof match>[1] },
 )}
+    <!-- eslint-disable @typescript-eslint/no-unnecessary-type-assertion -->
     {@const isMatch = match(
         matches?.routes === undefined
             ? [dest, addDest as Extract<Parameters<typeof match>[0], string>]

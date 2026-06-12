@@ -8,9 +8,9 @@ WORKDIR /build
 
 # Install dependencies
 ARG DEBIAN_FRONTEND=noninteractive
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.5/install.sh | bash
 ENV NVM_DIR=/root/.nvm
-RUN bash -c "source $NVM_DIR/nvm.sh && nvm install 25"
+RUN bash -c "source $NVM_DIR/nvm.sh && nvm install 26"
 
 # Restore
 COPY --parents ./**/*.slnx ./

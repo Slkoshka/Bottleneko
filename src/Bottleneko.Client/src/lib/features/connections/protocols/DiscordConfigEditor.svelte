@@ -18,6 +18,7 @@
     import { FormSchema } from './DiscordConfigEditor';
 
     const { disabled = false, ...props }: Props = $props();
+    // svelte-ignore state_referenced_locally
     const formState = new FormState(
         FormSchema,
         props.definition?.config.$type === 'Discord'
